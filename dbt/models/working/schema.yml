@@ -1,0 +1,24 @@
+version: 2
+
+models:
+  - name: indicator_catalog_simple
+    description: "Working model - Simplified master list of indicator templates"
+    columns:
+      - name: indicator_template_id
+        description: "Primary key - unique identifier for indicator template"
+        tests:
+          - not_null
+          - unique
+      - name: indicator_code_name
+        description: "Code name of the indicator"
+        tests:
+          - not_null
+      - name: indicator_short_name
+        description: "Short descriptive name of the indicator"
+      - name: dimension
+        description: "Poverty dimension (health, education, housing, etc.)"
+      - name: status
+        description: "Status of the indicator (active for all in this simplified version)"
+        tests:
+          - accepted_values:
+              values: ['active']

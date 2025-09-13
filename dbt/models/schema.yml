@@ -1,0 +1,192 @@
+version: 2
+
+models:
+  # Indicator Models
+  - name: indicator_catalog
+    description: "Master list of all indicator templates with metadata and usage statistics"
+    columns:
+      - name: indicator_template_id
+        description: "Primary key - unique identifier for indicator template"
+        tests:
+          - not_null
+          - unique
+      - name: indicator_code_name
+        description: "Code name of the indicator"
+        tests:
+          - not_null
+      - name: indicator_short_name
+        description: "Short descriptive name of the indicator"
+      - name: dimension
+        description: "Poverty dimension (health, education, housing, etc.)"
+        tests:
+          - not_null
+      - name: measurement_unit
+        description: "Unit of measurement for the indicator"
+      - name: status
+        description: "Status of the indicator (active/inactive)"
+        tests:
+          - accepted_values:
+              values: ['active', 'inactive']
+      - name: total_implementations
+        description: "Total number of survey implementations using this template"
+        tests:
+          - not_null
+      - name: total_organizations_using
+        description: "Number of distinct organizations using this indicator"
+        tests:
+          - not_null
+      - name: total_responses
+        description: "Total number of family responses for this indicator"
+        tests:
+          - not_null
+      - name: last_used_date
+        description: "Date when indicator was last used"
+
+  - name: indicator_usage
+    description: "Track which organizations use which indicator templates"
+    columns:
+      - name: organization_id
+        description: "Organization identifier"
+        tests:
+          - not_null
+      - name: indicator_template_id
+        description: "Indicator template identifier"
+        tests:
+          - not_null
+      - name: organization_name
+        description: "Name of the organization"
+      - name: hub_name
+        description: "Hub/region name"
+      - name: country
+        description: "Country where organization operates"
+      - name: surveys_using_indicator
+        description: "Number of surveys using this indicator"
+        tests:
+          - not_null
+      - name: families_measured
+        description: "Number of families measured with this indicator"
+        tests:
+          - not_null
+      - name: is_currently_active
+        description: "Whether indicator is currently active (used in last 90 days)"
+        tests:
+          - not_null
+
+  - name: indicator_performance
+    description: "Current performance metrics for each indicator template by organization"
+    columns:
+      - name: organization_id
+        description: "Organization identifier"
+        tests:
+          - not_null
+      - name: indicator_template_id
+        description: "Indicator template identifier"
+        tests:
+          - not_null
+      - name: families_measured
+        description: "Number of families measured (minimum 5 for inclusion)"
+        tests:
+          - not_null
+      - name: current_red_pct
+        description: "Percentage of families in red status (0.0 to 1.0)"
+      - name: current_yellow_pct
+        description: "Percentage of families in yellow status (0.0 to 1.0)"
+      - name: current_green_pct
+        description: "Percentage of families in green status (0.0 to 1.0)"
+      - name: avg_score
+        description: "Average score on 1-3 scale (1=red, 2=yellow, 3=green)"
+
+  # Survey Models
+  - name: survey_definitions_active
+    description: "Currently active survey configurations by organization"
+    columns:
+      - name: survey_definition_id
+        description: "Primary key - unique identifier for survey definition"
+        tests:
+          - not_null
+          - unique
+      - name: survey_code
+        description: "Code identifier for the survey"
+      - name: survey_title
+        description: "Title of the survey"
+      - name: organization_id
+        description: "Organization that owns this survey"
+        tests:
+          - not_null
+      - name: organization_name
+        description: "Name of the organization"
+      - name: total_indicators
+        description: "Number of indicators in this survey"
+        tests:
+          - not_null
+      - name: total_economic_questions
+        description: "Number of economic questions in this survey"
+        tests:
+          - not_null
+      - name: is_current_version
+        description: "Whether this is the current version of the survey"
+        tests:
+          - not_null
+
+  - name: survey_activity
+    description: "Survey collection metrics aggregated by organization and month"
+    columns:
+      - name: organization_id
+        description: "Organization identifier"
+        tests:
+          - not_null
+      - name: year_month
+        description: "Year and month in YYYY-MM format"
+        tests:
+          - not_null
+      - name: total_surveys_collected
+        description: "Total number of surveys collected in the month"
+        tests:
+          - not_null
+      - name: baseline_surveys
+        description: "Number of baseline surveys (first survey for family)"
+        tests:
+          - not_null
+      - name: followup_surveys
+        description: "Number of follow-up surveys (subsequent surveys)"
+        tests:
+          - not_null
+      - name: unique_families_surveyed
+        description: "Number of unique families surveyed in the month"
+        tests:
+          - not_null
+      - name: stoplight_completion_rate
+        description: "Percentage of surveys with stoplight data"
+      - name: anonymous_survey_pct
+        description: "Percentage of surveys that are anonymous"
+
+  - name: survey_completion
+    description: "Survey engagement and retention metrics by organization"
+    columns:
+      - name: organization_id
+        description: "Primary key - organization identifier"
+        tests:
+          - not_null
+          - unique
+      - name: organization_name
+        description: "Name of the organization"
+      - name: total_families_enrolled
+        description: "Total number of families that have taken at least one survey"
+        tests:
+          - not_null
+      - name: families_with_baseline
+        description: "Number of families with baseline survey"
+        tests:
+          - not_null
+      - name: families_with_followup
+        description: "Number of families with follow-up surveys"
+        tests:
+          - not_null
+      - name: baseline_completion_rate
+        description: "Percentage of enrolled families with baseline"
+      - name: followup_rate
+        description: "Percentage of families with baseline that have follow-up"
+      - name: avg_surveys_per_family
+        description: "Average number of surveys per family"
+      - name: days_since_last_survey
+        description: "Days since the organization's most recent survey"

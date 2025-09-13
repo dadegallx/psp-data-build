@@ -1,0 +1,42 @@
+version: 2
+
+sources:
+  - name: data_collect
+    description: "Data collection schema containing survey definitions, responses, and snapshots"
+    tables:
+      - name: survey_stoplight_indicator
+        description: "Indicator template definitions"
+      - name: survey_stoplight_dimension
+        description: "Poverty dimensions (health, education, etc.)"
+      - name: survey_stoplight
+        description: "Survey stoplight implementations"
+      - name: survey_definition
+        description: "Survey configuration definitions"
+      - name: snapshot
+        description: "Family survey snapshots"
+      - name: snapshot_stoplight
+        description: "Stoplight indicator responses"
+      - name: survey_economic
+        description: "Economic survey questions"
+
+  - name: ps_families
+    description: "Family data schema"
+    tables:
+      - name: family
+        description: "Family master data"
+
+  - name: ps_network
+    description: "Network and organization data schema"
+    tables:
+      - name: organizations
+        description: "Organization master data"
+      - name: applications
+        description: "Application/hub configuration data"
+
+  - name: ps_solutions
+    description: "Solutions data schema"
+    tables: []
+
+  - name: library
+    description: "Library data schema"
+    tables: []
