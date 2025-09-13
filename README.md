@@ -117,6 +117,89 @@ dbt docs serve
 dbt source freshness
 ```
 
+## Lightdash Deployment
+
+This project is designed to work seamlessly with [Lightdash](https://www.lightdash.com/), an open-source BI tool that connects directly to your dbt models.
+
+### Prerequisites for Lightdash
+
+- Node.js 18+ (for Lightdash CLI)
+- Local Lightdash instance running on Docker
+- Valid database connection (`.env` file configured)
+
+### Quick Deployment
+
+**Automated deployment (recommended):**
+```bash
+./scripts/deploy-to-lightdash.sh
+```
+
+This script will:
+- Check and install prerequisites (dbt, Lightdash CLI)
+- Validate your database connection
+- Deploy all models to Lightdash
+- Provide deployment status and next steps
+
+### Manual Deployment
+
+If you prefer manual deployment:
+
+1. **Install Lightdash CLI:**
+   ```bash
+   npm install -g @lightdash/cli@0.2001.1
+   ```
+
+2. **Install dbt (if not already installed):**
+   ```bash
+   uv tool install dbt-core --with dbt-postgres
+   ```
+
+3. **Login to Lightdash:**
+   ```bash
+   lightdash login http://localhost:8080 --token YOUR_TOKEN
+   ```
+
+4. **Navigate to dbt directory and deploy:**
+   ```bash
+   cd dbt
+   source ../.env && lightdash deploy --create
+   ```
+
+### What Gets Deployed
+
+- **Working models** (`tag:working`): Production-ready models like `indicator_catalog_simple`
+- **Staging models** (`tag:staging`): Development models for testing and iteration
+- **All column definitions** from `schema.yml` files become Lightdash dimensions
+- **Data tests** are preserved and visible in Lightdash
+
+### Using Lightdash
+
+After deployment:
+1. Visit http://localhost:8080 in your browser
+2. Navigate to your project (default: "PSP Data Build")
+3. Explore the available tables:
+   - **indicator_catalog_simple**: Ready-to-use indicator catalog
+   - **staging models**: For development and testing
+4. Create charts, dashboards, and reports using the familiar drag-and-drop interface
+
+### Troubleshooting
+
+**Environment variable issues:**
+- Ensure `.env` file is in the project root (not in the `dbt/` directory)
+- Check that all required variables are set: `DBT_HOST`, `DBT_USER`, `DBT_PASSWORD`, `DBT_DBNAME`
+
+**Node.js version warnings:**
+- Lightdash CLI is optimized for Node.js v20
+- Most functionality works on newer versions, but consider using Node v20 for best compatibility
+
+**Database connection errors:**
+- Test your connection: `cd dbt && source ../.env && dbt debug`
+- Verify your database credentials and network access
+
+**Model compilation issues:**
+- Run `dbt compile` to check for syntax errors
+- Ensure all source tables are accessible with your credentials
+
 ## Data Quality
 
 The project includes comprehensive data quality tests:
@@ -129,24 +212,32 @@ The project includes comprehensive data quality tests:
 ## Project Structure
 
 ```
-dbt/
-├── models/
-│   ├── _sources.yml          # Source table definitions
-│   ├── working/              # Validated, working models
-│   │   ├── schema.yml
-│   │   └── indicator_catalog_simple.sql
-│   └── staging/              # In-development models
-│       ├── schema.yml
-│       ├── indicators/
-│       │   ├── indicator_catalog.sql
-│       │   ├── indicator_usage.sql
-│       │   └── indicator_performance.sql
-│       └── surveys/
-│           ├── survey_definitions_active.sql
-│           ├── survey_activity.sql
-│           └── survey_completion.sql
-├── dbt_project.yml           # Project configuration
-└── README.md
+psp-data-build/
+├── dbt/                      # dbt project directory
+│   ├── models/
+│   │   ├── _sources.yml          # Source table definitions
+│   │   ├── working/              # Validated, working models
+│   │   │   ├── schema.yml
+│   │   │   └── indicator_catalog_simple.sql
+│   │   └── staging/              # In-development models
+│   │       ├── schema.yml
+│   │       ├── indicators/
+│   │       │   ├── indicator_catalog.sql
+│   │       │   ├── indicator_usage.sql
+│   │       │   └── indicator_performance.sql
+│   │       └── surveys/
+│   │           ├── survey_definitions_active.sql
+│   │           ├── survey_activity.sql
+│   │           └── survey_completion.sql
+│   ├── dbt_project.yml           # Project configuration
+│   └── README.md
+├── scripts/
+│   └── deploy-to-lightdash.sh    # Automated deployment script
+├── .env                          # Database connection credentials
+├── .env.template                 # Template for environment variables
+├── pyproject.toml               # Python dependencies
+├── uv.lock                      # Lock file for dependencies
+└── README.md                    # This file
 ```
 
 ## Database Connection

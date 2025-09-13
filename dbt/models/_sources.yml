@@ -37,6 +37,3 @@ sources:
     description: "Solutions data schema"
     tables: []
 
-  - name: library
-    description: "Library data schema"
-    tables: []

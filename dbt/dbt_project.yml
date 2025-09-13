@@ -35,11 +35,3 @@ models:
     working:
       +materialized: view
       +tags: ["working"]
-    # Staging models - in development, may not work yet
-    staging:
-      +materialized: view
-      +tags: ["staging"]
-      indicators:
-        +tags: ["staging", "indicators"]
-      surveys:
-        +tags: ["staging", "surveys"]
