@@ -1,39 +1,109 @@
 version: 2
 
 sources:
-  - name: data_collect
-    description: "Data collection schema containing survey definitions, responses, and snapshots"
+  - name: ps_network
+    description: "Network and organizational structure data"
     tables:
-      - name: survey_stoplight_indicator
-        description: "Indicator template definitions"
-      - name: survey_stoplight_dimension
-        description: "Poverty dimensions (health, education, etc.)"
-      - name: survey_stoplight
-        description: "Survey stoplight implementations"
-      - name: survey_definition
-        description: "Survey configuration definitions"
-      - name: snapshot
-        description: "Family survey snapshots"
-      - name: snapshot_stoplight
-        description: "Stoplight indicator responses"
-      - name: survey_economic
-        description: "Economic survey questions"
+      - name: applications
+        description: "Hub/Application data"
+        columns:
+          - name: id
+            description: "Application ID"
+          - name: name
+            description: "Application name (Hub name)"
+
+      - name: organizations
+        description: "Organizations within hubs"
+        columns:
+          - name: id
+            description: "Organization ID"
+          - name: name
+            description: "Organization name"
+          - name: country_code
+            description: "Country code where organization operates"
+          - name: application_id
+            description: "Reference to applications table"
 
   - name: ps_families
-    description: "Family data schema"
+    description: "Family and household data"
     tables:
       - name: family
-        description: "Family master data"
+        description: "Family records"
+        columns:
+          - name: family_id
+            description: "Family ID (primary key)"
+          - name: code
+            description: "Family code"
+          - name: anonymous
+            description: "Whether family data is anonymized"
+          - name: organization_id
+            description: "Reference to organizations table"
 
-  - name: ps_network
-    description: "Network and organization data schema"
+  - name: data_collect
+    description: "Data collection and survey data"
     tables:
-      - name: organizations
-        description: "Organization master data"
-      - name: applications
-        description: "Application/hub configuration data"
+      - name: snapshot
+        description: "Survey snapshots/sessions"
+        columns:
+          - name: id
+            description: "Snapshot ID"
+          - name: snapshot_date
+            description: "Snapshot date (bigint timestamp in milliseconds)"
+          - name: snapshot_number
+            description: "Snapshot sequence number (1=baseline, >1=follow-up)"
+          - name: family_id
+            description: "Reference to family table"
+          - name: is_last
+            description: "Whether this is the most recent snapshot for the family"
 
-  - name: ps_solutions
-    description: "Solutions data schema"
-    tables: []
+      - name: survey_stoplight_indicator
+        description: "Indicator templates/definitions"
+        columns:
+          - name: id
+            description: "Indicator template ID"
+          - name: code_name
+            description: "Unique indicator code"
+          - name: met_short_name
+            description: "Short display name for indicator"
+          - name: survey_dimension_id
+            description: "Reference to dimension"
 
+      - name: survey_stoplight
+        description: "Survey-specific indicator implementations"
+        columns:
+          - name: id
+            description: "Survey implementation ID"
+          - name: survey_stoplight_indicator_id
+            description: "Reference to indicator template"
+
+      - name: snapshot_stoplight
+        description: "Indicator responses in snapshots"
+        columns:
+          - name: id
+            description: "Response ID"
+          - name: value
+            description: "Stoplight value (1=red, 2=yellow, 3=green)"
+          - name: snapshot_id
+            description: "Reference to snapshot"
+          - name: survey_stoplight_id
+            description: "Reference to survey implementation"
+
+      - name: snapshot_stoplight_priority
+        description: "Priority selections from families"
+        columns:
+          - name: id
+            description: "Priority ID"
+          - name: snapshot_id
+            description: "Reference to snapshot"
+          - name: survey_stoplight_id
+            description: "Reference to survey implementation"
+
+      - name: survey_stoplight_dimension
+        description: "Survey dimensions (poverty assessment categories)"
+        columns:
+          - name: id
+            description: "Dimension ID"
+          - name: code_name
+            description: "Unique dimension code"
+          - name: met_name
+            description: "Display name for dimension"

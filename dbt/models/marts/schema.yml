@@ -1,0 +1,530 @@
+version: 2
+
+models:
+  - name: mart_global_survey_coverage
+    description: |
+      Global survey coverage and engagement metrics across all hubs and organizations.
+
+      This mart provides a comprehensive view of survey deployment effectiveness,
+      family participation rates, and survey frequency patterns. It helps identify
+      organizations with low engagement, track follow-up completion rates, and
+      monitor survey activity over time.
+
+      **Grain**: One row per organization
+
+      **Key Business Rules**:
+      - snapshot_number = 1 indicates baseline survey
+      - snapshot_number > 1 indicates follow-up surveys
+      - snapshot_date converted from seconds to timestamp
+      - Organizations without families or surveys show zeros/nulls appropriately
+
+    columns:
+      - name: application_id
+        description: "Hub/Application identifier"
+        data_type: bigint
+        tests:
+          - not_null
+
+      - name: application_name
+        description: "Hub/Application name"
+        data_type: varchar
+
+      - name: organization_id
+        description: "Organization identifier (primary key)"
+        data_type: bigint
+        tests:
+          - not_null
+          - unique
+
+      - name: organization_name
+        description: "Organization name"
+        data_type: varchar
+
+      - name: country_code
+        description: "Country code where organization operates"
+        data_type: varchar
+
+      - name: total_families
+        description: "Total number of families enrolled with this organization"
+        data_type: int
+        tests:
+          - not_null
+
+      - name: families_with_baseline
+        description: "Number of families with at least one baseline survey (snapshot_number=1)"
+        data_type: int
+        tests:
+          - not_null
+
+      - name: families_with_followup
+        description: "Number of families with at least one follow-up survey (snapshot_number>1)"
+        data_type: int
+        tests:
+          - not_null
+
+      - name: followup_rate
+        description: |
+          Follow-up completion rate (families_with_followup / families_with_baseline).
+          NULL when no baseline surveys exist.
+        data_type: decimal(5,4)
+        tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 1
+                inclusive: true
+
+      - name: total_snapshots
+        description: "Total number of survey snapshots across all families"
+        data_type: int
+        tests:
+          - not_null
+
+      - name: avg_snapshots_per_family
+        description: |
+          Average number of snapshots per family (total_snapshots / total_families).
+          NULL when no families exist.
+        data_type: decimal(4,2)
+
+      - name: first_survey_date
+        description: "Date of first survey snapshot in this organization"
+        data_type: date
+
+      - name: last_survey_date
+        description: "Date of most recent survey snapshot in this organization"
+        data_type: date
+
+      - name: days_since_last_activity
+        description: |
+          Number of days since the most recent survey activity.
+          NULL when no surveys exist.
+        data_type: int
+
+      - name: avg_days_between_snapshots
+        description: |
+          Average number of days between consecutive snapshots per family.
+          Only calculated for families with multiple snapshots.
+        data_type: decimal(6,1)
+
+    tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "families_with_baseline <= total_families"
+          config:
+            severity: error
+
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "families_with_followup <= families_with_baseline"
+          config:
+            severity: error
+
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "total_snapshots >= families_with_baseline"
+          config:
+            severity: error
+
+  - name: mart_global_indicator_catalog
+    description: |
+      Master inventory of all poverty indicators and their global performance metrics.
+
+      This mart provides a comprehensive view of how each poverty assessment indicator
+      is performing globally across all hubs and organizations. It tracks usage patterns,
+      stoplight distribution rates, improvement trends, and priority selection frequencies.
+
+      **Grain**: One row per unique indicator template
+
+      **Key Business Rules**:
+      - Stoplight values: 1=red (critical poverty), 2=yellow (moderate poverty), 3=green (non-poor)
+      - Improvement rate calculated only for families with 2+ measurements
+      - Priority selection rate based on families selecting indicator as priority
+      - Hub usage tracks distinct applications using each indicator
+
+    columns:
+      - name: indicator_code
+        description: "Unique indicator code identifier"
+        data_type: varchar
+        tests:
+          - not_null
+          - unique
+
+      - name: indicator_short_name
+        description: "Short display name for the indicator"
+        data_type: varchar
+
+      - name: dimension
+        description: "Dimension category this indicator belongs to"
+        data_type: varchar
+
+      - name: hubs_using_count
+        description: "Number of distinct hubs/applications using this indicator"
+        data_type: int
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: true
+
+      - name: total_variations
+        description: "Number of distinct survey implementations of this indicator template"
+        data_type: int
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: true
+
+      - name: total_responses
+        description: "Total number of indicator responses across all surveys"
+        data_type: int
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: true
+
+      - name: families_measured
+        description: "Number of distinct families that have responses for this indicator"
+        data_type: int
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: true
+
+      - name: global_red_rate
+        description: |
+          Proportion of responses that are red (critical poverty, value=1).
+          NULL when no responses exist.
+        data_type: decimal(5,4)
+        tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 1
+                inclusive: true
+
+      - name: global_yellow_rate
+        description: |
+          Proportion of responses that are yellow (moderate poverty, value=2).
+          NULL when no responses exist.
+        data_type: decimal(5,4)
+        tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 1
+                inclusive: true
+
+      - name: global_green_rate
+        description: |
+          Proportion of responses that are green (non-poor, value=3).
+          NULL when no responses exist.
+        data_type: decimal(5,4)
+        tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 1
+                inclusive: true
+
+      - name: improvement_rate
+        description: |
+          Proportion of families whose latest indicator value is better than their first value.
+          Only calculated for families with 2+ measurements. NULL when insufficient data.
+        data_type: decimal(5,4)
+        tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 1
+                inclusive: true
+
+      - name: priority_selection_rate
+        description: |
+          Proportion of indicator responses where families selected this indicator as a priority.
+          NULL when no responses exist.
+        data_type: decimal(5,4)
+        tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 1
+                inclusive: true
+
+    tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "ABS(global_red_rate + global_yellow_rate + global_green_rate - 1.0) < 0.001"
+          config:
+            severity: warn
+            where: "total_responses > 0"
+
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "families_measured <= total_responses"
+          config:
+            severity: error
+
+  - name: mart_py_family_current_state
+    description: |
+      Current poverty status and progression for each family in Paraguay.
+
+      This mart provides a comprehensive view of family-level poverty assessment data,
+      tracking current status, historical progression, and intervention priorities.
+      It focuses specifically on Paraguay families and includes both current snapshot
+      data and comparative analysis against baseline surveys.
+
+      **Grain**: One row per family in Paraguay
+
+      **Key Business Rules**:
+      - Filter: Paraguay families only (country_code = 'PY')
+      - Current status uses latest snapshot (is_last = true)
+      - Baseline comparison uses first snapshot (snapshot_number = 1)
+      - Score calculations: (green×3 + yellow×2 + red×1) / (total×3)
+      - Score changes only calculated for families with 2+ snapshots
+      - Six standard dimensions: income, health, housing, education, organization, self-awareness
+
+    columns:
+      - name: family_id
+        description: "Family identifier (primary key)"
+        data_type: bigint
+        tests:
+          - not_null
+          - unique
+
+      - name: family_code
+        description: "Family unique code identifier"
+        data_type: varchar
+
+      - name: organization_name
+        description: "Name of the organization managing this family"
+        data_type: varchar
+
+      - name: is_anonymous
+        description: "Whether family data is anonymized"
+        data_type: boolean
+        tests:
+          - not_null
+
+      - name: first_snapshot_date
+        description: "Date of first survey snapshot for this family"
+        data_type: date
+
+      - name: latest_snapshot_date
+        description: "Date of most recent survey snapshot for this family"
+        data_type: date
+
+      - name: total_snapshots
+        description: "Total number of survey snapshots for this family"
+        data_type: int
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 1
+              inclusive: true
+
+      - name: months_since_baseline
+        description: "Number of months between first and latest snapshot"
+        data_type: decimal(5,1)
+
+      - name: total_indicators
+        description: "Total number of stoplight indicators in latest snapshot"
+        data_type: int
+        tests:
+          - not_null
+
+      - name: indicators_red
+        description: "Number of red (critical need) indicators in latest snapshot"
+        data_type: int
+        tests:
+          - not_null
+
+      - name: indicators_yellow
+        description: "Number of yellow (some progress) indicators in latest snapshot"
+        data_type: int
+        tests:
+          - not_null
+
+      - name: indicators_green
+        description: "Number of green (achieved) indicators in latest snapshot"
+        data_type: int
+        tests:
+          - not_null
+
+      - name: poverty_score
+        description: |
+          Overall poverty score from latest snapshot.
+          Scale: 0.0000 (all red) to 1.0000 (all green).
+          Formula: (green×3 + yellow×2 + red×1) / (total×3)
+        data_type: decimal(5,4)
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0.0000
+              max_value: 1.0000
+              inclusive: true
+
+      - name: income_score
+        description: "Income and Employment dimension score from latest snapshot"
+        data_type: decimal(5,4)
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0.0000
+              max_value: 1.0000
+              inclusive: true
+
+      - name: health_score
+        description: "Health and Environment dimension score from latest snapshot"
+        data_type: decimal(5,4)
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0.0000
+              max_value: 1.0000
+              inclusive: true
+
+      - name: housing_score
+        description: "Housing and Infrastructure dimension score from latest snapshot"
+        data_type: decimal(5,4)
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0.0000
+              max_value: 1.0000
+              inclusive: true
+
+      - name: education_score
+        description: "Education and Culture dimension score from latest snapshot"
+        data_type: decimal(5,4)
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0.0000
+              max_value: 1.0000
+              inclusive: true
+
+      - name: organization_score
+        description: "Organization and Participation dimension score from latest snapshot"
+        data_type: decimal(5,4)
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0.0000
+              max_value: 1.0000
+              inclusive: true
+
+      - name: self_awareness_score
+        description: "Interiority and Motivation dimension score from latest snapshot"
+        data_type: decimal(5,4)
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0.0000
+              max_value: 1.0000
+              inclusive: true
+
+      - name: poverty_score_change
+        description: |
+          Change in overall poverty score from baseline to latest snapshot.
+          Positive values indicate improvement. NULL for families with only 1 snapshot.
+        data_type: decimal(5,4)
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: -1.0000
+              max_value: 1.0000
+              inclusive: true
+
+      - name: income_score_change
+        description: "Change in income dimension score from baseline to latest"
+        data_type: decimal(5,4)
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: -1.0000
+              max_value: 1.0000
+              inclusive: true
+
+      - name: health_score_change
+        description: "Change in health dimension score from baseline to latest"
+        data_type: decimal(5,4)
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: -1.0000
+              max_value: 1.0000
+              inclusive: true
+
+      - name: housing_score_change
+        description: "Change in housing dimension score from baseline to latest"
+        data_type: decimal(5,4)
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: -1.0000
+              max_value: 1.0000
+              inclusive: true
+
+      - name: education_score_change
+        description: "Change in education dimension score from baseline to latest"
+        data_type: decimal(5,4)
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: -1.0000
+              max_value: 1.0000
+              inclusive: true
+
+      - name: organization_score_change
+        description: "Change in organization dimension score from baseline to latest"
+        data_type: decimal(5,4)
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: -1.0000
+              max_value: 1.0000
+              inclusive: true
+
+      - name: self_awareness_score_change
+        description: "Change in self-awareness dimension score from baseline to latest"
+        data_type: decimal(5,4)
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: -1.0000
+              max_value: 1.0000
+              inclusive: true
+
+      - name: indicators_improved
+        description: "Number of indicators that improved from baseline to latest snapshot"
+        data_type: int
+        tests:
+          - not_null
+
+      - name: indicators_declined
+        description: "Number of indicators that declined from baseline to latest snapshot"
+        data_type: int
+        tests:
+          - not_null
+
+      - name: priorities_selected
+        description: "Array of priority indicator code names selected by family in latest snapshot"
+        data_type: text[]
+
+      - name: priority_count
+        description: "Number of priority indicators selected by family in latest snapshot"
+        data_type: int
+        tests:
+          - not_null
+
+    tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "indicators_red + indicators_yellow + indicators_green = total_indicators"
+          config:
+            severity: error
+
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "total_snapshots >= 1"
+          config:
+            severity: error
+
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "(poverty_score_change IS NULL) = (total_snapshots = 1)"
+          config:
+            severity: warn

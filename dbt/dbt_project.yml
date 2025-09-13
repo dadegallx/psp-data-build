@@ -35,3 +35,8 @@ models:
     working:
       +materialized: view
       +tags: ["working"]
+
+    # Mart models - core semantic layer for analysis
+    marts:
+      +materialized: view
+      +tags: ["mart", "semantic_layer"]

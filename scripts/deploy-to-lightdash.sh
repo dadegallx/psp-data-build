@@ -29,7 +29,7 @@ print_error() {
 }
 
 # Check if we're in the right directory
-if [[ ! -f "../dbt/dbt_project.yml" ]]; then
+if [[ ! -f "dbt/dbt_project.yml" ]]; then
     print_error "Please run this script from the project root directory"
     print_error "Usage: ./scripts/deploy-to-lightdash.sh"
     exit 1
@@ -122,11 +122,12 @@ print_status "Deploying to Lightdash..."
 print_status "This will compile your dbt models and create/update the Lightdash project"
 
 # Run the deployment
-lightdash deploy --create
+lightdash deploy --create --project-name "PSP Data Build - Prod"
 
 print_success "Lightdash deployment completed!"
 print_status "Your models are now available at: http://localhost:8080"
 print_status ""
 print_status "Available models in Lightdash:"
-print_status "- indicator_catalog_simple (Working model - ready for use)"
-print_status "- All staging models for development and testing"
+print_status "- mart_global_survey_coverage (Survey deployment and family engagement metrics)"
+print_status "- mart_global_indicator_catalog (Master inventory of poverty indicators)"
+print_status "- mart_py_family_current_state (Paraguay family poverty status and progression)"
