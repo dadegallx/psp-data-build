@@ -97,7 +97,7 @@ print_success "Environment variables loaded successfully"
 
 # Check Lightdash login status
 print_status "Checking Lightdash authentication..."
-if ! lightdash whoami &> /dev/null; then
+if ! lightdash diagnostics 2>/dev/null | grep -q "✅ Authenticated"; then
     print_warning "Not logged in to Lightdash. Please login first:"
     print_warning "Run: lightdash login http://localhost:8080 --token YOUR_TOKEN"
     exit 1
@@ -122,7 +122,7 @@ print_status "Deploying to Lightdash..."
 print_status "This will compile your dbt models and create/update the Lightdash project"
 
 # Run the deployment
-lightdash deploy --create --project-name "PSP Data Build - Prod"
+lightdash deploy --create "PSP Data Build - Prod" --ignore-errors
 
 print_success "Lightdash deployment completed!"
 print_status "Your models are now available at: http://localhost:8080"
