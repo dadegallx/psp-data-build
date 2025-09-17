@@ -31,12 +31,20 @@ clean-targets:         # directories to be removed by `dbt clean`
 # files using the `{{ config(...) }}` macro.
 models:
   psp_data_build:
-    # Working models - validated and ready for use
-    working:
+    # Staging models - simple 1:1 source transformations
+    staging:
+      +schema: analytics_staging
       +materialized: view
-      +tags: ["working"]
+      +tags: ["staging"]
 
-    # Mart models - core semantic layer for analysis
-    marts:
+    # Intermediate models - joins and business logic
+    intermediate:
+      +schema: analytics_staging
       +materialized: view
-      +tags: ["mart", "semantic_layer"]
+      +tags: ["intermediate"]
+
+    # Mart models - final analytics layer
+    marts:
+      +schema: analytics
+      +materialized: view
+      +tags: ["mart"]
