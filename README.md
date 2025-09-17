@@ -1,267 +1,174 @@
-# Poverty Stoplight Data Build
+# Data Build Tool (dbt) Project
 
-dbt semantic layer for the Poverty Stoplight database, providing business-ready models for LightDash BI tool.
+This repository contains a dbt (data build tool) project for creating a semantic data layer from your PostgreSQL database. dbt is a transformation framework that enables data teams to transform raw data in their warehouse by simply writing select statements, turning them into a reliable and documented data pipeline.
 
-## Architecture
+## What is dbt?
 
-This project implements a progressive dbt semantic layer based on the data architecture document. It focuses on creating business-ready models that directly serve LightDash users with two foundational model sets: **Indicator Performance** and **Survey Activity**.
+dbt (data build tool) is an open-source command-line tool that enables data analysts and engineers to transform data in their warehouse by writing simple SQL select statements. dbt handles the complexity of:
 
-### Key Principles
-- **Progressive Development**: Start simple, add complexity incrementally
-- **Template-Level Aggregation**: Focus on indicator templates (346) rather than implementations (20,000+)
-- **Direct Business Models**: Subject-based organization without unnecessary layers
-- **Current State Focus**: Prioritize latest data with historical context available
+- **Dependencies**: Automatically builds models in the correct order
+- **Testing**: Validates data quality with built-in and custom tests
+- **Documentation**: Generates comprehensive documentation from your code
+- **Version Control**: Integrates with Git for collaborative development
+- **Incremental Processing**: Processes only new or changed data when appropriate
 
-## Prerequisites
+Think of dbt as "software engineering best practices for data transformations."
 
-- Python 3.8+
-- uv package manager
-- PostgreSQL database access to Poverty Stoplight database
-- Environment variables for database connection
+## Project Structure
 
-## Setup
+```
+├── dbt/                          # dbt project directory
+│   ├── models/                   # SQL transformation models
+│   │   ├── _sources.yml         # Source table definitions
+│   │   ├── staging/             # Raw data cleaning models
+│   │   └── marts/               # Business-ready analytical models
+│   ├── tests/                   # Custom data quality tests
+│   ├── dbt_project.yml         # Project configuration
+│   └── profiles.yml             # Database connection settings
+├── scripts/                     # Deployment and utility scripts
+├── .env                        # Environment variables (not in git)
+├── .env.template               # Template for required variables
+└── pyproject.toml              # Python dependencies
+```
 
-1. **Clone and navigate to project:**
+## Local Development Setup
+
+### Prerequisites
+
+- **Python 3.8+**
+- **uv package manager** (preferred over pip)
+- **PostgreSQL database access**
+- **Git** (for version control)
+
+### Installation Steps
+
+1. **Clone and navigate to the project:**
    ```bash
-   cd psp-data-build
+   git clone <repository-url>
+   cd <project-directory>
    ```
 
-2. **Install dependencies:**
+2. **Install Python dependencies:**
    ```bash
    uv sync
    ```
 
-3. **Activate virtual environment:**
+3. **Activate the virtual environment:**
    ```bash
    source .venv/bin/activate
    ```
 
-4. **Set up environment variables:**
-   Create a `.env` file with your database connection details:
+4. **Configure database connection:**
+
+   Copy the template and fill in your database credentials:
+   ```bash
+   cp .env.template .env
+   ```
+
+   Edit `.env` with your PostgreSQL connection details:
    ```bash
    export DBT_HOST="your-postgres-host"
    export DBT_USER="your-username"
    export DBT_PASSWORD="your-password"
    export DBT_PORT="5432"
    export DBT_DBNAME="your-database-name"
-   export DBT_SCHEMA="dbt_dev"
+   export DBT_SCHEMA="dbt_dev"  # Your development schema
    ```
 
-5. **Test connection:**
-   ```bash
-   dbt debug
-   ```
-
-## Models
-
-### Indicator Models (`models/indicators/`)
-- **`indicator_catalog`** - Master list of indicator templates with metadata and usage statistics
-  - Grain: One row per indicator template
-  - Key metrics: implementations, organizations using, total responses
-- **`indicator_usage`** - Track which organizations use which indicator templates
-  - Grain: One row per indicator template per organization
-  - Key metrics: surveys using indicator, families measured, activity status
-- **`indicator_performance`** - Current performance metrics for each indicator template
-  - Grain: One row per indicator template per organization
-  - Key metrics: red/yellow/green percentages, average scores
-
-### Survey Models (`models/surveys/`)
-- **`survey_definitions_active`** - Currently active survey configurations by organization
-  - Grain: One row per active survey definition
-  - Key metrics: indicator counts, economic questions, usage stats
-- **`survey_activity`** - Survey collection metrics aggregated by month
-  - Grain: One row per organization per month
-  - Key metrics: baseline vs follow-up surveys, completion rates
-- **`survey_completion`** - Survey engagement and retention metrics
-  - Grain: One row per organization
-  - Key metrics: retention rates, survey frequency, engagement patterns
-
-## Development Commands
-
-**Compile models (check for syntax errors):**
-```bash
-dbt compile
-```
-
-**Run all models:**
-```bash
-dbt run
-```
-
-**Run specific model:**
-```bash
-dbt run --select indicator_catalog
-```
-
-**Run models by tag:**
-```bash
-dbt run --select tag:working    # Only validated models
-dbt run --select tag:staging    # In-development models
-dbt run --select tag:indicators # Indicator models only
-dbt run --select tag:surveys    # Survey models only
-```
-
-**Test models:**
-```bash
-dbt test
-```
-
-**Generate documentation:**
-```bash
-dbt docs generate
-dbt docs serve
-```
-
-**Check for freshness:**
-```bash
-dbt source freshness
-```
-
-## Lightdash Deployment
-
-This project is designed to work seamlessly with [Lightdash](https://www.lightdash.com/), an open-source BI tool that connects directly to your dbt models.
-
-### Prerequisites for Lightdash
-
-- Node.js 18+ (for Lightdash CLI)
-- Local Lightdash instance running on Docker
-- Valid database connection (`.env` file configured)
-
-### Quick Deployment
-
-**Automated deployment (recommended):**
-```bash
-./scripts/deploy-to-lightdash.sh
-```
-
-This script will:
-- Check and install prerequisites (dbt, Lightdash CLI)
-- Validate your database connection
-- Deploy all models to Lightdash
-- Provide deployment status and next steps
-
-### Manual Deployment
-
-If you prefer manual deployment:
-
-1. **Install Lightdash CLI:**
-   ```bash
-   npm install -g @lightdash/cli@0.2001.1
-   ```
-
-2. **Install dbt (if not already installed):**
-   ```bash
-   uv tool install dbt-core --with dbt-postgres
-   ```
-
-3. **Login to Lightdash:**
-   ```bash
-   lightdash login http://localhost:8080 --token YOUR_TOKEN
-   ```
-
-4. **Navigate to dbt directory and deploy:**
+5. **Test the database connection:**
    ```bash
    cd dbt
-   source ../.env && lightdash deploy --create
+   source ../.env && dbt debug
    ```
 
-### What Gets Deployed
+### Essential dbt Commands
 
-- **Working models** (`tag:working`): Production-ready models like `indicator_catalog_simple`
-- **Staging models** (`tag:staging`): Development models for testing and iteration
-- **All column definitions** from `schema.yml` files become Lightdash dimensions
-- **Data tests** are preserved and visible in Lightdash
+**Development workflow:**
+```bash
+# Check for syntax errors without running
+dbt compile
 
-### Using Lightdash
+# Run all models
+dbt run
 
-After deployment:
-1. Visit http://localhost:8080 in your browser
-2. Navigate to your project (default: "PSP Data Build")
-3. Explore the available tables:
-   - **indicator_catalog_simple**: Ready-to-use indicator catalog
-   - **staging models**: For development and testing
-4. Create charts, dashboards, and reports using the familiar drag-and-drop interface
+# Run specific model
+dbt run --select model_name
 
-### Troubleshooting
+# Run models by tag
+dbt run --select tag:staging
 
-**Environment variable issues:**
-- Ensure `.env` file is in the project root (not in the `dbt/` directory)
-- Check that all required variables are set: `DBT_HOST`, `DBT_USER`, `DBT_PASSWORD`, `DBT_DBNAME`
+# Test data quality
+dbt test
 
-**Node.js version warnings:**
-- Lightdash CLI is optimized for Node.js v20
-- Most functionality works on newer versions, but consider using Node v20 for best compatibility
-
-**Database connection errors:**
-- Test your connection: `cd dbt && source ../.env && dbt debug`
-- Verify your database credentials and network access
-
-**Model compilation issues:**
-- Run `dbt compile` to check for syntax errors
-- Ensure all source tables are accessible with your credentials
-
-## Data Quality
-
-The project includes comprehensive data quality tests:
-- **Not null** tests on primary keys
-- **Unique** tests on primary keys
-- **Relationship** tests for foreign keys
-- **Accepted values** tests for categorical fields
-- **Custom** business logic tests
-
-## Project Structure
-
-```
-psp-data-build/
-├── dbt/                      # dbt project directory
-│   ├── models/
-│   │   ├── _sources.yml          # Source table definitions
-│   │   ├── working/              # Validated, working models
-│   │   │   ├── schema.yml
-│   │   │   └── indicator_catalog_simple.sql
-│   │   └── staging/              # In-development models
-│   │       ├── schema.yml
-│   │       ├── indicators/
-│   │       │   ├── indicator_catalog.sql
-│   │       │   ├── indicator_usage.sql
-│   │       │   └── indicator_performance.sql
-│   │       └── surveys/
-│   │           ├── survey_definitions_active.sql
-│   │           ├── survey_activity.sql
-│   │           └── survey_completion.sql
-│   ├── dbt_project.yml           # Project configuration
-│   └── README.md
-├── scripts/
-│   └── deploy-to-lightdash.sh    # Automated deployment script
-├── .env                          # Database connection credentials
-├── .env.template                 # Template for environment variables
-├── pyproject.toml               # Python dependencies
-├── uv.lock                      # Lock file for dependencies
-└── README.md                    # This file
+# Generate and serve documentation
+dbt docs generate && dbt docs serve
 ```
 
-## Database Connection
+**Understanding the models:**
 
-The project connects to the Poverty Stoplight PostgreSQL database with the following schemas:
-- `data_collect` - Survey definitions, responses, and snapshots
-- `ps_families` - Family master data
-- `ps_network` - Organization and application data
-- `ps_solutions` - Solutions data (future use)
-- `library` - Library data (future use)
+Your DBT project organizes SQL transformations as models, typically in a structure like:
+
+```
+models/
+├── staging/      # Clean and standardize raw data
+├── intermediate/ # Business logic transformations  
+└── marts/        # Final analysis-ready tables
+```
+
+## Production Deployment
+
+DBT is not like a real-time system that automatically updates when source data changes. Instead, it's a batch transformation tool that runs when you execute it.
+
+### Orchestration and Scheduling
+Since DBT runs on-demand, you'll need something to trigger it regularly. Popular approaches include:
+
+**AWS-native options:**
+
+- AWS EventBridge: Schedule DBT runs like a cron job
+- AWS Step Functions: Orchestrate complex data pipelines
+- Amazon ECS Scheduled Tasks: Run DBT in containers on schedule
+
+**Third-party orchestrators:**
+
+- Apache Airflow: Popular open-source option
+- Prefect or Dagster: Modern Python-based alternatives
+- DBT Cloud: Managed service that handles scheduling for you
+
+The frequency depends on your data freshness requirements.
+
+## Data Quality & Testing
+
+This project includes comprehensive data quality tests:
+
+- **Schema tests**: Not null, unique, relationships, accepted values
+- **Custom tests**: Business logic validation
+- **Source freshness**: Monitor data pipeline health
+
+Run tests regularly:
+```bash
+dbt test                    # Run all tests
+dbt test --select model_name  # Test specific model
+```
+
+## Documentation
+
+Generate and view project documentation:
+```bash
+dbt docs generate
+dbt docs serve  # Opens at http://localhost:8080
+```
+
+The documentation includes:
+- Model descriptions and column definitions
+- Data lineage graphs showing model dependencies
+- Source data profiling and statistics
+- Test results and data quality metrics
 
 ## Next Steps
 
-After successful implementation, consider expanding with:
-1. **Family Journey Models** - Individual family tracking
-2. **Solution Effectiveness Models** - Impact analysis
-3. **Geographic Analytics Models** - Regional comparisons
-4. **Predictive Models** - Risk indicators and recommendations
+After successful setup:
 
-## Contributing
-
-1. Follow the established naming conventions
-2. Add appropriate tests for new models
-3. Update documentation for any schema changes
-4. Test models against the database before committing
-
-For detailed specifications, see `data_architecture.md`.
+1. **Explore the models** using `dbt docs serve`
+2. **Run initial transformations** with `dbt run`
+3. **Connect your BI tool** to the transformed data tables (Basecamp!)
+4. **Set up production deployment** consider using a dedicated PostgreSQL schema for dbt models (e.g., `analytics`)
