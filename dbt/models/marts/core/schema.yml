@@ -1,0 +1,140 @@
+version: 2
+
+models:
+  - name: fact_snapshot
+    description: "Fact table containing one row per snapshot with enriched flags and temporal metrics. Grain: 1 row per snapshot."
+    columns:
+      - name: snapshot_id
+        description: "Primary key - unique identifier for each snapshot"
+        data_tests:
+          - not_null
+          - unique
+      - name: family_id
+        description: "Foreign key to dim_family"
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_family')
+                field: family_id
+      - name: organization_id
+        description: "Foreign key to dim_organization"
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_organization')
+                field: organization_id
+      - name: application_id
+        description: "Foreign key to dim_application"
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_application')
+                field: application_id
+      - name: survey_definition_id
+        description: "Foreign key to dim_survey_definition"
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_survey_definition')
+                field: survey_definition_id
+      - name: snapshot_ts
+        description: "Timestamp when snapshot was taken"
+        data_tests:
+          - not_null
+      - name: snapshot_number
+        description: "Survey round (1=baseline, >1=follow-up)"
+        data_tests:
+          - not_null
+      - name: is_baseline
+        description: "Flag indicating baseline survey (snapshot_number = 1)"
+      - name: is_last_any
+        description: "Flag indicating most recent snapshot for family"
+      - name: is_last_with_stoplight
+        description: "Flag indicating most recent snapshot with stoplight data"
+      - name: anonymous
+        description: "Privacy flag for anonymous surveys"
+
+  - name: dim_family
+    description: "Family dimension with privacy-aware PII masking"
+    columns:
+      - name: family_id
+        description: "Primary key - unique identifier for each family"
+        data_tests:
+          - not_null
+          - unique
+      - name: family_name
+        description: "Family name (masked as 'ANON_DATA' when is_anonymous=true)"
+      - name: family_code
+        description: "Unique family code"
+        data_tests:
+          - not_null
+      - name: is_anonymous
+        description: "Privacy indicator - when true, PII is masked"
+      - name: is_active
+        description: "Flag indicating if family is active"
+
+  - name: dim_organization
+    description: "Organization dimension"
+    columns:
+      - name: organization_id
+        description: "Primary key - unique identifier for each organization"
+        data_tests:
+          - not_null
+          - unique
+      - name: application_id
+        description: "Foreign key to dim_application"
+        data_tests:
+          - not_null
+      - name: organization_name
+        description: "Organization name"
+        data_tests:
+          - not_null
+      - name: is_active
+        description: "Flag indicating if organization is active"
+
+  - name: dim_application
+    description: "Application/hub dimension"
+    columns:
+      - name: application_id
+        description: "Primary key - unique identifier for each application"
+        data_tests:
+          - not_null
+          - unique
+      - name: application_name
+        description: "Application name"
+        data_tests:
+          - not_null
+      - name: is_active
+        description: "Flag indicating if application is active"
+
+  - name: dim_survey_definition
+    description: "Survey definition dimension"
+    columns:
+      - name: survey_definition_id
+        description: "Primary key - unique identifier for each survey definition"
+        data_tests:
+          - not_null
+          - unique
+      - name: survey_title
+        description: "Survey title"
+      - name: survey_code
+        description: "Unique survey code"
+
+  - name: dim_time
+    description: "Time dimension derived from snapshot dates"
+    columns:
+      - name: date_day
+        description: "Primary key - calendar date"
+        data_tests:
+          - not_null
+          - unique
+      - name: year
+        description: "Year component"
+      - name: month
+        description: "Month component"
+      - name: quarter
+        description: "Quarter component"

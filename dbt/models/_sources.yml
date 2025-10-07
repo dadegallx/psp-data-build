@@ -18,6 +18,8 @@ sources:
     tables:
       - name: snapshot
         description: "Survey snapshot records"
+      - name: survey_definition
+        description: "Survey configuration and metadata"
       - name: surveys_new_snapshot
         description: "Survey response data"
       - name: survey_stoplight_indicator

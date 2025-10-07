@@ -1,0 +1,23 @@
+version: 2
+
+models:
+  - name: int_snapshot_enriched
+    description: "Enriched snapshot data with computed flags and temporal metrics using window functions"
+    columns:
+      - name: snapshot_id
+        description: "Unique identifier for each snapshot"
+        data_tests:
+          - not_null
+          - unique
+      - name: family_id
+        description: "Foreign key to family dimension"
+        data_tests:
+          - not_null
+      - name: is_baseline
+        description: "Derived flag: true when snapshot_number = 1 (baseline survey)"
+      - name: is_last_any
+        description: "Derived flag: true for the most recent snapshot of each family (regardless of completeness)"
+      - name: is_last_with_stoplight
+        description: "Derived flag: true for the most recent snapshot with stoplight data (stoplight_skipped=false)"
+      - name: days_since_prev
+        description: "Calculated metric: days elapsed since the previous snapshot for this family"
