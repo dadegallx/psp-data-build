@@ -1,8 +1,0 @@
-select
-    id as indicator_master_id,
-    code_name,
-    met_short_name,
-    met_description,
-    survey_dimension_id
-
-from {{ source('data_collect', 'survey_stoplight_indicator') }}
