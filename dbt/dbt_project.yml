@@ -35,10 +35,20 @@ models:
       +tags: ['staging']
       +schema: staging
 
+    intermediate:
+      +materialized: view
+      +tags: ['intermediate']
+      +schema: intermediate
+
     marts:
       +materialized: view
       +tags: ['mart', 'semantic_layer']
-      +schema: marts
+
+      core:
+        +schema: marts
+
+      views:
+        +schema: marts
 
 seeds:
   psp_data_build:
