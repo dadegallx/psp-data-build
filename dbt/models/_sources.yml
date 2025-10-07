@@ -18,6 +18,8 @@ sources:
     tables:
       - name: snapshot
         description: "Survey snapshot records"
+      - name: snapshot_stoplight
+        description: "Stoplight indicator values from snapshots (1=Red, 2=Yellow, 3=Green)"
       - name: survey_definition
         description: "Survey configuration and metadata"
       - name: surveys_new_snapshot

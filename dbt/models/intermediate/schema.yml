@@ -21,3 +21,36 @@ models:
         description: "Derived flag: true for the most recent snapshot with stoplight data (stoplight_skipped=false)"
       - name: days_since_prev
         description: "Calculated metric: days elapsed since the previous snapshot for this family"
+
+  - name: int_indicator_lite
+    description: "Lightweight indicator explosion for current state dimension analysis (experimental). Grain: 1 row per indicator per dimension per latest snapshot with stoplight."
+    columns:
+      - name: indicator_key
+        description: "Composite key: snapshot_id || '__' || indicator_code_name || '__' || dimension_id (dimension included since indicators can belong to multiple dimensions)"
+        data_tests:
+          - not_null
+          - unique
+      - name: snapshot_id
+        description: "Foreign key to snapshot"
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('fact_snapshot')
+                field: snapshot_id
+      - name: family_id
+        description: "Foreign key to family"
+        data_tests:
+          - not_null
+      - name: dimension_id
+        description: "Dimension ID from survey_stoplight"
+        data_tests:
+          - not_null
+      - name: indicator_value
+        description: "Stoplight color value (1=Red, 2=Yellow, 3=Green)"
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: [1, 2, 3]
+      - name: indicator_score
+        description: "Numeric score (Red=0, Yellow=0.5, Green=1)"

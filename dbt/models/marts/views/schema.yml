@@ -31,3 +31,33 @@ models:
         description: "Should always be true in this view"
       - name: snapshot_number
         description: "Should always be 1 in this view"
+
+  - name: mart_family_dimension_current
+    description: "Experimental quick-win view: Family × Dimension current state. Shows color distributions and dimension scores for each family-dimension combination. Grain: 1 row per family × dimension."
+    columns:
+      - name: family_id
+        description: "Foreign key to dim_family"
+        data_tests:
+          - not_null
+      - name: dimension_id
+        description: "Dimension ID from survey definitions"
+        data_tests:
+          - not_null
+      - name: dimension_name
+        description: "Human-readable dimension name"
+      - name: pct_red
+        description: "% of indicators in Red (critical poverty)"
+      - name: pct_yellow
+        description: "% of indicators in Yellow (moderate poverty)"
+      - name: pct_green
+        description: "% of indicators in Green (non-poor)"
+      - name: dimension_score
+        description: "Average dimension score (Red=0, Yellow=0.5, Green=1)"
+        data_tests:
+          - not_null
+      - name: indicators_count
+        description: "Number of indicators in this dimension"
+        data_tests:
+          - not_null
+      - name: is_anonymous
+        description: "Privacy flag indicating if family data is anonymous"
