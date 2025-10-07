@@ -1,0 +1,54 @@
+version: 2
+
+sources:
+  - name: ps_network
+    description: "Organization and application management schema"
+    database: "{{ env_var('DBT_DBNAME') }}"
+    schema: ps_network
+    tables:
+      - name: applications
+        description: "Hub/platform definitions"
+      - name: organizations
+        description: "Organizations within applications"
+
+  - name: data_collect
+    description: "Survey data collection and responses"
+    database: "{{ env_var('DBT_DBNAME') }}"
+    schema: data_collect
+    tables:
+      - name: snapshot
+        description: "Survey snapshot records"
+      - name: surveys_new_snapshot
+        description: "Survey response data"
+      - name: survey_stoplight_indicator
+        description: "Master indicator template catalog"
+      - name: survey_stoplight
+        description: "Survey-specific indicator implementations"
+      - name: answers_new_snapshot
+        description: "Individual question answers"
+
+  - name: ps_families
+    description: "Family and member information"
+    database: "{{ env_var('DBT_DBNAME') }}"
+    schema: ps_families
+    tables:
+      - name: family
+        description: "Family master data"
+      - name: family_member_person
+        description: "Family member details"
+
+  - name: library
+    description: "Reference data and libraries"
+    database: "{{ env_var('DBT_DBNAME') }}"
+    schema: library
+    tables:
+      - name: stoplight_library
+        description: "Stoplight indicators library"
+
+  - name: ps_solutions
+    description: "Intervention solutions data"
+    database: "{{ env_var('DBT_DBNAME') }}"
+    schema: ps_solutions
+    tables:
+      - name: solutions
+        description: "Solution definitions"

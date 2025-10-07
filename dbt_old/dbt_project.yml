@@ -1,3 +1,4 @@
+
 # Name your project! Project names should contain only lowercase characters
 # and underscores. A good package name should reflect your organization's
 # name or the intended use of these models
@@ -13,37 +14,37 @@ profile: 'psp_data_build'
 model-paths: ["models"]
 analysis-paths: ["analyses"]
 test-paths: ["tests"]
-seed-paths: ["data"]
+seed-paths: ["seeds"]
 macro-paths: ["macros"]
 snapshot-paths: ["snapshots"]
 
-clean-targets:
+clean-targets:         # directories to be removed by `dbt clean`
   - "target"
   - "dbt_packages"
-  - "logs"
+
 
 # Configuring models
 # Full documentation: https://docs.getdbt.com/docs/configuring-models
 
+# In this example config, we tell dbt to build all models in the example/
+# directory as views. These settings can be overridden in the individual model
+# files using the `{{ config(...) }}` macro.
 models:
   psp_data_build:
-    # Configuration for all models
-    +materialized: view
-
+    # Staging models - simple 1:1 source transformations
     staging:
+      +schema: analytics_staging
       +materialized: view
-      +tags: ['staging']
-      +schema: staging
+      +tags: ["staging"]
 
+    # Intermediate models - joins and business logic
+    intermediate:
+      +schema: analytics_staging
+      +materialized: view
+      +tags: ["intermediate"]
+
+    # Mart models - final analytics layer
     marts:
+      +schema: analytics
       +materialized: view
-      +tags: ['mart', 'semantic_layer']
-      +schema: marts
-
-seeds:
-  psp_data_build:
-    +schema: seeds
-
-snapshots:
-  psp_data_build:
-    +target_schema: snapshots
+      +tags: ["mart"]
