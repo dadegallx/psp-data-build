@@ -1,271 +1,184 @@
 # Mart Reporting Toolkit
 
-## Broad Questions (Whole Dataset)
+Focus on the questions that decision-makers raise most often. Use these ready-to-run queries together with the recommended visuals to guide conversations.
 
-### Active Families (Current)
+---
 
-**Business question** — How many families across the network currently have a valid snapshot on record?
+## Platform Pulse (Whole Dataset)
+
+### Current Families With a Valid Snapshot
+
+**Question** — How many families across the network currently have an up-to-date snapshot on record?  
+**Recommended visualization** — KPI card; track the headline count over time.
 
 ```sql
 SELECT COUNT(DISTINCT family_id) AS active_families_current
 FROM mart_marts.mart_snapshot_current;
 ```
 
-**Recommended visualization** — Single KPI card (optionally trend over time).
-
-### Active Families by Organization/Application
-
-**Business question** — Which organization and application combinations contribute the highest number of active families?
+**Breakdown by organization and hub (application)** — horizontal bar chart sorted descending.
 
 ```sql
 SELECT
-  organization_id,
-  application_id,
-  COUNT(DISTINCT family_id) AS active_families_current
-FROM mart_marts.mart_snapshot_current
-GROUP BY 1, 2
+  sc.organization_id,
+  org.organization_name,
+  sc.application_id,
+  app.application_name,
+  COUNT(DISTINCT sc.family_id) AS active_families_current
+FROM mart_marts.mart_snapshot_current sc
+LEFT JOIN mart_marts.dim_organization org USING (organization_id)
+LEFT JOIN mart_marts.dim_application app USING (application_id)
+GROUP BY 1, 2, 3, 4
 ORDER BY active_families_current DESC;
 ```
 
-**Recommended visualization** — Horizontal bar chart sorted descending to spotlight leaders.
+---
 
-### Baseline Families
+### Families Completing a Follow-up Survey
 
-**Business question** — How many unique families have completed a baseline snapshot overall?
-
-```sql
-SELECT COUNT(DISTINCT family_id) AS baseline_families
-FROM mart_marts.mart_snapshot_baseline;
-```
-
-**Recommended visualization** — KPI card (pair with follow-up metrics for context).
-
-### Baseline Families by Organization/Application
-
-**Business question** — Where are baseline engagements concentrated across organizations and applications?
+**Question** — How many families have progressed beyond their baseline and submitted at least one follow-up snapshot?  
+**Recommended visualization** — KPI card paired with the baseline total for context.
 
 ```sql
-SELECT
-  organization_id,
-  application_id,
-  COUNT(DISTINCT family_id) AS baseline_families
-FROM mart_marts.mart_snapshot_baseline
-GROUP BY 1, 2
-ORDER BY baseline_families DESC;
-```
-
-**Recommended visualization** — Stacked bar chart per organization with application segments.
-
-### Follow-up Families
-
-**Business question** — How many families progressed beyond their first snapshot anywhere in the platform?
-
-```sql
-SELECT COUNT(DISTINCT family_id) AS followup_families
+SELECT COUNT(DISTINCT family_id) AS families_with_followup
 FROM mart_marts.fact_snapshot
 WHERE snapshot_number > 1;
 ```
 
-**Recommended visualization** — KPI card or progress gauge alongside baseline totals.
-
-### Follow-up Families by Organization/Application
-
-**Business question** — Which organization/application teams are delivering the most follow-up activity?
+**Breakdown by organization and hub** — clustered columns comparing follow-up traction across teams.
 
 ```sql
 SELECT
-  organization_id,
-  application_id,
-  COUNT(DISTINCT family_id) AS followup_families
-FROM mart_marts.fact_snapshot
-WHERE snapshot_number > 1
-GROUP BY 1, 2
-ORDER BY followup_families DESC;
+  fs.organization_id,
+  org.organization_name,
+  fs.application_id,
+  app.application_name,
+  COUNT(DISTINCT fs.family_id) AS families_with_followup
+FROM mart_marts.fact_snapshot fs
+LEFT JOIN mart_marts.dim_organization org USING (organization_id)
+LEFT JOIN mart_marts.dim_application app USING (application_id)
+WHERE fs.snapshot_number > 1
+GROUP BY 1, 2, 3, 4
+ORDER BY families_with_followup DESC;
 ```
 
-**Recommended visualization** — Clustered column chart to compare organizations.
+---
 
-### Follow-up Coverage (Any)
+### Baseline vs. Follow-up Mix
 
-**Business question** — What share of baseline families has at least one follow-up snapshot?
+**Question** — Of the families with a baseline, how many remain baseline-only versus those that reached at least one follow-up?  
+**Recommended visualization** — donut chart showing the split between “baseline only” and “baseline + follow-up”.
 
 ```sql
 WITH baseline AS (
-  SELECT DISTINCT family_id FROM mart_marts.mart_snapshot_baseline
+  SELECT DISTINCT family_id
+  FROM mart_marts.mart_snapshot_baseline
 ),
 followup AS (
-  SELECT DISTINCT family_id FROM mart_marts.fact_snapshot
+  SELECT DISTINCT family_id
+  FROM mart_marts.fact_snapshot
   WHERE snapshot_number > 1
 )
 SELECT
-  COUNT(DISTINCT f.family_id) * 1.0
-  / NULLIF(COUNT(DISTINCT b.family_id), 0) AS followup_coverage
+  COUNT(*) FILTER (WHERE f.family_id IS NULL) AS baseline_only_families,
+  COUNT(*) FILTER (WHERE f.family_id IS NOT NULL) AS baseline_with_followup_families
 FROM baseline b
 LEFT JOIN followup f USING (family_id);
 ```
 
-**Recommended visualization** — Gauge or donut chart indicating percentage.
-
-### Follow-up Coverage by Organization
-
-**Business question** — Which organizations retain families through follow-ups most effectively?
+**Breakdown by organization and hub** — stacked bar chart per team showing the two categories.
 
 ```sql
 WITH baseline AS (
-  SELECT DISTINCT organization_id, family_id
+  SELECT DISTINCT family_id, organization_id, application_id
   FROM mart_marts.mart_snapshot_baseline
 ),
 followup AS (
-  SELECT DISTINCT organization_id, family_id
+  SELECT DISTINCT family_id
   FROM mart_marts.fact_snapshot
   WHERE snapshot_number > 1
 )
 SELECT
   b.organization_id,
-  COUNT(DISTINCT f.family_id) * 1.0
-  / NULLIF(COUNT(DISTINCT b.family_id), 0) AS followup_coverage
+  org.organization_name,
+  b.application_id,
+  app.application_name,
+  COUNT(*) FILTER (WHERE f.family_id IS NULL) AS baseline_only_families,
+  COUNT(*) FILTER (WHERE f.family_id IS NOT NULL) AS baseline_with_followup_families
 FROM baseline b
-LEFT JOIN followup f
-  ON f.organization_id = b.organization_id
- AND f.family_id = b.family_id
-GROUP BY 1
-ORDER BY followup_coverage DESC;
+LEFT JOIN followup f USING (family_id)
+LEFT JOIN mart_marts.dim_organization org ON org.organization_id = b.organization_id
+LEFT JOIN mart_marts.dim_application app ON app.application_id = b.application_id
+GROUP BY 1, 2, 3, 4
+ORDER BY baseline_with_followup_families DESC;
 ```
 
-**Recommended visualization** — Bullet chart or sorted bar chart to benchmark performance.
+---
 
-### Anonymous Share (Current)
+### Anonymous Snapshot Share
 
-**Business question** — What proportion of current snapshots are recorded anonymously across the platform?
+**Question** — What portion of current snapshots are anonymous, and how does that vary by hub?  
+**Recommended visualization** — overall donut chart plus a horizontal bar chart by hub.
 
 ```sql
 SELECT
-  SUM(CASE WHEN anonymous THEN 1 ELSE 0 END) * 1.0
-  / NULLIF(COUNT(*), 0) AS share_anonymous_current
+  SUM(CASE WHEN anonymous THEN 1 ELSE 0 END) * 1.0 / NULLIF(COUNT(*), 0) AS share_anonymous_current
 FROM mart_marts.mart_snapshot_current;
 ```
 
-**Recommended visualization** — Donut chart comparing anonymous vs. identified records.
-
-### Median Days Between Snapshots
-
-**Business question** — What is the typical cadence between successive snapshots for engaged families?
+**Breakdown by hub (application)** — highlight applications where anonymity is more prevalent.
 
 ```sql
 SELECT
-  PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY days_since_prev) AS median_days_between
+  sc.application_id,
+  app.application_name,
+  SUM(CASE WHEN sc.anonymous THEN 1 ELSE 0 END) AS anonymous_snapshots,
+  COUNT(*) AS total_snapshots,
+  SUM(CASE WHEN sc.anonymous THEN 1 ELSE 0 END) * 1.0 / NULLIF(COUNT(*), 0) AS share_anonymous
+FROM mart_marts.mart_snapshot_current sc
+LEFT JOIN mart_marts.dim_application app USING (application_id)
+GROUP BY 1, 2
+ORDER BY share_anonymous DESC;
+```
+
+---
+
+### Snapshot Cadence
+
+**Question** — What is the typical cadence between snapshots, and does the speed differ across teams?  
+**Recommended visualization** — KPI card showing median days (with average as a secondary metric); optional scatter or box plot by organization.
+
+```sql
+SELECT
+  PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY days_since_prev) AS median_days_between,
+  AVG(days_since_prev) AS avg_days_between
 FROM mart_marts.fact_snapshot
 WHERE days_since_prev IS NOT NULL;
 ```
 
-**Recommended visualization** — KPI card, optionally paired with historical sparkline.
-
-### Median Days by Organization
-
-**Business question** — Which organizations move families through follow-ups fastest?
+**Breakdown by organization and hub** — surface teams that are faster or slower than the network median.
 
 ```sql
 SELECT
-  organization_id,
-  PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY days_since_prev) AS median_days_between
-FROM mart_marts.fact_snapshot
-WHERE days_since_prev IS NOT NULL
-GROUP BY 1
+  fs.organization_id,
+  org.organization_name,
+  fs.application_id,
+  app.application_name,
+  PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY fs.days_since_prev) AS median_days_between,
+  AVG(fs.days_since_prev) AS avg_days_between
+FROM mart_marts.fact_snapshot fs
+LEFT JOIN mart_marts.dim_organization org USING (organization_id)
+LEFT JOIN mart_marts.dim_application app USING (application_id)
+WHERE fs.days_since_prev IS NOT NULL
+GROUP BY 1, 2, 3, 4
 ORDER BY median_days_between;
 ```
 
-**Recommended visualization** — Sorted bar or dot plot highlighting standouts.
-
-### Quick-Win Dimension Insights (Expanded)
-
-#### Family Status by Dimension (Detail View)
-
-**Business question** — What is each family’s current status per dimension, including color mix and score?
-
-```sql
-SELECT
-  family_id,
-  organization_id,
-  application_id,
-  survey_definition_id,
-  dimension_id,
-  dimension_name,
-  pct_red,
-  pct_yellow,
-  pct_green,
-  dimension_score,
-  indicators_count,
-  red_count,
-  yellow_count,
-  green_count,
-  is_anonymous,
-  family_id_public
-FROM mart_marts.mart_family_dimension_current
-ORDER BY family_id, dimension_name;
-```
-
-**Recommended visualization** — Heat map (families × dimensions) or searchable table with conditional formatting.
-
-#### Dimension Summary Metrics (Whole Dataset)
-
-**Business question** — On average, which dimensions perform best and which are most critical across all families?
-
-```sql
-SELECT
-  dimension_id,
-  dimension_name,
-  AVG(dimension_score) AS avg_dimension_score,
-  AVG(pct_red) AS avg_pct_red,
-  AVG(pct_yellow) AS avg_pct_yellow,
-  AVG(pct_green) AS avg_pct_green,
-  SUM(indicators_count) AS total_indicators_tracked,
-  COUNT(DISTINCT family_id) AS families_measured
-FROM mart_marts.mart_family_dimension_current
-GROUP BY 1, 2
-ORDER BY avg_dimension_score;
-```
-
-**Recommended visualization** — Sorted bar chart of average scores with stacked color distribution.
-
-#### Families with Highest Red Concentration (Watchlist)
-
-**Business question** — Which families face the greatest concentration of red indicators today?
-
-```sql
-SELECT
-  family_id,
-  organization_id,
-  application_id,
-  dimension_name,
-  red_count,
-  indicators_count,
-  pct_red,
-  dimension_score
-FROM mart_marts.mart_family_dimension_current
-WHERE red_count > 0
-ORDER BY pct_red DESC, dimension_score ASC
-LIMIT 50;
-```
-
-**Recommended visualization** — Table or bubble chart to support targeted interventions.
-
-### Recent Active Families (Recency Filter)
-
-**Business question** — How many active families have submitted a snapshot in the last eight weeks?
-
-```sql
-SELECT COUNT(DISTINCT family_id) AS active_families_current_8w
-FROM mart_marts.mart_snapshot_current
-WHERE snapshot_ts >= CURRENT_DATE - INTERVAL '56 day';
-```
-
-**Recommended visualization** — Rolling eight-week trend line or area chart.
-
 ---
 
-## Demo: Survey Heroes FP (Semáforo Héroes)
+## Semáforo Héroes Demo (Survey Definition “Semáforo Héroes”)
 
-*Filter template used in each query*
+Use the shared survey filter CTE in each query to target the demo dataset.
 
 ```sql
 WITH survey_filter AS (
@@ -275,11 +188,81 @@ WITH survey_filter AS (
 )
 ```
 
-Each query below reuses this CTE; adjust to incorporate it directly.
+### Family Status Heatmap
 
-### Active Families (Current)
+**Question** — What is each Semáforo Héroes family’s current status by dimension, and how can we focus on a specific dimension (e.g., Health & Environment)?  
+**Recommended visualization** — heatmap (families × dimensions) with optional slicer by dimension.
 
-**Business question** — How many Semáforo Héroes families currently have a valid snapshot?
+```sql
+WITH survey_filter AS (
+  SELECT survey_definition_id
+  FROM mart_marts.dim_survey_definition
+  WHERE survey_title = 'Semáforo Héroes'
+)
+SELECT
+  mfd.family_id,
+  fam.family_name,
+  mfd.dimension_id,
+  mfd.dimension_name,
+  mfd.dimension_score,
+  mfd.pct_red,
+  mfd.pct_yellow,
+  mfd.pct_green,
+  mfd.indicators_count,
+  mfd.family_id_public
+FROM mart_marts.mart_family_dimension_current mfd
+JOIN survey_filter sf USING (survey_definition_id)
+LEFT JOIN mart_marts.dim_family fam USING (family_id)
+-- Optional dimension focus:
+-- WHERE mfd.dimension_name IN ('Health', 'Environment')
+ORDER BY mfd.family_id, mfd.dimension_name;
+```
+
+---
+
+### Dimension Performance Summary
+
+**Question** — On average, which dimensions perform best, and how many families land in green/yellow/red for each dimension?  
+**Recommended visualization** — (1) sorted bar chart of average scores, (2) stacked bar chart of family distribution by dominant color.
+
+```sql
+WITH survey_filter AS (
+  SELECT survey_definition_id
+  FROM mart_marts.dim_survey_definition
+  WHERE survey_title = 'Semáforo Héroes'
+),
+scored AS (
+  SELECT
+    mfd.dimension_id,
+    mfd.dimension_name,
+    mfd.family_id,
+    mfd.dimension_score,
+    CASE
+      WHEN mfd.pct_green >= GREATEST(mfd.pct_yellow, mfd.pct_red) THEN 'Green'
+      WHEN mfd.pct_yellow >= GREATEST(mfd.pct_green, mfd.pct_red) THEN 'Yellow'
+      ELSE 'Red'
+    END AS dominant_color
+  FROM mart_marts.mart_family_dimension_current mfd
+  JOIN survey_filter sf USING (survey_definition_id)
+)
+SELECT
+  dimension_id,
+  dimension_name,
+  AVG(dimension_score) AS avg_dimension_score,
+  COUNT(*) FILTER (WHERE dominant_color = 'Green') * 1.0 / COUNT(*) AS share_green,
+  COUNT(*) FILTER (WHERE dominant_color = 'Yellow') * 1.0 / COUNT(*) AS share_yellow,
+  COUNT(*) FILTER (WHERE dominant_color = 'Red') * 1.0 / COUNT(*) AS share_red
+FROM scored
+GROUP BY 1, 2
+ORDER BY avg_dimension_score DESC;
+```
+
+---
+
+### Heroes Families With a Snapshot
+
+**Question** — How many Semáforo Héroes families currently have an active snapshot?  
+**Recommended visualization** — KPI card; reference during the demo to show cohort size.
 
 ```sql
 WITH survey_filter AS (
@@ -292,28 +275,12 @@ FROM mart_marts.mart_snapshot_current sc
 JOIN survey_filter sf USING (survey_definition_id);
 ```
 
-**Recommended visualization** — Single KPI card for the demo cohort.
+---
 
-### Baseline Families
+### Recent Heroes Activity (Last 8 Weeks)
 
-**Business question** — How many Semáforo Héroes families completed their baseline snapshot?
-
-```sql
-WITH survey_filter AS (
-  SELECT survey_definition_id
-  FROM mart_marts.dim_survey_definition
-  WHERE survey_title = 'Semáforo Héroes'
-)
-SELECT COUNT(DISTINCT sb.family_id) AS baseline_families
-FROM mart_marts.mart_snapshot_baseline sb
-JOIN survey_filter sf USING (survey_definition_id);
-```
-
-**Recommended visualization** — KPI card paired with follow-up metric.
-
-### Follow-up Families
-
-**Business question** — How many Semáforo Héroes families advanced beyond their first snapshot?
+**Question** — How many Semáforo Héroes families submitted a snapshot in the last eight weeks?  
+**Recommended visualization** — eight-week trend line or area chart.
 
 ```sql
 WITH survey_filter AS (
@@ -321,185 +288,116 @@ WITH survey_filter AS (
   FROM mart_marts.dim_survey_definition
   WHERE survey_title = 'Semáforo Héroes'
 )
-SELECT COUNT(DISTINCT fs.family_id) AS followup_families
-FROM mart_marts.fact_snapshot fs
-JOIN survey_filter sf USING (survey_definition_id)
-WHERE fs.snapshot_number > 1;
-```
-
-**Recommended visualization** — KPI card; narrate progress vs. baseline.
-
-### Follow-up Coverage (Any)
-
-**Business question** — What share of Semáforo Héroes baseline families returned for a follow-up snapshot?
-
-```sql
-WITH survey_filter AS (
-  SELECT survey_definition_id
-  FROM mart_marts.dim_survey_definition
-  WHERE survey_title = 'Semáforo Héroes'
-),
-baseline AS (
-  SELECT DISTINCT family_id
-  FROM mart_marts.mart_snapshot_baseline
-  JOIN survey_filter USING (survey_definition_id)
-),
-followup AS (
-  SELECT DISTINCT family_id
-  FROM mart_marts.fact_snapshot
-  JOIN survey_filter USING (survey_definition_id)
-  WHERE snapshot_number > 1
-)
-SELECT
-  COUNT(DISTINCT f.family_id) * 1.0
-  / NULLIF(COUNT(DISTINCT b.family_id), 0) AS followup_coverage
-FROM baseline b
-LEFT JOIN followup f USING (family_id);
-```
-
-**Recommended visualization** — Gauge focused on follow-up conversion.
-
-### Anonymous Share (Current)
-
-**Business question** — What proportion of current Semáforo Héroes snapshots are marked anonymous?
-
-```sql
-WITH survey_filter AS (
-  SELECT survey_definition_id
-  FROM mart_marts.dim_survey_definition
-  WHERE survey_title = 'Semáforo Héroes'
-)
-SELECT
-  SUM(CASE WHEN sc.anonymous THEN 1 ELSE 0 END) * 1.0
-  / NULLIF(COUNT(*), 0) AS share_anonymous_current
-FROM mart_marts.mart_snapshot_current sc
-JOIN survey_filter sf USING (survey_definition_id);
-```
-
-**Recommended visualization** — Donut chart to discuss privacy mix.
-
-### Median Days Between Snapshots
-
-**Business question** — What is the typical cadence between Semáforo Héroes snapshots?
-
-```sql
-WITH survey_filter AS (
-  SELECT survey_definition_id
-  FROM mart_marts.dim_survey_definition
-  WHERE survey_title = 'Semáforo Héroes'
-)
-SELECT
-  PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY fs.days_since_prev) AS median_days_between
-FROM mart_marts.fact_snapshot fs
-JOIN survey_filter sf USING (survey_definition_id)
-WHERE fs.days_since_prev IS NOT NULL;
-```
-
-**Recommended visualization** — KPI card; compare against broad benchmark during the demo.
-
-### Quick-Win Dimension Insights (Semáforo Héroes)
-
-#### Family Status by Dimension (Detail)
-
-**Business question** — What is the current dimension status for each Semáforo Héroes family?
-
-```sql
-WITH survey_filter AS (
-  SELECT survey_definition_id
-  FROM mart_marts.dim_survey_definition
-  WHERE survey_title = 'Semáforo Héroes'
-)
-SELECT
-  mfd.family_id,
-  mfd.dimension_id,
-  mfd.dimension_name,
-  mfd.pct_red,
-  mfd.pct_yellow,
-  mfd.pct_green,
-  mfd.dimension_score,
-  mfd.indicators_count,
-  mfd.red_count,
-  mfd.yellow_count,
-  mfd.green_count,
-  mfd.family_id_public
-FROM mart_marts.mart_family_dimension_current mfd
-JOIN survey_filter sf USING (survey_definition_id)
-ORDER BY mfd.family_id, mfd.dimension_name;
-```
-
-**Recommended visualization** — Heat map or filterable table for live walkthroughs.
-
-#### Dimension Summary Metrics (Semáforo Héroes)
-
-**Business question** — Which dimensions are the strongest and weakest within Semáforo Héroes?
-
-```sql
-WITH survey_filter AS (
-  SELECT survey_definition_id
-  FROM mart_marts.dim_survey_definition
-  WHERE survey_title = 'Semáforo Héroes'
-)
-SELECT
-  mfd.dimension_id,
-  mfd.dimension_name,
-  AVG(mfd.dimension_score) AS avg_dimension_score,
-  AVG(mfd.pct_red) AS avg_pct_red,
-  AVG(mfd.pct_yellow) AS avg_pct_yellow,
-  AVG(mfd.pct_green) AS avg_pct_green,
-  SUM(mfd.indicators_count) AS total_indicators_tracked,
-  COUNT(DISTINCT mfd.family_id) AS families_measured
-FROM mart_marts.mart_family_dimension_current mfd
-JOIN survey_filter sf USING (survey_definition_id)
-GROUP BY 1, 2
-ORDER BY avg_dimension_score;
-```
-
-**Recommended visualization** — Sorted bar chart highlighting critical dimensions, ideal for demo storytelling.
-
-#### Families with Highest Red Concentration (Semáforo Héroes Watchlist)
-
-**Business question** — Which Semáforo Héroes families need the most urgent attention by dimension?
-
-```sql
-WITH survey_filter AS (
-  SELECT survey_definition_id
-  FROM mart_marts.dim_survey_definition
-  WHERE survey_title = 'Semáforo Héroes'
-)
-SELECT
-  mfd.family_id,
-  mfd.dimension_name,
-  mfd.red_count,
-  mfd.indicators_count,
-  mfd.pct_red,
-  mfd.dimension_score,
-  mfd.family_id_public
-FROM mart_marts.mart_family_dimension_current mfd
-JOIN survey_filter sf USING (survey_definition_id)
-WHERE mfd.red_count > 0
-ORDER BY mfd.pct_red DESC, mfd.dimension_score ASC
-LIMIT 25;
-```
-
-**Recommended visualization** — Table with conditional formatting to drive intervention discussion.
-
-### Recent Active Families (Semáforo Héroes)
-
-**Business question** — How many Semáforo Héroes families were active in the last eight weeks?
-
-```sql
-WITH survey_filter AS (
-  SELECT survey_definition_id
-  FROM mart_marts.dim_survey_definition
-  WHERE survey_title = 'Semáforo Héroes'
-)
-SELECT COUNT(DISTINCT sc.family_id) AS active_families_current_8w
+SELECT COUNT(DISTINCT sc.family_id) AS active_families_last_8_weeks
 FROM mart_marts.mart_snapshot_current sc
 JOIN survey_filter sf USING (survey_definition_id)
 WHERE sc.snapshot_ts >= CURRENT_DATE - INTERVAL '56 day';
 ```
 
-**Recommended visualization** — Eight-week trend line to demonstrate recency during the demo.
+---
 
-Let me know if you’d like to layer in comparisons (demo cohort vs. overall) or turn any of these blocks into ready-to-share slide copy.
+### Dimension Evolution: Baseline vs. Latest Snapshot
+
+**Question** — How have average dimension scores evolved from baseline to the most recent snapshot?  
+**Recommended visualization** — paired line charts (baseline vs. latest) or a clustered line chart per dimension.
+
+```sql
+WITH survey_filter AS (
+  SELECT survey_definition_id
+  FROM mart_marts.dim_survey_definition
+  WHERE survey_title = 'Semáforo Héroes'
+),
+-- Map each snapshot to its dimension indicators
+indicator_map AS (
+  SELECT
+    ss.survey_definition_id,
+    ss.code_name,
+    ss.survey_dimension_id AS dimension_id,
+    ss.dimension AS dimension_name
+  FROM data_collect.survey_stoplight ss
+),
+-- Helper to convert stoplight values to scores: 1=Red (0.0), 2=Yellow (0.5), 3=Green (1.0)
+indicator_scores AS (
+  SELECT
+    sn.snapshot_id,
+    sn.family_id,
+    sn.survey_definition_id,
+    sn.snapshot_number,
+    sn.snapshot_stage,
+    im.dimension_id,
+    im.dimension_name,
+    CASE sl.value
+      WHEN 1 THEN 0.0
+      WHEN 2 THEN 0.5
+      WHEN 3 THEN 1.0
+      ELSE NULL
+    END AS indicator_score
+  FROM (
+    SELECT
+      fs.snapshot_id,
+      fs.family_id,
+      fs.survey_definition_id,
+      fs.snapshot_number,
+      CASE
+        WHEN fs.snapshot_number = 1 THEN 'Baseline'
+        WHEN fs.is_last_with_stoplight = TRUE THEN 'Latest'
+      END AS snapshot_stage
+    FROM mart_marts.fact_snapshot fs
+    JOIN survey_filter sf USING (survey_definition_id)
+    WHERE fs.snapshot_number = 1 OR fs.is_last_with_stoplight = TRUE
+  ) sn
+  JOIN data_collect.snapshot_stoplight sl
+    ON sl.snapshot_id = sn.snapshot_id
+  JOIN indicator_map im
+    ON im.survey_definition_id = sn.survey_definition_id
+   AND im.code_name = sl.code_name
+  WHERE sn.snapshot_stage IS NOT NULL
+    AND sl.value IN (1, 2, 3)
+),
+dimension_stage AS (
+  SELECT
+    dimension_id,
+    dimension_name,
+    snapshot_stage,
+    AVG(indicator_score) AS avg_dimension_score
+  FROM indicator_scores
+  GROUP BY 1, 2, 3
+)
+SELECT *
+FROM dimension_stage
+ORDER BY dimension_name, snapshot_stage;
+```
+
+---
+
+### Highest-Need Hotspots With Location
+
+**Question** — Where are the Semáforo Héroes families that need the most urgent support located?  
+**Recommended visualization** — map heatmap or bubble map filtered by a score threshold.
+
+```sql
+WITH survey_filter AS (
+  SELECT survey_definition_id
+  FROM mart_marts.dim_survey_definition
+  WHERE survey_title = 'Semáforo Héroes'
+)
+SELECT
+  mfd.family_id,
+  fam.family_name,
+  fam.latitude,
+  fam.longitude,
+  mfd.dimension_name,
+  mfd.dimension_score,
+  mfd.pct_red,
+  mfd.family_id_public
+FROM mart_marts.mart_family_dimension_current mfd
+JOIN survey_filter sf USING (survey_definition_id)
+LEFT JOIN mart_marts.dim_family fam USING (family_id)
+WHERE mfd.dimension_score <= 0.4 -- adjust threshold to highlight urgent cases
+  AND fam.latitude IS NOT NULL
+  AND fam.longitude IS NOT NULL
+ORDER BY mfd.dimension_score ASC;
+```
+
+Use these targeted views to build demos that move from high-level coverage to action-ready insights. Let me know if you want companion notebook cells or dashboard mock-ups. 
 
