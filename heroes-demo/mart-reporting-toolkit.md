@@ -26,8 +26,10 @@ SELECT
   app.application_name,
   COUNT(DISTINCT sc.family_id) AS active_families_current
 FROM mart_marts.mart_snapshot_current sc
-LEFT JOIN mart_marts.dim_organization org USING (organization_id)
-LEFT JOIN mart_marts.dim_application app USING (application_id)
+LEFT JOIN mart_marts.dim_organization org
+  ON sc.organization_id = org.organization_id
+LEFT JOIN mart_marts.dim_application app
+  ON sc.application_id = app.application_id
 GROUP BY 1, 2, 3, 4
 ORDER BY active_families_current DESC;
 ```
@@ -55,8 +57,10 @@ SELECT
   app.application_name,
   COUNT(DISTINCT fs.family_id) AS families_with_followup
 FROM mart_marts.fact_snapshot fs
-LEFT JOIN mart_marts.dim_organization org USING (organization_id)
-LEFT JOIN mart_marts.dim_application app USING (application_id)
+LEFT JOIN mart_marts.dim_organization org
+  ON fs.organization_id = org.organization_id
+LEFT JOIN mart_marts.dim_application app
+  ON fs.application_id = app.application_id
 WHERE fs.snapshot_number > 1
 GROUP BY 1, 2, 3, 4
 ORDER BY families_with_followup DESC;
@@ -400,4 +404,3 @@ ORDER BY mfd.dimension_score ASC;
 ```
 
 Use these targeted views to build demos that move from high-level coverage to action-ready insights. Let me know if you want companion notebook cells or dashboard mock-ups. 
-
