@@ -38,7 +38,11 @@ stoplight_raw as (
             partition by sl.snapshot_id, sl.code_name
             order by sl.id desc
         ) as rn
-    from {{ source('data_collect', 'snapshot_stoplight') }} sl
+    {% if target.name in ['heroes-dev', 'heroes-prod'] %}
+        from {{ source('heroes_collect', 'heroes_snapshot_stoplight') }} sl
+    {% else %}
+        from {{ source('data_collect', 'snapshot_stoplight') }} sl
+    {% endif %}
     where sl.value in (1, 2, 3)  -- Only valid stoplight values (Red, Yellow, Green)
         -- Exclude: 0=skipped/not applicable, 9=not answered/other
 ),
@@ -58,7 +62,11 @@ survey_map as (
         ss.code_name,
         ss.survey_dimension_id as dimension_id,
         ss.dimension as dimension_name
-    from {{ source('data_collect', 'survey_stoplight') }} ss
+    {% if target.name in ['heroes-dev', 'heroes-prod'] %}
+        from {{ source('heroes_collect', 'heroes_survey_stoplight') }} ss
+    {% else %}
+        from {{ source('data_collect', 'survey_stoplight') }} ss
+    {% endif %}
     where ss.survey_dimension_id is not null
 )
 

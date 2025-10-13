@@ -1,0 +1,92 @@
+# Semantic model for snapshot fact table
+# Defines entities, dimensions, and measures for MetricFlow
+
+semantic_models:
+  - name: snapshot
+    description: >
+      Semantic model for poverty assessment snapshots.
+      Each snapshot represents a survey conducted with a family at a specific point in time.
+      Baseline surveys (snapshot_number = 1) establish initial conditions,
+      while follow-up surveys track progress over time.
+
+    model: ref('fact_snapshot')
+
+    # Primary and foreign key entities
+    entities:
+      - name: snapshot
+        type: primary
+        expr: snapshot_id
+
+      - name: family
+        type: foreign
+        expr: family_id
+
+      - name: organization
+        type: foreign
+        expr: organization_id
+
+      - name: application
+        type: foreign
+        expr: application_id
+
+      - name: survey_definition
+        type: foreign
+        expr: survey_definition_id
+
+    # Default time dimension for aggregations
+    defaults:
+      agg_time_dimension: snapshot_ts
+
+    # Dimensional attributes for filtering and grouping
+    dimensions:
+      - name: snapshot_ts
+        type: time
+        description: "Timestamp when the snapshot was taken"
+        type_params:
+          time_granularity: day
+
+      - name: is_baseline
+        type: categorical
+        description: "Flag indicating baseline survey (snapshot_number = 1)"
+        expr: is_baseline
+
+      - name: is_last_any
+        type: categorical
+        description: "Flag indicating most recent snapshot for the family (any type)"
+        expr: is_last_any
+
+      - name: is_last_with_stoplight
+        type: categorical
+        description: "Flag indicating most recent snapshot with stoplight data"
+        expr: is_last_with_stoplight
+
+      - name: anonymous
+        type: categorical
+        description: "Privacy flag indicating if personal data is anonymized"
+        expr: anonymous
+
+      - name: snapshot_number
+        type: categorical
+        description: "Survey round number (1=baseline, >1=follow-up)"
+        expr: snapshot_number
+
+    # Measurable quantities for aggregation
+    measures:
+      - name: snapshots
+        description: "Count of all snapshots"
+        agg: count
+
+      - name: families_distinct
+        description: "Count of distinct families"
+        agg: count_distinct
+        expr: family_id
+
+      - name: orgs_distinct
+        description: "Count of distinct organizations"
+        agg: count_distinct
+        expr: organization_id
+
+      - name: median_days_between
+        description: "Median number of days between successive snapshots for families"
+        agg: median
+        expr: days_since_prev

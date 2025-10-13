@@ -58,6 +58,26 @@ models:
       - name: anonymous
         description: "Privacy flag for anonymous surveys"
 
+    # Model-level tests using dbt_utils
+    data_tests:
+      # Test: Snapshot timestamps must be plausible (between 2000 and now)
+      - dbt_utils.expression_is_true:
+          name: snapshot_timestamps_are_plausible
+          arguments:
+            expression: "snapshot_ts BETWEEN '2000-01-01'::timestamp AND CURRENT_TIMESTAMP + interval '1 day'"
+
+      # Test: Combination of (family_id, snapshot_number, survey_definition_id) should be unique
+      # This catches edge cases where families might have duplicate snapshot numbers
+      - dbt_utils.unique_combination_of_columns:
+          name: unique_family_snapshot_combination
+          arguments:
+            combination_of_columns:
+              - family_id
+              - snapshot_number
+              - survey_definition_id
+          config:
+            severity: warn
+
   - name: dim_family
     description: "Family dimension with privacy-aware PII masking"
     columns:
@@ -138,3 +158,16 @@ models:
         description: "Month component"
       - name: quarter
         description: "Quarter component"
+
+  - name: metricflow_time_spine
+    description: "Time spine model required by MetricFlow for time-based aggregations"
+    config:
+      meta:
+        time_spine:
+          time_column: date_day
+    columns:
+      - name: date_day
+        description: "Calendar date - one row per day from 2000 to current date + 1 year"
+        data_tests:
+          - not_null
+          - unique

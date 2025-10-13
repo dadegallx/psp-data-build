@@ -1,0 +1,80 @@
+# Business metrics for poverty assessment tracking
+# Defines key performance indicators for family engagement and follow-up coverage
+
+metrics:
+  # ========================================
+  # Simple Count Metrics
+  # ========================================
+
+  - name: active_families_current
+    description: >
+      Number of currently active families based on their most recent snapshot.
+      Uses is_last_any flag to identify the latest snapshot for each family.
+    type: simple
+    label: Active Families (Current)
+    type_params:
+      measure: families_distinct
+    filter: |
+      {{ Dimension('snapshot__is_last_any') }} = true
+
+  - name: baseline_families
+    description: >
+      Number of families with baseline surveys.
+      Baseline surveys (snapshot_number = 1) establish initial conditions.
+    type: simple
+    label: Baseline Families
+    type_params:
+      measure: families_distinct
+    filter: |
+      {{ Dimension('snapshot__is_baseline') }} = true
+
+  - name: followup_families
+    description: >
+      Number of families with at least one follow-up survey.
+      Follow-up surveys (snapshot_number > 1) track progress over time.
+    type: simple
+    label: Follow-up Families
+    type_params:
+      measure: families_distinct
+    filter: |
+      {{ Dimension('snapshot__snapshot_number') }} > 1
+
+  # Helper metric for stoplight follow-up coverage ratio
+  - name: followup_families_stoplight
+    description: >
+      Number of families with at least one follow-up survey containing stoplight data.
+      This is an internal metric used for calculating followup_coverage_stoplight ratio.
+    type: simple
+    label: Follow-up Families (Stoplight)
+    type_params:
+      measure: families_distinct
+    filter: |
+      {{ Dimension('snapshot__snapshot_number') }} > 1 AND {{ Dimension('snapshot__is_last_with_stoplight') }} = true
+
+  # ========================================
+  # Coverage Ratio Metrics (Key KPIs)
+  # ========================================
+
+  - name: followup_coverage_any
+    description: >
+      Percentage of families with at least one follow-up survey (any type).
+      This KPI measures engagement and retention in the poverty assessment program.
+
+      Calculation: (Families with follow-up) / (Families with baseline) * 100
+    type: ratio
+    label: Follow-up Coverage (Any)
+    type_params:
+      numerator: followup_families
+      denominator: baseline_families
+
+  - name: followup_coverage_stoplight
+    description: >
+      Percentage of families with at least one follow-up survey containing stoplight data.
+      This KPI measures data quality and completeness of follow-up assessments.
+
+      Calculation: (Families with stoplight follow-up) / (Families with baseline) * 100
+    type: ratio
+    label: Follow-up Coverage (Stoplight)
+    type_params:
+      numerator: followup_families_stoplight
+      denominator: baseline_families

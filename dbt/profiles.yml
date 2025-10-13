@@ -14,6 +14,17 @@ psp_data_build:
       threads: 4
       keepalives_idle: 0
 
+    heroes-dev:
+      type: postgres
+      host: "{{ env_var('DBT_HOST') }}"
+      port: "{{ env_var('DBT_PORT') | as_number }}"
+      user: "{{ env_var('DBT_USER') }}"
+      pass: "{{ env_var('DBT_PASSWORD') }}"
+      dbname: "{{ env_var('DBT_DBNAME') }}"
+      schema: "{{ env_var('DBT_SCHEMA', 'dbt_dev') }}"
+      threads: 4
+      keepalives_idle: 0
+
     prod:
       type: postgres
       host: "{{ env_var('DBT_HOST') }}"
@@ -22,6 +33,17 @@ psp_data_build:
       pass: "{{ env_var('DBT_PASSWORD') }}"
       dbname: "{{ env_var('DBT_DBNAME') }}"
       schema: dbt_prod
+      threads: 4
+      keepalives_idle: 0
+
+    heroes-prod:
+      type: postgres
+      host: "{{ env_var('DBT_HOST') }}"
+      port: "{{ env_var('DBT_PORT') | as_number }}"
+      user: "{{ env_var('DBT_USER') }}"
+      pass: "{{ env_var('DBT_PASSWORD') }}"
+      dbname: "{{ env_var('DBT_DBNAME') }}"
+      schema: "{{ env_var('DBT_SCHEMA', 'dbt_dev') }}"
       threads: 4
       keepalives_idle: 0
 

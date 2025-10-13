@@ -4,7 +4,11 @@
 ) }}
 
 with source as (
-    select * from {{ source('data_collect', 'snapshot') }}
+    {% if target.name in ['heroes-dev', 'heroes-prod'] %}
+        select * from {{ source('heroes_collect', 'heroes_snapshot') }}
+    {% else %}
+        select * from {{ source('data_collect', 'snapshot') }}
+    {% endif %}
 ),
 
 renamed as (
