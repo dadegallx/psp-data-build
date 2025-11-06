@@ -106,7 +106,14 @@ models:
           - not_null
 
   - name: stg_snapshot_stoplight
-    description: "Cleaned indicator assessments (stoplight values)"
+    description: >
+      Cleaned indicator assessments (stoplight values).
+
+      This model enriches raw snapshot_stoplight responses with indicator_id via FK chain:
+      snapshot_stoplight → snapshot → survey_stoplight.
+
+      Note: In rare cases (<0.01%), a survey may have duplicate code_names.
+      We resolve this by selecting the indicator with the lowest order_number.
     columns:
       - name: snapshot_stoplight_id
         description: "Primary key"
@@ -120,6 +127,10 @@ models:
           - relationships:
               field: snapshot_id
               to: ref('stg_snapshots')
+      - name: indicator_id
+        description: "Foreign key to survey_stoplight (derived via snapshot → survey_definition)"
+        data_tests:
+          - not_null
       - name: indicator_status_value
         description: "Stoplight status: 1=Red, 2=Yellow, 3=Green, NULL=Skipped"
         data_tests:
