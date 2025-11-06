@@ -30,8 +30,8 @@ renamed as (
         post_code,
 
         -- Audit fields
-        to_timestamp(created_at / 1000) as created_at,
-        to_timestamp(updated_at / 1000) as updated_at
+        created_date as created_at,
+        last_modified_date as updated_at
 
     from source
 )

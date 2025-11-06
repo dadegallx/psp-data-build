@@ -12,7 +12,7 @@ with source as (
 renamed as (
     select
         -- Primary key
-        family_member_id,
+        id as family_member_id,
 
         -- Foreign keys
         family_id,
@@ -21,7 +21,7 @@ renamed as (
         birth_country,
 
         -- Audit fields
-        to_timestamp(created_at / 1000) as created_at
+        created_date as created_at
 
     from source
 )

@@ -76,15 +76,15 @@ sources:
             description: "Physical address"
           - name: post_code
             description: "Postal code"
-          - name: created_at
-            description: "Creation timestamp (milliseconds since epoch)"
-          - name: updated_at
-            description: "Last update timestamp (milliseconds since epoch)"
+          - name: created_date
+            description: "Creation timestamp (timestamp without time zone)"
+          - name: last_modified_date
+            description: "Last modification timestamp (timestamp without time zone)"
 
       - name: family_members
         description: "Individual family member information"
         columns:
-          - name: family_member_id
+          - name: id
             description: "Primary key"
           - name: family_id
             description: "Foreign key to ps_families.family"
@@ -94,8 +94,8 @@ sources:
             description: "Member last name (may be 'ANON_DATA')"
           - name: birth_country
             description: "Country of birth - used to derive family country"
-          - name: created_at
-            description: "Creation timestamp (milliseconds since epoch)"
+          - name: created_date
+            description: "Creation timestamp (timestamp without time zone)"
 
   # Survey data collection and responses
   - name: data_collect
@@ -178,7 +178,7 @@ sources:
           - name: active
             description: "Whether survey is currently active"
           - name: created_at
-            description: "Creation timestamp (milliseconds since epoch)"
+            description: "Creation timestamp (timestamp without time zone)"
 
       - name: survey_stoplight
         description: "Survey-specific indicator implementations (20,000+ customized instances from templates)"
@@ -197,5 +197,5 @@ sources:
             description: "Whether indicator is required in survey"
           - name: dimension
             description: "Dimension category name (one of 6 categories)"
-          - name: survey_stoplight_indicator_id
+          - name: survey_indicator_id
             description: "Foreign key to survey_stoplight_indicator (master template)"

@@ -22,7 +22,7 @@ renamed as (
         active as survey_is_active,
 
         -- Audit fields
-        to_timestamp(created_at / 1000) as created_at
+        created_at
 
     from source
 )

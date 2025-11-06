@@ -15,7 +15,7 @@ renamed as (
         id as indicator_id,
 
         -- Foreign keys
-        survey_stoplight_indicator_id as indicator_template_id,
+        survey_indicator_id as indicator_template_id,
 
         -- Attributes
         code_name as indicator_code_name,
