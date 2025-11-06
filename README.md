@@ -17,15 +17,22 @@ Think of dbt as "software engineering best practices for data transformations."
 ## Project Structure
 
 ```
+├── data_model/                   # Data warehouse design documentation
+│   ├── SCHEMA_REFERENCE.md      # Star schema specifications
+│   └── BUSINESS_QUESTIONS_DOCS.md  # Business questions and metrics
 ├── dbt/                          # dbt project directory
 │   ├── models/                   # SQL transformation models
 │   │   ├── _sources.yml         # Source table definitions
 │   │   ├── staging/             # Raw data cleaning models
-│   │   └── marts/               # Business-ready analytical models
+│   │   ├── intermediate/        # Business logic transformations
+│   │   ├── marts/               # Business-ready analytical models
+│   │   └── semantic/            # MetricFlow semantic layer (future)
 │   ├── tests/                   # Custom data quality tests
 │   ├── dbt_project.yml         # Project configuration
 │   └── profiles.yml             # Database connection settings
-├── scripts/                     # Deployment and utility scripts
+├── claude-skills/               # Claude Code AI skills for development
+├── .claude/
+│   └── CLAUDE.md               # Claude Code project guidance
 ├── .env                        # Environment variables (not in git)
 ├── .env.template               # Template for required variables
 └── pyproject.toml              # Python dependencies
@@ -143,24 +150,7 @@ models/
 
 ## Production Deployment
 
-DBT is not like a real-time system that automatically updates when source data changes. Instead, it's a batch transformation tool that runs when you execute it.
-
-### Orchestration and Scheduling
-Since DBT runs on-demand, you'll need something to trigger it regularly. Popular approaches include:
-
-**AWS-native options:**
-
-- AWS EventBridge: Schedule DBT runs like a cron job
-- AWS Step Functions: Orchestrate complex data pipelines
-- Amazon ECS Scheduled Tasks: Run DBT in containers on schedule
-
-**Third-party orchestrators:**
-
-- Apache Airflow: Popular open-source option
-- Prefect or Dagster: Modern Python-based alternatives
-- DBT Cloud: Managed service that handles scheduling for you
-
-The frequency depends on your data freshness requirements.
+dbt is a batch transformation tool that runs on-demand. For production, dbt runs can be scheduled using orchestration tools like AWS EventBridge, Apache Airflow, or dbt Cloud. The frequency depends on your data freshness requirements.
 
 ## Data Quality & Testing
 
@@ -194,7 +184,9 @@ The documentation includes:
 
 After successful setup:
 
-1. **Explore the models** using `dbt docs serve`
-2. **Run initial transformations** with `dbt run`
-3. **Connect your BI tool** to the transformed data tables (Basecamp!)
-4. **Set up production deployment** consider using a dedicated PostgreSQL schema for dbt models (e.g., `analytics`)
+1. **Review the data model** - See `data_model/SCHEMA_REFERENCE.md` for schema design
+2. **Explore business requirements** - Review `data_model/BUSINESS_QUESTIONS_DOCS.md`
+3. **Install Claude skills** (optional) - See `claude-skills/README.md` for AI assistance
+4. **View documentation** - Run `dbt docs serve` to explore the project
+5. **Run transformations** - Execute `dbt run` to build models
+6. **Connect your BI tool** to the transformed data tables
