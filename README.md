@@ -31,6 +31,32 @@ Think of dbt as "software engineering best practices for data transformations."
 └── pyproject.toml              # Python dependencies
 ```
 
+## Claude Skills for AI-Assisted Development
+
+This project includes custom Claude Code skills to accelerate dbt development:
+
+### Available Skills
+
+**📦 dbt-model-builder**: Core dbt workflows for creating models, sources, tests, and documentation
+**📊 metricflow-builder**: Semantic layer development with dbt's MetricFlow
+
+### Quick Start
+
+If you're using Claude Code, install the skills to get AI-powered assistance:
+
+```bash
+# Skills are located in the claude-skills/ directory
+# See claude-skills/README.md for installation instructions
+```
+
+The skills provide:
+- Step-by-step guidance for dbt development tasks
+- Templates for staging, fact, and dimension models
+- Best practices for testing and documentation
+- MetricFlow semantic model and metrics patterns
+
+**→ See [claude-skills/README.md](claude-skills/README.md) for full installation and usage guide**
+
 ## Local Development Setup
 
 ### Prerequisites
