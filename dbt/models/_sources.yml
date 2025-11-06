@@ -1,0 +1,201 @@
+version: 2
+
+sources:
+  # Organizational hierarchy and application management
+  - name: ps_network
+    description: "Organizational hierarchy, hub/application management, and implementing organizations"
+    schema: ps_network
+    tables:
+      - name: applications
+        description: "Hub/application definitions serving as platforms for poverty stoplight projects"
+        columns:
+          - name: id
+            description: "Primary key"
+          - name: name
+            description: "Application/hub name"
+          - name: description
+            description: "Application description"
+          - name: is_active
+            description: "Whether application is currently active"
+          - name: country
+            description: "Country where application operates"
+          - name: country_code
+            description: "ISO country code"
+          - name: created_date
+            description: "Creation timestamp"
+          - name: last_modified_date
+            description: "Last modification timestamp"
+
+      - name: organizations
+        description: "Organizations implementing poverty stoplight surveys within applications"
+        columns:
+          - name: id
+            description: "Primary key"
+          - name: name
+            description: "Organization name"
+          - name: description
+            description: "Organization description"
+          - name: is_active
+            description: "Whether organization is currently active"
+          - name: country
+            description: "Country of operation"
+          - name: country_code
+            description: "ISO country code"
+          - name: application_id
+            description: "Foreign key to ps_network.applications"
+          - name: organization_type
+            description: "Type of organization"
+          - name: created_date
+            description: "Creation timestamp"
+          - name: last_modified_date
+            description: "Last modification timestamp"
+
+  # Family master data
+  - name: ps_families
+    description: "Family demographic and location information"
+    schema: ps_families
+    tables:
+      - name: family
+        description: "Family identity, location, and privacy settings"
+        columns:
+          - name: family_id
+            description: "Primary key"
+          - name: code
+            description: "Unique family code"
+          - name: name
+            description: "Family name (shows 'ANON_DATA' if anonymous)"
+          - name: is_active
+            description: "Whether family is currently active"
+          - name: anonymous
+            description: "Privacy flag - when true, personal data is anonymized"
+          - name: latitude
+            description: "GPS latitude coordinate"
+          - name: longitude
+            description: "GPS longitude coordinate"
+          - name: address
+            description: "Physical address"
+          - name: post_code
+            description: "Postal code"
+          - name: created_at
+            description: "Creation timestamp (milliseconds since epoch)"
+          - name: updated_at
+            description: "Last update timestamp (milliseconds since epoch)"
+
+      - name: family_members
+        description: "Individual family member information"
+        columns:
+          - name: family_member_id
+            description: "Primary key"
+          - name: family_id
+            description: "Foreign key to ps_families.family"
+          - name: first_name
+            description: "Member first name (may be 'ANON_DATA')"
+          - name: last_name
+            description: "Member last name (may be 'ANON_DATA')"
+          - name: birth_country
+            description: "Country of birth - used to derive family country"
+          - name: created_at
+            description: "Creation timestamp (milliseconds since epoch)"
+
+  # Survey data collection and responses
+  - name: data_collect
+    description: "Survey definitions, snapshots, and stoplight indicator assessments"
+    schema: data_collect
+    tables:
+      - name: survey_stoplight_indicator
+        description: "Master template catalog of reusable stoplight indicators (346 templates)"
+        columns:
+          - name: id
+            description: "Primary key"
+          - name: code_name
+            description: "Unique indicator template code"
+          - name: met_short_name
+            description: "Short name for indicator template"
+          - name: met_description
+            description: "Description of indicator template"
+          - name: survey_dimension_id
+            description: "Foreign key to dimension category"
+
+      - name: snapshot
+        description: "Main table storing completed survey snapshots"
+        columns:
+          - name: id
+            description: "Primary key"
+          - name: family_id
+            description: "Foreign key to ps_families.family"
+          - name: organization_id
+            description: "Foreign key to ps_network.organizations"
+          - name: application_id
+            description: "Foreign key to ps_network.applications"
+          - name: survey_definition_id
+            description: "Foreign key to survey_definition"
+          - name: snapshot_date
+            description: "Date when survey was completed (milliseconds since epoch)"
+          - name: snapshot_number
+            description: "Survey round: 1=baseline, >1=follow-up"
+          - name: is_last
+            description: "Flag indicating most recent survey for this family - KEY FOR CURRENT STATUS"
+          - name: anonymous
+            description: "Privacy flag for this snapshot"
+          - name: created_at
+            description: "Creation timestamp (milliseconds since epoch)"
+          - name: created_by
+            description: "User who created the snapshot"
+          - name: last_modified_date
+            description: "Last modification timestamp"
+
+      - name: snapshot_stoplight
+        description: "Individual indicator values from snapshots (stoplight assessments)"
+        columns:
+          - name: id
+            description: "Primary key"
+          - name: snapshot_id
+            description: "Foreign key to snapshot"
+          - name: code_name
+            description: "Indicator code for this assessment"
+          - name: value
+            description: "Stoplight status: 1=Red, 2=Yellow, 3=Green, NULL=Skipped"
+          - name: updated_at
+            description: "Update timestamp (milliseconds since epoch)"
+          - name: updated_by
+            description: "User who updated the assessment"
+          - name: created_date
+            description: "Creation timestamp"
+
+      - name: survey_definition
+        description: "Survey template/configuration metadata"
+        columns:
+          - name: id
+            description: "Primary key"
+          - name: survey_code
+            description: "Unique survey code"
+          - name: title
+            description: "Survey title"
+          - name: description
+            description: "Survey description"
+          - name: lang
+            description: "Survey language code (e.g., 'en', 'es')"
+          - name: active
+            description: "Whether survey is currently active"
+          - name: created_at
+            description: "Creation timestamp (milliseconds since epoch)"
+
+      - name: survey_stoplight
+        description: "Survey-specific indicator implementations (20,000+ customized instances from templates)"
+        columns:
+          - name: id
+            description: "Primary key - this becomes indicator_id in dim_indicator"
+          - name: code_name
+            description: "Unique indicator code for this survey implementation"
+          - name: short_name
+            description: "Short display name"
+          - name: question_text
+            description: "Full question text shown to families"
+          - name: description
+            description: "Detailed description/aspirational text"
+          - name: required
+            description: "Whether indicator is required in survey"
+          - name: dimension
+            description: "Dimension category name (one of 6 categories)"
+          - name: survey_stoplight_indicator_id
+            description: "Foreign key to survey_stoplight_indicator (master template)"

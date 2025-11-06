@@ -1,0 +1,66 @@
+{{
+  config(
+    materialized='table',
+    tags=['mart', 'dimension', 'organization']
+  )
+}}
+
+with organizations as (
+    select * from {{ ref('stg_organizations') }}
+),
+
+applications as (
+    select * from {{ ref('stg_applications') }}
+),
+
+joined as (
+    select
+        organizations.organization_id,
+        organizations.organization_name,
+        organizations.organization_description,
+        organizations.organization_is_active,
+        organizations.organization_country,
+        organizations.organization_country_code,
+        organizations.organization_type,
+
+        -- Application hierarchy (denormalized)
+        applications.application_id,
+        applications.application_name,
+        applications.application_description,
+        applications.application_is_active,
+        applications.application_country,
+        applications.application_country_code
+
+    from organizations
+    inner join applications
+        on organizations.application_id = applications.application_id
+),
+
+final as (
+    select
+        -- Surrogate key
+        {{ dbt_utils.generate_surrogate_key(['organization_id']) }} as organization_key,
+
+        -- Natural key
+        organization_id,
+
+        -- Organization attributes
+        organization_name,
+        organization_description,
+        organization_is_active,
+        organization_country,
+        organization_country_code,
+        organization_type,
+
+        -- Application hierarchy (denormalized)
+        application_id,
+        application_name,
+        application_description,
+        application_is_active,
+        application_country,
+        application_country_code
+
+    from joined
+)
+
+select * from final

@@ -1,0 +1,175 @@
+version: 2
+
+models:
+  - name: stg_applications
+    description: "Cleaned applications (hubs/platforms) from ps_network schema"
+    columns:
+      - name: application_id
+        description: "Primary key"
+        data_tests:
+          - unique
+          - not_null
+      - name: application_name
+        description: "Application/hub name"
+        data_tests:
+          - not_null
+
+  - name: stg_organizations
+    description: "Cleaned organizations implementing surveys"
+    columns:
+      - name: organization_id
+        description: "Primary key"
+        data_tests:
+          - unique
+          - not_null
+      - name: application_id
+        description: "Foreign key to applications"
+        data_tests:
+          - not_null
+          - relationships:
+              field: application_id
+              to: ref('stg_applications')
+      - name: organization_name
+        description: "Organization name"
+        data_tests:
+          - not_null
+
+  - name: stg_families
+    description: "Cleaned family records with geography and privacy handling"
+    columns:
+      - name: family_id
+        description: "Primary key"
+        data_tests:
+          - unique
+          - not_null
+      - name: family_code
+        description: "Unique family code"
+        data_tests:
+          - unique
+          - not_null
+      - name: is_anonymous
+        description: "Privacy flag - when true, personal data is anonymized"
+        data_tests:
+          - not_null
+
+  - name: stg_family_members
+    description: "Cleaned family member records, used for country derivation"
+    columns:
+      - name: family_member_id
+        description: "Primary key"
+        data_tests:
+          - unique
+          - not_null
+      - name: family_id
+        description: "Foreign key to families"
+        data_tests:
+          - not_null
+          - relationships:
+              field: family_id
+              to: ref('stg_families')
+
+  - name: stg_snapshots
+    description: "Cleaned survey snapshot records with converted timestamps"
+    columns:
+      - name: snapshot_id
+        description: "Primary key"
+        data_tests:
+          - unique
+          - not_null
+      - name: family_id
+        description: "Foreign key to families"
+        data_tests:
+          - not_null
+          - relationships:
+              field: family_id
+              to: ref('stg_families')
+      - name: organization_id
+        description: "Foreign key to organizations"
+        data_tests:
+          - not_null
+          - relationships:
+              field: organization_id
+              to: ref('stg_organizations')
+      - name: snapshot_number
+        description: "Survey round: 1=baseline, >1=follow-up"
+        data_tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "> 0"
+      - name: is_last
+        description: "Flag indicating most recent survey for family"
+        data_tests:
+          - not_null
+      - name: snapshot_date
+        description: "Date when survey was completed"
+        data_tests:
+          - not_null
+
+  - name: stg_snapshot_stoplight
+    description: "Cleaned indicator assessments (stoplight values)"
+    columns:
+      - name: snapshot_stoplight_id
+        description: "Primary key"
+        data_tests:
+          - unique
+          - not_null
+      - name: snapshot_id
+        description: "Foreign key to snapshots"
+        data_tests:
+          - not_null
+          - relationships:
+              field: snapshot_id
+              to: ref('stg_snapshots')
+      - name: indicator_status_value
+        description: "Stoplight status: 1=Red, 2=Yellow, 3=Green, NULL=Skipped"
+        data_tests:
+          - accepted_values:
+              values: [1, 2, 3]
+              config:
+                severity: warn
+                where: "indicator_status_value is not null"
+
+  - name: stg_survey_definitions
+    description: "Cleaned survey template definitions"
+    columns:
+      - name: survey_definition_id
+        description: "Primary key"
+        data_tests:
+          - unique
+          - not_null
+      - name: survey_title
+        description: "Survey title"
+        data_tests:
+          - not_null
+
+  - name: stg_survey_stoplight
+    description: "Cleaned survey-specific indicator implementations"
+    columns:
+      - name: indicator_id
+        description: "Primary key (becomes indicator_id in dimension)"
+        data_tests:
+          - unique
+          - not_null
+      - name: indicator_code_name
+        description: "Unique indicator code"
+        data_tests:
+          - not_null
+      - name: dimension_name
+        description: "Dimension category name (one of 6 categories)"
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['Education and Culture', 'Health and Environment', 'Housing and Infrastructure', 'Income and Employment', 'Interiority and Motivation', 'Organization and Participation']
+
+  - name: stg_survey_stoplight_indicator
+    description: "Cleaned master indicator templates"
+    columns:
+      - name: indicator_template_id
+        description: "Primary key"
+        data_tests:
+          - unique
+          - not_null
+      - name: indicator_template_code_name
+        description: "Unique template code"
+        data_tests:
+          - not_null

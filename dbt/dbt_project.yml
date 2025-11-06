@@ -1,0 +1,49 @@
+# dbt Project Configuration for Poverty Stoplight Star Schema
+name: 'psp_data_build'
+version: '1.0.0'
+config-version: 2
+
+# This setting configures which "profile" dbt uses for this project
+profile: 'psp_data_build'
+
+# These configurations specify where dbt should look for different types of files
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["data"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+# Clean targets
+clean-targets:
+  - "target"
+  - "dbt_packages"
+  - "logs"
+
+# Configuring models
+# Full documentation: https://docs.getdbt.com/docs/configuring-models
+
+models:
+  psp_data_build:
+    # Default configuration for all models
+    +materialized: view
+
+    staging:
+      # Staging models: lightweight views for data cleaning
+      +materialized: view
+      +tags: ['staging']
+      +schema: staging
+
+    marts:
+      # Marts: final semantic layer tables
+      +materialized: table
+      +tags: ['mart', 'semantic_layer']
+      +schema: marts
+
+seeds:
+  psp_data_build:
+    +schema: seeds
+
+snapshots:
+  psp_data_build:
+    +target_schema: snapshots
