@@ -25,9 +25,9 @@ renamed as (
         is_last,
         anonymous,
 
-        -- Date fields (convert from milliseconds to timestamp)
-        to_timestamp(snapshot_date / 1000) as snapshot_date,
-        to_timestamp(created_at / 1000) as created_at,
+        -- Date fields (already in seconds, convert to timestamp)
+        to_timestamp(snapshot_date) as snapshot_date,
+        to_timestamp(created_at) as created_at,
 
         -- Audit fields
         created_by,
