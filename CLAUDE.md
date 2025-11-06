@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a dbt project that creates a star schema semantic layer for the Poverty Stoplight database, transforming raw operational data into analysis-ready models for LightDash BI tool. The project focuses on poverty measurement tracking, organizational performance monitoring, and indicator effectiveness analysis.
+This is a dbt project that creates a star schema semantic layer for the Poverty Stoplight database, transforming raw operational data into analysis-ready models for BI data visualisation. The project focuses on poverty measurement tracking, organizational performance monitoring, and indicator effectiveness analysis.
 
 **Key Technologies:**
 - dbt-core 1.7+ with PostgreSQL adapter

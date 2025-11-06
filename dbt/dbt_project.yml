@@ -34,11 +34,23 @@ models:
       +tags: ['staging']
       +schema: staging
 
+    intermediate:
+      # Intermediate models: business logic transformations
+      +materialized: view
+      +tags: ['intermediate']
+      +schema: intermediate
+
     marts:
       # Marts: final semantic layer tables
       +materialized: table
       +tags: ['mart', 'semantic_layer']
       +schema: marts
+
+      dashboards:
+        # Dashboard marts: pre-aggregated for Superset visualization
+        +materialized: table
+        +tags: ['mart', 'dashboard']
+        +schema: dashboards
 
 seeds:
   psp_data_build:

@@ -1,0 +1,158 @@
+version: 2
+
+models:
+  - name: mart_dimension_metrics
+    description: >
+      Pre-aggregated poverty status metrics by the 6 poverty dimensions.
+      Supports Dashboard 1: Dimensions Overview showing green/yellow/red/skipped distribution.
+      Grain: Dimension × Organization × Country × Date.
+      Fully denormalized with all filter columns included for Superset drag-and-drop.
+    columns:
+      - name: dimension_name
+        description: "Dimension category (one of 6 poverty dimensions)"
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['Education and Culture', 'Health and Environment', 'Housing and Infrastructure', 'Income and Employment', 'Interiority and Motivation', 'Organization and Participation']
+      - name: organization_name
+        description: "Organization name for filtering"
+        data_tests:
+          - not_null
+      - name: snapshot_date
+        description: "Survey completion date"
+        data_tests:
+          - not_null
+      - name: total_indicator_responses
+        description: "Total indicator responses (including skipped)"
+        data_tests:
+          - not_null
+      - name: green_pct
+        description: "Percentage of green indicators"
+      - name: yellow_pct
+        description: "Percentage of yellow indicators"
+      - name: red_pct
+        description: "Percentage of red indicators"
+
+  - name: mart_indicator_metrics
+    description: >
+      Pre-aggregated poverty status metrics by individual indicator with sorting ranks.
+      Supports Dashboard 2: Stoplight Indicators showing which indicators have most critical needs.
+      Grain: Indicator × Organization × Country × Date.
+      Includes pre-computed rankings (rank_by_red, rank_by_yellow, rank_by_priority) for dashboard sorting.
+    columns:
+      - name: indicator_short_name
+        description: "Indicator short name"
+        data_tests:
+          - not_null
+      - name: indicator_code_name
+        description: "Unique indicator code"
+        data_tests:
+          - not_null
+      - name: dimension_name
+        description: "Parent dimension category"
+        data_tests:
+          - not_null
+      - name: organization_name
+        description: "Organization name for filtering"
+        data_tests:
+          - not_null
+      - name: snapshot_date
+        description: "Survey completion date"
+        data_tests:
+          - not_null
+      - name: total_families_assessed
+        description: "Unique families assessed for this indicator"
+        data_tests:
+          - not_null
+      - name: green_pct
+        description: "Percentage of families with green status"
+      - name: rank_by_priority
+        description: "Pre-computed rank (red DESC, yellow DESC) for dashboard sorting"
+        data_tests:
+          - not_null
+
+  - name: mart_family_geography
+    description: >
+      Family locations with indicator-level poverty status for geographic map visualization.
+      Supports Dashboard 3: Map Overview showing clustered family locations colored by poverty status.
+      Grain: Family × Indicator × Snapshot (most granular for filtering by specific indicators).
+      Only includes families with valid GPS coordinates.
+    columns:
+      - name: family_id
+        description: "Family identifier"
+        data_tests:
+          - not_null
+      - name: indicator_short_name
+        description: "Indicator short name for filtering"
+        data_tests:
+          - not_null
+      - name: latitude
+        description: "GPS latitude coordinate"
+        data_tests:
+          - not_null
+      - name: longitude
+        description: "GPS longitude coordinate"
+        data_tests:
+          - not_null
+      - name: indicator_status_value
+        description: "Stoplight status: 1=Red, 2=Yellow, 3=Green, NULL=Skipped"
+        data_tests:
+          - accepted_values:
+              values: [1, 2, 3]
+              config:
+                severity: warn
+                where: "indicator_status_value is not null"
+      - name: indicator_status_label
+        description: "Human-readable status label"
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['Red', 'Yellow', 'Green', 'Skipped']
+      - name: indicator_status_color_hex
+        description: "Hex color code for map visualization"
+        data_tests:
+          - not_null
+
+  - name: mart_progress
+    description: >
+      Baseline vs latest survey comparison for families with 2+ surveys.
+      Supports Dashboard 4: Survey Comparison showing improvement/deterioration between survey rounds.
+      Grain: Family × Indicator (only families with multiple surveys).
+      Pre-filtered to families where snapshot_number >= 2 exists.
+    columns:
+      - name: family_id
+        description: "Family identifier"
+        data_tests:
+          - not_null
+      - name: indicator_short_name
+        description: "Indicator short name"
+        data_tests:
+          - not_null
+      - name: dimension_name
+        description: "Parent dimension category"
+        data_tests:
+          - not_null
+      - name: organization_name
+        description: "Organization name for filtering"
+        data_tests:
+          - not_null
+      - name: total_surveys_completed
+        description: "Total number of surveys completed by this family"
+        data_tests:
+          - not_null
+      - name: baseline_snapshot_number
+        description: "Should always be 1 (baseline)"
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: [1]
+      - name: latest_snapshot_number
+        description: "Latest survey round number"
+        data_tests:
+          - not_null
+      - name: change_category
+        description: "Overall change classification"
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['Improved', 'Deteriorated', 'Unchanged', 'Unknown']
