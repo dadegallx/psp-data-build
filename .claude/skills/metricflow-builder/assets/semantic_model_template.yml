@@ -1,0 +1,70 @@
+version: 2
+
+semantic_models:
+  - name: semantic_model_name
+    description: >
+      Brief description of the semantic model and its purpose.
+      Grain: One row per [entity/event].
+
+    model: ref('model_name')
+
+    defaults:
+      agg_time_dimension: primary_time_dimension_name
+
+    # Entities (join keys)
+    entities:
+      - name: primary_entity
+        type: primary
+        expr: primary_key_column
+        description: "Primary key for this model"
+
+      - name: related_entity
+        type: foreign
+        expr: foreign_key_column
+        description: "Foreign key to related entity"
+
+    # Dimensions (grouping attributes)
+    dimensions:
+      # Time dimensions
+      - name: primary_time_dimension_name
+        type: time
+        type_params:
+          time_granularity: day
+        description: "Primary time dimension for this model"
+
+      # Categorical dimensions
+      - name: categorical_dimension
+        type: categorical
+        description: "Categorical attribute for grouping"
+
+      - name: computed_dimension
+        type: categorical
+        expr: >
+          case
+            when condition1 then 'Value1'
+            when condition2 then 'Value2'
+            else 'Other'
+          end
+        description: "Computed categorical dimension"
+
+    # Measures (aggregations)
+    measures:
+      - name: record_count
+        agg: count
+        expr: primary_key_column
+        description: "Count of records"
+
+      - name: total_amount
+        agg: sum
+        expr: amount_column
+        description: "Total amount"
+
+      - name: avg_amount
+        agg: average
+        expr: amount_column
+        description: "Average amount"
+
+      - name: unique_entities
+        agg: count_distinct
+        expr: entity_id_column
+        description: "Count of unique entities"

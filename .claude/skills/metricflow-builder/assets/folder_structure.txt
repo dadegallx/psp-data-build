@@ -1,0 +1,111 @@
+# MetricFlow Semantic Layer Folder Structure
+
+## Recommended Structure (Dedicated Subfolder)
+
+models/
+├── staging/                    # Staging models (clean source data)
+│   ├── _sources.yml           # Source definitions
+│   ├── stg_orders.sql
+│   └── stg_customers.sql
+│
+├── intermediate/               # Intermediate transformations (optional)
+│   ├── int_order_items.sql
+│   └── int_customer_orders.sql
+│
+├── marts/                      # Final business-ready models
+│   ├── core/
+│   │   ├── fct_orders.sql     # Fact table
+│   │   ├── fct_orders.yml     # Model schema (tests, docs)
+│   │   ├── dim_customers.sql  # Dimension table
+│   │   └── dim_customers.yml  # Model schema
+│   └── finance/
+│       ├── fct_transactions.sql
+│       └── fct_transactions.yml
+│
+└── semantic_models/            # MetricFlow semantic layer
+    ├── _semantic_models.yml   # All semantic model definitions
+    ├── _metrics.yml           # All metric definitions
+    ├── metricflow_time_spine.sql        # Time spine model
+    └── sem_metricflow_time_spine.yml   # Time spine semantic model
+
+## Alternative Structure (One File Per Mart)
+
+models/
+└── semantic_models/
+    ├── sem_orders.yml         # Orders semantic model + metrics
+    ├── sem_customers.yml      # Customers semantic model + metrics
+    ├── sem_transactions.yml   # Transactions semantic model + metrics
+    ├── metricflow_time_spine.sql
+    └── sem_metricflow_time_spine.yml
+
+## Naming Conventions
+
+### Semantic Model Files
+- Prefix: `sem_` (e.g., `sem_orders.yml`)
+- Or use descriptive names: `_semantic_models.yml`, `_metrics.yml`
+- Store in `models/semantic_models/` directory
+
+### Semantic Model Names
+- Use descriptive names matching the underlying model
+- Examples: `orders_semantic_model`, `customers_semantic_model`
+- Can be shorter if clear: `orders`, `customers`
+
+### Entity Names
+- Use singular form: `customer`, `order`, `product`
+- Match entity names across models for automatic joins
+- Examples: `customer`, `order_line`, `product`
+
+### Dimension Names
+- Use descriptive names without prefixes
+- Examples: `order_date`, `customer_region`, `product_category`
+- Time dimensions: `order_date`, `created_at`, `shipped_date`
+
+### Measure Names
+- Include aggregation type in name
+- Examples: `total_revenue`, `order_count`, `avg_order_value`
+- Pattern: `{agg_type}_{what}` or `{what}_{agg_type}`
+
+### Metric Names
+- Use business-friendly names
+- Examples: `return_rate`, `revenue_per_customer`, `sales_growth`
+- Avoid technical jargon
+
+## Tags
+
+Apply tags to organize and select models:
+
+### Semantic Models and Metrics
+```yaml
+semantic_models:
+  - name: orders
+    model: ref('fct_orders')
+    config:
+      meta:
+        tags: ['semantic_layer', 'core']
+```
+
+### Time Spine
+```sql
+{{
+  config(
+    tags=['semantic_layer', 'time_spine']
+  )
+}}
+```
+
+## Selection Examples
+
+# Run all semantic layer models
+dbt run --select tag:semantic_layer
+
+# Build time spine
+dbt run --select tag:time_spine
+
+# Validate all semantic models
+dbt sl validate
+
+# List all metrics
+dbt sl list metrics
+
+# Query a specific metric
+dbt sl query --metrics total_revenue --group-by order_date

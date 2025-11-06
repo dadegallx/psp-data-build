@@ -1,0 +1,147 @@
+dbt Project Folder Structure
+===============================
+
+Recommended structure for organizing dbt projects:
+
+dbt/
+├── models/
+│   ├── _sources.yml                  # Source table definitions for all schemas
+│   ├── staging/                      # Staging layer - one model per source table
+│   │   ├── schema_name/
+│   │   │   ├── _schema_name__sources.yml  # Source definitions for this schema
+│   │   │   ├── stg_schema_name__table1.sql
+│   │   │   ├── stg_schema_name__table2.sql
+│   │   │   └── schema.yml            # Documentation and tests for staging models
+│   │   └── another_schema/
+│   │       ├── _another_schema__sources.yml
+│   │       ├── stg_another_schema__table1.sql
+│   │       └── schema.yml
+│   ├── intermediate/                 # Optional: Complex transformations between staging and marts
+│   │   ├── int_entity__joined.sql
+│   │   ├── int_entity__aggregated.sql
+│   │   └── schema.yml
+│   └── marts/                        # Business-ready models (facts and dimensions)
+│       ├── core/                     # Core business entities
+│       │   ├── dim_customers.sql
+│       │   ├── dim_products.sql
+│       │   ├── fct_orders.sql
+│       │   └── schema.yml
+│       ├── finance/                  # Domain-specific marts
+│       │   ├── fct_revenue.sql
+│       │   └── schema.yml
+│       └── marketing/
+│           ├── fct_campaigns.sql
+│           └── schema.yml
+├── tests/                            # Custom SQL tests
+│   ├── assert_valid_totals.sql
+│   └── assert_no_duplicates.sql
+├── macros/                           # Reusable Jinja macros
+│   ├── generate_schema_name.sql
+│   ├── cents_to_dollars.sql
+│   └── grant_select.sql
+├── seeds/                            # CSV files loaded as tables
+│   ├── country_codes.csv
+│   └── product_categories.csv
+├── snapshots/                        # Slowly changing dimension snapshots
+│   └── customers_snapshot.sql
+├── analyses/                         # Ad-hoc SQL queries (not built)
+│   └── customer_cohort_analysis.sql
+├── dbt_project.yml                   # Project configuration
+└── packages.yml                      # dbt package dependencies
+
+
+Naming Conventions
+==================
+
+Staging Models:
+- Format: stg_{source}_{table}.sql or stg_{source}__{table}.sql
+- Example: stg_shopify_orders.sql or stg_shopify__orders.sql
+- Use double underscore if source name is multi-word
+
+Intermediate Models:
+- Format: int_{entity}_{verb}.sql
+- Examples: int_orders_pivoted.sql, int_customers_joined.sql
+
+Fact Models:
+- Format: fct_{entity}.sql
+- Examples: fct_orders.sql, fct_revenue.sql
+
+Dimension Models:
+- Format: dim_{entity}.sql
+- Examples: dim_customers.sql, dim_products.sql
+
+
+Folder Organization Principles
+==============================
+
+1. Staging Layer:
+   - Organize by source schema/system
+   - One staging model per source table
+   - Minimal transformations (rename, cast, filter)
+   - Always materialize as views
+
+2. Intermediate Layer (optional):
+   - Use when logic is too complex for single step
+   - Break complex joins/aggregations into steps
+   - Can be views or ephemeral
+
+3. Marts Layer:
+   - Organize by business domain or use case
+   - Business-ready, analysis-optimized models
+   - Materialize as tables for performance
+   - Include facts and dimensions
+
+4. YAML Files:
+   - Keep schema.yml files close to models they document
+   - One schema.yml per folder is common
+   - Can have multiple schema.yml files if folder is large
+   - Name YAML files descriptively: schema.yml, _sources.yml
+
+
+Tags for Organization
+=====================
+
+Use tags to organize models across folders:
+
+models:
+  project_name:
+    staging:
+      +tags: ["staging"]
+    marts:
+      +tags: ["mart"]
+      core:
+        +tags: ["core", "daily"]
+      finance:
+        +tags: ["finance", "weekly"]
+
+Common tag categories:
+- Layer: staging, intermediate, mart
+- Entity type: fact, dimension
+- Refresh frequency: hourly, daily, weekly
+- Business domain: finance, marketing, operations
+- Criticality: core, critical, experimental
+
+
+Selection Examples
+==================
+
+# Run all staging models
+dbt run --select tag:staging
+
+# Run all models in marts/core folder
+dbt run --select marts.core
+
+# Run a model and all its downstream dependents
+dbt run --select model_name+
+
+# Run all models that depend on a specific model
+dbt run --select +model_name
+
+# Run a model and its immediate parents
+dbt run --select +model_name+
+
+# Run models matching a pattern
+dbt run --select stg_shopify*
+
+# Run models by multiple tags
+dbt run --select tag:daily tag:core

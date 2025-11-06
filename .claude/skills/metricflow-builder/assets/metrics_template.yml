@@ -1,0 +1,86 @@
+version: 2
+
+metrics:
+  # ========================================
+  # SIMPLE METRICS
+  # ========================================
+
+  - name: simple_metric_name
+    description: "Description of what this metric measures"
+    type: simple
+    label: Display Name
+    type_params:
+      measure: measure_name
+
+  - name: filtered_simple_metric
+    description: "Simple metric with filter applied"
+    type: simple
+    label: Filtered Metric
+    type_params:
+      measure: measure_name
+    filter: |
+      {{ Dimension('entity__dimension_name') }} = 'filter_value'
+
+  # ========================================
+  # RATIO METRICS
+  # ========================================
+
+  - name: basic_ratio_metric
+    description: "Ratio of numerator to denominator"
+    type: ratio
+    label: Ratio Metric %
+    type_params:
+      numerator: numerator_metric_name
+      denominator: denominator_metric_name
+
+  - name: ratio_with_filters
+    description: "Ratio metric with independent filters on num and denom"
+    type: ratio
+    label: Filtered Ratio %
+    type_params:
+      numerator:
+        name: numerator_metric_name
+        filter: |
+          {{ Dimension('entity__dimension') }} = 'value1'
+      denominator:
+        name: denominator_metric_name
+        filter: |
+          {{ Dimension('entity__dimension') }} IN ('value1', 'value2')
+
+  # ========================================
+  # DERIVED METRICS
+  # ========================================
+
+  - name: calculated_metric
+    description: "Metric calculated from multiple other metrics"
+    type: derived
+    label: Calculated Metric
+    type_params:
+      expr: metric1 / metric2
+      metrics:
+        - name: metric1
+        - name: metric2
+
+  - name: complex_calculation
+    description: "Complex derived metric with multiple operations"
+    type: derived
+    label: Complex Metric
+    type_params:
+      expr: (metric1 + metric2) / metric3 * 100
+      metrics:
+        - name: metric1
+        - name: metric2
+        - name: metric3
+
+  - name: time_comparison_metric
+    description: "Metric comparing current period to prior period"
+    type: derived
+    label: Period over Period Change
+    type_params:
+      expr: (current_value - prior_value) / prior_value * 100
+      metrics:
+        - name: base_metric
+          alias: current_value
+        - name: base_metric
+          alias: prior_value
+          offset_window: 1 month

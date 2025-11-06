@@ -1,0 +1,49 @@
+version: 2
+
+models:
+  - name: model_name
+    description: >
+      Brief description of what this model represents.
+
+      **Grain:** One row per [entity/event]
+
+      **Refresh:** [Daily/Hourly/Weekly]
+
+      **Business logic:**
+      - Key transformation or business rule
+      - Another important note
+    meta:
+      owner: team_name
+      contains_pii: false
+    columns:
+      - name: primary_key
+        description: "Primary key description"
+        data_tests:
+          - unique
+          - not_null
+
+      - name: foreign_key
+        description: "Foreign key description"
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('related_model')
+              field: related_key
+
+      - name: categorical_column
+        description: "Description of categorical field"
+        data_tests:
+          - accepted_values:
+              values: ['value1', 'value2', 'value3']
+
+      - name: numeric_column
+        description: "Description of numeric field"
+        data_tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+
+      - name: date_column
+        description: "Description of date field"
+        data_tests:
+          - not_null
