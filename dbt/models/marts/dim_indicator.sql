@@ -15,17 +15,20 @@ survey_stoplight_indicator as (
 
 joined as (
     select
-        survey_stoplight.indicator_id,
-        survey_stoplight.indicator_code_name,
-        survey_stoplight.indicator_short_name,
-        survey_stoplight.indicator_question_text,
-        survey_stoplight.indicator_description,
-        survey_stoplight.indicator_is_required,
-        survey_stoplight.dimension_name,
+        -- Survey-specific indicator (instance)
+        survey_stoplight.indicator_id as survey_indicator_id,
+        survey_stoplight.indicator_code_name as survey_indicator_code_name,
+        survey_stoplight.indicator_short_name as survey_indicator_short_name,
+        survey_stoplight.indicator_question_text as survey_indicator_question_text,
+        survey_stoplight.indicator_description as survey_indicator_description,
+        survey_stoplight.indicator_is_required as survey_indicator_is_required,
+        survey_stoplight.dimension_name as survey_dimension_name,
 
-        -- Template linkage
-        survey_stoplight.indicator_template_id,
-        survey_stoplight_indicator.indicator_template_code_name,
+        -- Master indicator (template) - for aggregation
+        survey_stoplight_indicator.indicator_template_id as indicator_id,
+        survey_stoplight_indicator.indicator_template_code_name as indicator_code_name,
+        survey_stoplight_indicator.indicator_name as indicator_name,
+        survey_stoplight_indicator.indicator_description as indicator_description,
 
         -- Dimension attributes
         survey_stoplight_indicator.dimension_id
@@ -37,27 +40,29 @@ joined as (
 
 final as (
     select
-        -- Surrogate key
-        {{ dbt_utils.generate_surrogate_key(['indicator_id']) }} as indicator_key,
+        -- Surrogate key (based on survey-specific indicator ID)
+        {{ dbt_utils.generate_surrogate_key(['survey_indicator_id']) }} as indicator_key,
 
-        -- Natural key
-        indicator_id,
+        -- Natural keys
+        survey_indicator_id,  -- Survey-specific ID
+        indicator_id,         -- Master template ID
 
-        -- Indicator attributes
-        indicator_code_name,
-        indicator_short_name,
-        indicator_question_text,
-        indicator_description,
-        indicator_is_required,
+        -- MASTER INDICATOR ATTRIBUTES (for aggregation/grouping)
+        indicator_code_name,      -- Template code (e.g., 'income')
+        indicator_name,           -- English display name (e.g., 'Income')
+        indicator_description,    -- English description
 
-        -- Dimension hierarchy (denormalized)
+        -- SURVEY INDICATOR ATTRIBUTES (for localization/drill-down)
+        survey_indicator_code_name,     -- Survey-specific code
+        survey_indicator_short_name,    -- Translated name (e.g., 'Ingresos')
+        survey_indicator_question_text, -- Translated question
+        survey_indicator_description,   -- Translated description
+        survey_indicator_is_required,   -- Required flag
+
+        -- DIMENSION ATTRIBUTES
         dimension_id,
-        dimension_name,
-        null as dimension_code,  -- Not available in source
-
-        -- Template linkage
-        indicator_template_id,
-        indicator_template_code_name
+        survey_dimension_name as dimension_name,
+        null as dimension_code  -- Not available in source
 
     from joined
 )

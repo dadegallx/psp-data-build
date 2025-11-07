@@ -78,25 +78,66 @@ models:
 
   - name: dim_indicator
     description: >
-      Indicator dimension with Dimension hierarchy.
-      Contains survey-specific indicator implementations with linkage to master templates.
+      Indicator dimension with two-level architecture:
+      1. MASTER INDICATOR (template) - Canonical English names for aggregation
+      2. SURVEY INDICATOR (instance) - Survey-specific translations for drill-down
+
       One row per survey indicator (survey_stoplight instance).
-      Estimated 500-1,000 rows.
+      Estimated 20,000+ rows (one per survey-indicator combination).
+
+      USAGE:
+      - For aggregation/grouping: Use indicator_name (English display name)
+      - For drill-down/details: Use survey_indicator_* fields (localized)
     columns:
       - name: indicator_key
-        description: "Surrogate key"
+        description: "Surrogate key (based on survey_indicator_id)"
+        data_tests:
+          - unique
+          - not_null
+
+      - name: survey_indicator_id
+        description: "Natural key from data_collect.survey_stoplight (survey-specific)"
         data_tests:
           - unique
           - not_null
 
       - name: indicator_id
-        description: "Natural key from data_collect.survey_stoplight"
+        description: "Master template ID from survey_stoplight_indicator"
         data_tests:
-          - unique
           - not_null
 
       - name: indicator_code_name
-        description: "Unique indicator code"
+        description: "Master indicator code (e.g., 'income') - use for technical joins"
+        data_tests:
+          - not_null
+
+      - name: indicator_name
+        description: "English display name (e.g., 'Income') - PRIMARY FIELD FOR DASHBOARDS"
+        data_tests:
+          - not_null
+
+      - name: indicator_description
+        description: "English description of the master indicator"
+
+      - name: survey_indicator_code_name
+        description: "Survey-specific indicator code"
+        data_tests:
+          - not_null
+
+      - name: survey_indicator_short_name
+        description: "Translated indicator name (e.g., 'Ingresos', 'Renda')"
+
+      - name: survey_indicator_question_text
+        description: "Translated question text shown to families"
+
+      - name: survey_indicator_description
+        description: "Translated description/aspirational text"
+
+      - name: survey_indicator_is_required
+        description: "Whether indicator is required in this survey"
+
+      - name: dimension_id
+        description: "Dimension category ID"
         data_tests:
           - not_null
 

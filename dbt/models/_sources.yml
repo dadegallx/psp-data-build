@@ -199,3 +199,15 @@ sources:
             description: "Dimension category name (one of 6 categories)"
           - name: survey_indicator_id
             description: "Foreign key to survey_stoplight_indicator (master template)"
+
+      - name: translation
+        description: "Multi-language translation key-value store for indicator and dimension names"
+        columns:
+          - name: id
+            description: "Primary key"
+          - name: key
+            description: "Translation key (e.g., 'income.name', 'income.description')"
+          - name: lang
+            description: "Language code (e.g., 'EN', 'ES', 'PT')"
+          - name: translation
+            description: "Translated text for the given key and language"

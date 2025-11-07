@@ -168,11 +168,19 @@ CREATE INDEX idx_org_country ON dim_organization (organization_country_code);
 
 ### dim_indicator
 
-**Description:** Indicator hierarchy (Dimension > Indicator)
+**Description:** Indicator dimension with two-level architecture separating master templates from survey-specific implementations
+
+**Architecture:**
+- **Master Indicator (template)**: Canonical English names from `survey_stoplight_indicator` + `translation` table - used for aggregation across surveys
+- **Survey Indicator (instance)**: Survey-specific translations from `survey_stoplight` - used for localized display and drill-down
 
 **Grain:** One row per survey indicator (survey_stoplight instance)
 
-**Row Count:** ~500-1,000 indicators
+**Row Count:** ~20,000 indicators (one per survey-indicator combination)
+
+**Usage Pattern:**
+- **Dashboard Aggregation**: Use `indicator_name` (English, e.g., "Income")
+- **Detail Drill-down**: Use `survey_indicator_*` fields (localized, e.g., "Ingresos", "Renda")
 
 ---
 
@@ -180,18 +188,24 @@ CREATE INDEX idx_org_country ON dim_organization (organization_country_code);
 
 | Column Name | Data Type | Nullable | Default | Constraints | Description |
 |-------------|-----------|----------|---------|-------------|-------------|
-| `indicator_key` | BIGINT | NOT NULL | - | PRIMARY KEY | Surrogate key |
-| `indicator_id` | BIGINT | NOT NULL | - | UNIQUE | Natural key from data_collect.survey_stoplight.id |
-| `indicator_code_name` | VARCHAR(255) | NOT NULL | - | INDEX | Unique indicator code |
-| `indicator_short_name` | VARCHAR(255) | NOT NULL | - | - | Short display name |
-| `indicator_question_text` | VARCHAR(300) | NULL | - | - | Full question text shown to families |
-| `indicator_description` | TEXT | NULL | - | - | Detailed description/aspirational text |
-| `indicator_is_required` | BOOLEAN | NULL | FALSE | - | Whether indicator is required in survey |
+| **Keys** |
+| `indicator_key` | BIGINT | NOT NULL | - | PRIMARY KEY | Surrogate key (based on survey_indicator_id) |
+| `survey_indicator_id` | BIGINT | NOT NULL | - | UNIQUE | Natural key from data_collect.survey_stoplight.id (survey-specific) |
+| `indicator_id` | BIGINT | NOT NULL | - | INDEX | Master template ID from survey_stoplight_indicator |
+| **Master Indicator (for aggregation)** |
+| `indicator_code_name` | VARCHAR(255) | NOT NULL | - | INDEX | Master indicator code (e.g., 'income') |
+| `indicator_name` | VARCHAR(255) | NOT NULL | - | INDEX | **English display name (e.g., 'Income') - PRIMARY for dashboards** |
+| `indicator_description` | TEXT | NULL | - | - | English description of master indicator |
+| **Survey Indicator (for localization)** |
+| `survey_indicator_code_name` | VARCHAR(255) | NOT NULL | - | - | Survey-specific indicator code |
+| `survey_indicator_short_name` | VARCHAR(255) | NULL | - | - | Translated name (e.g., 'Ingresos', 'Renda', 'Income') |
+| `survey_indicator_question_text` | VARCHAR(300) | NULL | - | - | Translated question text shown to families |
+| `survey_indicator_description` | TEXT | NULL | - | - | Translated description/aspirational text |
+| `survey_indicator_is_required` | BOOLEAN | NULL | FALSE | - | Whether indicator is required in this survey |
+| **Dimension Attributes** |
 | `dimension_id` | BIGINT | NOT NULL | - | INDEX | Natural key for dimension category |
 | `dimension_name` | VARCHAR(100) | NOT NULL | - | INDEX | Dimension category name (one of 6 categories) |
 | `dimension_code` | VARCHAR(50) | NULL | - | - | Dimension code/abbreviation |
-| `indicator_template_id` | BIGINT | NULL | - | - | FK to survey_stoplight_indicator (master template) |
-| `indicator_template_code_name` | VARCHAR(255) | NULL | - | - | Template code name for lineage tracking |
 
 #### Valid Dimension Names
 - "Education and Culture"
@@ -204,23 +218,51 @@ CREATE INDEX idx_org_country ON dim_organization (organization_country_code);
 #### Indexes
 
 ```sql
+-- Primary and natural keys
 CREATE UNIQUE INDEX idx_indicator_pk ON dim_indicator (indicator_key);
-CREATE UNIQUE INDEX idx_indicator_natural_key ON dim_indicator (indicator_id);
+CREATE UNIQUE INDEX idx_indicator_natural_key ON dim_indicator (survey_indicator_id);
+
+-- Master indicator indexes (for aggregation queries)
+CREATE INDEX idx_indicator_master_id ON dim_indicator (indicator_id);
+CREATE INDEX idx_indicator_name ON dim_indicator (indicator_name);
 CREATE INDEX idx_indicator_code ON dim_indicator (indicator_code_name);
+
+-- Dimension indexes
 CREATE INDEX idx_indicator_dimension ON dim_indicator (dimension_id);
 CREATE INDEX idx_indicator_dim_name ON dim_indicator (dimension_name);
-CREATE INDEX idx_indicator_template ON dim_indicator (indicator_template_id);
 ```
 
 #### Source Mapping
 
 | Target Column | Source Table | Source Column | Transformation |
 |---------------|--------------|---------------|----------------|
-| `indicator_id` | data_collect.survey_stoplight | id | Direct mapping |
-| `indicator_code_name` | data_collect.survey_stoplight | code_name | Direct mapping |
-| `indicator_short_name` | data_collect.survey_stoplight | short_name | Direct mapping |
+| **Survey Indicator Fields** |
+| `survey_indicator_id` | data_collect.survey_stoplight | id | Direct mapping |
+| `survey_indicator_code_name` | data_collect.survey_stoplight | code_name | Direct mapping |
+| `survey_indicator_short_name` | data_collect.survey_stoplight | short_name | Direct mapping |
+| `survey_indicator_question_text` | data_collect.survey_stoplight | question_text | Direct mapping |
+| `survey_indicator_description` | data_collect.survey_stoplight | description | Direct mapping |
+| `survey_indicator_is_required` | data_collect.survey_stoplight | required | Direct mapping |
 | `dimension_name` | data_collect.survey_stoplight | dimension | Direct mapping |
-| `indicator_template_id` | data_collect.survey_stoplight | survey_stoplight_indicator_id | Direct mapping |
+| **Master Indicator Fields** |
+| `indicator_id` | data_collect.survey_stoplight_indicator | id | Via survey_stoplight.survey_indicator_id join |
+| `indicator_code_name` | data_collect.survey_stoplight_indicator | code_name | Via template join |
+| `indicator_name` | data_collect.translation | translation | Join on met_short_name → key WHERE lang='EN' |
+| `indicator_description` | data_collect.translation | translation | Join on met_description → key WHERE lang='EN' |
+| `dimension_id` | data_collect.survey_stoplight_indicator | survey_dimension_id | Via template join |
+
+#### Data Example
+
+One indicator concept across multiple surveys:
+
+| survey_indicator_id | indicator_name | survey_indicator_short_name | Language Context |
+|---------------------|----------------|----------------------------|-----------------|
+| 25329 | Income | Ingresos | Spanish survey |
+| 22489 | Income | Renda | Portuguese survey |
+| 19597 | Income | Income | English survey |
+| 24777 | Income | Ingresos familiares | Spanish survey (different wording) |
+
+**Dashboard Usage**: All four records GROUP BY `indicator_name` = 'Income' for consistent aggregation
 
 ---
 
