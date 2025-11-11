@@ -16,16 +16,16 @@
 -- Columns: 20 - removed technical/privacy fields, added color criteria
 --
 -- BUSINESS USER FEATURES:
--- ✅ Easy counting: SUM(is_red::int), SUM(is_yellow::int), SUM(is_green::int)
--- ✅ Easy percentages: AVG(is_red::int) * 100
--- ✅ Easy filtering: WHERE is_red = TRUE
--- ✅ Clear status flags: is_red, is_yellow, is_green, is_skipped
+-- ✅ Easy counting: SUM(is_red), SUM(is_yellow), SUM(is_green) - no casting needed!
+-- ✅ Easy percentages: AVG(is_red) * 100
+-- ✅ Easy filtering: WHERE is_red = 1
+-- ✅ Integer flags (0/1): is_red, is_yellow, is_green, is_skipped
 -- ✅ Color criteria: Explains what each poverty level means for each indicator
 --
 -- SUPERSET/TABLEAU USAGE:
--- - Red indicator count: SUM(is_red::int) or COUNT(*) FILTER (WHERE is_red)
--- - Most critical indicators: GROUP BY indicator_name, ORDER BY SUM(is_red::int) DESC
--- - Progress tracking: Compare SUM(is_green::int) over time
+-- - Red indicator count: SUM(is_red) or COUNT(*) FILTER (WHERE is_red = 1)
+-- - Most critical indicators: GROUP BY indicator_name, ORDER BY SUM(is_red) DESC
+-- - Progress tracking: Compare SUM(is_green) over time
 -- - Dimension analysis: GROUP BY dimension_name, calculate % red/yellow/green
 -- - Tooltip context: Show red/yellow/green criteria descriptions
 --
@@ -98,10 +98,10 @@ denormalized as (
         -- ====================================================================
         -- POVERTY STATUS FLAGS (4 columns) - Easy counting and averaging
         -- ====================================================================
-        (fact.indicator_status_value = 1) as is_red,        -- Critical poverty/unmet need
-        (fact.indicator_status_value = 2) as is_yellow,     -- Moderate poverty/vulnerability
-        (fact.indicator_status_value = 3) as is_green,      -- Non-poor/need met
-        (fact.indicator_status_value not in (1, 2, 3) or fact.indicator_status_value is null) as is_skipped -- Not assessed/not applicable/invalid
+        (fact.indicator_status_value = 1)::int as is_red,        -- Critical poverty/unmet need (1=yes, 0=no)
+        (fact.indicator_status_value = 2)::int as is_yellow,     -- Moderate poverty/vulnerability (1=yes, 0=no)
+        (fact.indicator_status_value = 3)::int as is_green,      -- Non-poor/need met (1=yes, 0=no)
+        (fact.indicator_status_value not in (1, 2, 3) or fact.indicator_status_value is null)::int as is_skipped -- Not assessed/not applicable/invalid (1=yes, 0=no)
 
     from fact
     inner join dim_date

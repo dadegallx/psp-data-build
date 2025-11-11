@@ -12,12 +12,12 @@ models:
       - 2 family identifiers
       - 2 organization context
       - 8 indicator definition (including color criteria)
-      - 4 poverty status flags (boolean)
+      - 4 poverty status flags (integer 0/1)
 
       **Key Features:**
       - ✅ Laser-focused on indicators - removed technical/privacy fields
-      - ✅ Boolean flags for easy counting: is_red, is_yellow, is_green, is_skipped
-      - ✅ Simple aggregation: SUM(is_red::int), AVG(is_green::int) * 100
+      - ✅ Integer flags for easy counting: is_red, is_yellow, is_green, is_skipped (1/0)
+      - ✅ Simple aggregation: SUM(is_red), AVG(is_green) * 100 - no casting needed!
       - ✅ Two-level indicator architecture: master (English) + survey (localized)
       - ✅ Latest snapshots only (current family status)
 
@@ -25,31 +25,31 @@ models:
 
       1. **Most Critical Indicators (Top Red Count):**
          - Group by: `indicator_name`
-         - Metric: `SUM(is_red::int)` or `COUNT(*) FILTER (WHERE is_red)`
+         - Metric: `SUM(is_red)` or `COUNT(*) FILTER (WHERE is_red = 1)`
          - Sort: Red count DESC
          - Chart: Horizontal bar chart
 
       2. **Poverty Distribution by Dimension:**
          - Group by: `dimension_name`
          - Metrics:
-           * Red: `SUM(is_red::int)`
-           * Yellow: `SUM(is_yellow::int)`
-           * Green: `SUM(is_green::int)`
+           * Red: `SUM(is_red)`
+           * Yellow: `SUM(is_yellow)`
+           * Green: `SUM(is_green)`
          - Chart: Stacked bar chart or pie chart
 
       3. **Progress Over Time:**
          - X-axis: `snapshot_year` and `snapshot_quarter`
          - Metrics:
-           * Green %: `AVG(is_green::int) * 100`
-           * Red %: `AVG(is_red::int) * 100`
+           * Green %: `AVG(is_green) * 100`
+           * Red %: `AVG(is_red) * 100`
          - Chart: Line chart or area chart
 
       4. **Organization Comparison:**
          - Group by: `organization_name`
          - Metrics:
            * Total families: `COUNT(DISTINCT family_id)`
-           * Red %: `AVG(is_red::int) * 100`
-           * Green %: `AVG(is_green::int) * 100`
+           * Red %: `AVG(is_red) * 100`
+           * Green %: `AVG(is_green) * 100`
          - Chart: Table or grouped bar chart
 
       5. **Indicator Detail Drill-Down:**
@@ -160,52 +160,60 @@ models:
           **Use in dashboards:** Tooltip text, drill-down details, explanation cards
 
       # ========================================================================
-      # POVERTY STATUS FLAGS (4 columns) - Boolean for easy counting/averaging
+      # POVERTY STATUS FLAGS (4 columns) - Integer 0/1 for easy counting/averaging
       # ========================================================================
       - name: is_red
         description: >
-          **CRITICAL POVERTY FLAG** - TRUE when indicator shows critical poverty/unmet need (value = 1).
+          **CRITICAL POVERTY FLAG** - Integer (1 when indicator shows critical poverty/unmet need, 0 otherwise).
 
-          **Business User Calculations:**
-          - Count red indicators: `SUM(is_red::int)` or `COUNT(*) FILTER (WHERE is_red)`
-          - Red percentage: `AVG(is_red::int) * 100`
-          - Filter to reds only: `WHERE is_red = TRUE`
+          **Business User Calculations (no casting needed!):**
+          - Count red indicators: `SUM(is_red)` or `COUNT(*) FILTER (WHERE is_red = 1)`
+          - Red percentage: `AVG(is_red) * 100`
+          - Filter to reds only: `WHERE is_red = 1`
         data_tests:
           - not_null
+          - accepted_values:
+              values: [0, 1]
 
       - name: is_yellow
         description: >
-          **MODERATE POVERTY FLAG** - TRUE when indicator shows moderate poverty/vulnerability (value = 2).
+          **MODERATE POVERTY FLAG** - Integer (1 when indicator shows moderate poverty/vulnerability, 0 otherwise).
 
-          **Business User Calculations:**
-          - Count yellow indicators: `SUM(is_yellow::int)` or `COUNT(*) FILTER (WHERE is_yellow)`
-          - Yellow percentage: `AVG(is_yellow::int) * 100`
-          - Filter to yellows only: `WHERE is_yellow = TRUE`
+          **Business User Calculations (no casting needed!):**
+          - Count yellow indicators: `SUM(is_yellow)` or `COUNT(*) FILTER (WHERE is_yellow = 1)`
+          - Yellow percentage: `AVG(is_yellow) * 100`
+          - Filter to yellows only: `WHERE is_yellow = 1`
         data_tests:
           - not_null
+          - accepted_values:
+              values: [0, 1]
 
       - name: is_green
         description: >
-          **SUCCESS FLAG** - TRUE when indicator shows non-poor/need met (value = 3).
+          **SUCCESS FLAG** - Integer (1 when indicator shows non-poor/need met, 0 otherwise).
 
-          **Business User Calculations:**
-          - Count green indicators: `SUM(is_green::int)` or `COUNT(*) FILTER (WHERE is_green)`
-          - Green percentage (success rate): `AVG(is_green::int) * 100`
-          - Filter to greens only: `WHERE is_green = TRUE`
+          **Business User Calculations (no casting needed!):**
+          - Count green indicators: `SUM(is_green)` or `COUNT(*) FILTER (WHERE is_green = 1)`
+          - Green percentage (success rate): `AVG(is_green) * 100`
+          - Filter to greens only: `WHERE is_green = 1`
           - Track progress: Compare green % over time
         data_tests:
           - not_null
+          - accepted_values:
+              values: [0, 1]
 
       - name: is_skipped
         description: >
-          **SKIPPED/NOT APPLICABLE FLAG** - TRUE when indicator was not assessed (value = NULL).
+          **SKIPPED/NOT APPLICABLE FLAG** - Integer (1 when indicator was not assessed, 0 otherwise).
 
-          **Business User Calculations:**
-          - Count skipped indicators: `SUM(is_skipped::int)` or `COUNT(*) FILTER (WHERE is_skipped)`
-          - Skipped percentage: `AVG(is_skipped::int) * 100`
-          - Data completeness: `100 - AVG(is_skipped::int) * 100`
+          **Business User Calculations (no casting needed!):**
+          - Count skipped indicators: `SUM(is_skipped)` or `COUNT(*) FILTER (WHERE is_skipped = 1)`
+          - Skipped percentage: `AVG(is_skipped) * 100`
+          - Data completeness: `100 - AVG(is_skipped) * 100`
         data_tests:
           - not_null
+          - accepted_values:
+              values: [0, 1]
 
   - name: family_indicators_signal
     description: >
