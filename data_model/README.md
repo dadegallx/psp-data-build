@@ -54,7 +54,7 @@ This directory contains the complete data modeling documentation for the Poverty
 ---
 
 ### 5. Raw Source Schema
-📄 **[raw_data_collect/RAW_SCHEMA.md](./raw_data_collect/RAW_SCHEMA.md)**
+📄 **[raw_data_collect_docs/RAW_SCHEMA.md](./raw_data_collect_docs/RAW_SCHEMA.md)**
 - Complete raw database schema documentation
 - All source tables across 5 schemas
 - Key relationships and data patterns
@@ -62,7 +62,7 @@ This directory contains the complete data modeling documentation for the Poverty
 
 **Use this to:** Understand the source system structure
 
-📄 **[raw_data_collect/RAW_SCHEMA-DOCS.md](./raw_data_collect/RAW_SCHEMA-DOCS.md)**
+📄 **[raw_data_collect_docs/RAW_SCHEMA_DOCS.md](./raw_data_collect_docs/RAW_SCHEMA_DOCS.md)**
 - Simplified, business-friendly overview of raw schema
 - Core structure and key concepts
 - Data patterns to understand

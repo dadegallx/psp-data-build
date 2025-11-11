@@ -108,7 +108,7 @@ dbt/
 - **Dimensions:** `dim_date`, `dim_family`, `dim_indicator`, `dim_organization`, `dim_survey_definition`
 - **Materialization:** Staging = views (fast, no storage), Marts = tables (query performance)
 - **Schema Separation:** Staging models in `staging` schema, marts in `marts` schema
-- **Detailed specifications:** See `data_model/SCHEMA_REFERENCE.md`
+- **Detailed specifications:** See `data_model/schema_docs/SCHEMA_REFERENCE.md`
 
 ## Critical Business Logic & Data Patterns
 
@@ -259,9 +259,9 @@ mcp__neon__get_database_tables(projectId: "soft-brook-12834941")
 - Test transformations before implementing in dbt
 
 **Source Documentation:**
-- `data_model/SCHEMA_REFERENCE.md` - Star schema specifications
-- `data_model/raw_data_collect/RAW_SCHEMA.md` - Source table documentation
-- `data_model/BUSINESS_QUESTIONS_DOCS.md` - Business requirements
+- `data_model/schema_docs/SCHEMA_REFERENCE.md` - Star schema specifications
+- `data_model/raw_data_collect_docs/RAW_SCHEMA.md` - Source table documentation
+- `data_model/schema_docs/BUSINESS_QUESTIONS_DOCS.md` - Business requirements
 
 ## Claude Code Skills
 

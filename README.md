@@ -184,8 +184,8 @@ The documentation includes:
 
 After successful setup:
 
-1. **Review the data model** - See `data_model/SCHEMA_REFERENCE.md` for schema design
-2. **Explore business requirements** - Review `data_model/BUSINESS_QUESTIONS_DOCS.md`
+1. **Review the data model** - See `data_model/schema_docs/SCHEMA_REFERENCE.md` for schema design
+2. **Explore business requirements** - Review `data_model/schema_docs/BUSINESS_QUESTIONS_DOCS.md`
 3. **Install Claude skills** (optional) - See `claude-skills/README.md` for AI assistance
 4. **View documentation** - Run `dbt docs serve` to explore the project
 5. **Run transformations** - Execute `dbt run` to build models

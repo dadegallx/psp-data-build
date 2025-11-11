@@ -254,6 +254,6 @@ After successful dbt build:
 ## Resources
 
 - [dbt Documentation](https://docs.getdbt.com/)
-- [Star Schema Design Docs](../data_model/STAR_SCHEMA_DESIGN.md)
-- [Schema Reference](../data_model/SCHEMA_REFERENCE.md)
-- [Business Questions](../data_model/BUSINESS_QUESTIONS_DOCS.md)
+- [Star Schema Design Docs](../data_model/schema_docs/STAR_SCHEMA_DESIGN.md)
+- [Schema Reference](../data_model/schema_docs/SCHEMA_REFERENCE.md)
+- [Business Questions](../data_model/schema_docs/BUSINESS_QUESTIONS_DOCS.md)

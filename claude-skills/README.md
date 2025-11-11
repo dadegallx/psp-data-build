@@ -239,8 +239,8 @@ These skills are maintained as part of the PSP Data Build project. To suggest im
 **Project Documentation:**
 - README.md (project root) - Project overview and setup
 - CLAUDE.md (project root) - Claude-specific project guidance
-- data_model/SCHEMA_REFERENCE.md - Data warehouse schema
-- data_model/BUSINESS_QUESTIONS_DOCS.md - Business questions and metrics
+- data_model/schema_docs/SCHEMA_REFERENCE.md - Data warehouse schema
+- data_model/schema_docs/BUSINESS_QUESTIONS_DOCS.md - Business questions and metrics
 
 ## Version History
 
