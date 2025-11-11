@@ -220,3 +220,57 @@ models:
               config:
                 severity: warn
                 where: "indicator_status_value is not null"
+
+  - name: family_indicators_signal
+    description: >
+      **Organization-scoped dataset for Signal organization.**
+
+      Filtered view of family_indicators containing only Signal data.
+      Designed to simplify BI dashboard development by eliminating the need
+      for organization filtering and reducing dataset complexity.
+
+      **Organization Stats:**
+      - Organization: Signal (hub application)
+      - Families: 967 (LARGE dataset for stress testing)
+      - Indicators: 55
+      - Total Records: 45,358
+      - Data Completeness: 100%
+
+      **Use Case:** Pre-filtered dataset for Signal-specific dashboards and analytics.
+      All columns identical to family_indicators parent model.
+
+  - name: family_indicators_unbound_honduras
+    description: >
+      **Organization-scoped dataset for Unbound honduras organization.**
+
+      Filtered view of family_indicators containing only Unbound honduras data.
+      Designed to simplify BI dashboard development by eliminating the need
+      for organization filtering and reducing dataset complexity.
+
+      **Organization Stats:**
+      - Organization: Unbound honduras (unbound_hon_hub application)
+      - Families: 231 (MEDIUM dataset with perfect balance)
+      - Indicators: 50 (ideal standard survey size)
+      - Total Records: 11,550
+      - Data Completeness: 100%
+
+      **Use Case:** Pre-filtered dataset for Unbound Honduras-specific dashboards and analytics.
+      All columns identical to family_indicators parent model.
+
+  - name: family_indicators_empresas_semaforo
+    description: >
+      **Organization-scoped dataset for Empresas del Semáforo Paraguay.**
+
+      Filtered view of family_indicators containing only Empresas del Semáforo Paraguay data.
+      Designed to simplify BI dashboard development by eliminating the need
+      for organization filtering and reducing dataset complexity.
+
+      **Organization Stats:**
+      - Organization: Empresas del Semáforo Paraguay (hub application)
+      - Families: 97 (SMALL dataset for quick testing)
+      - Indicators: 51 (ideal standard survey size)
+      - Total Records: 4,947
+      - Data Completeness: 100%
+
+      **Use Case:** Pre-filtered dataset for Empresas del Semáforo-specific dashboards and analytics.
+      All columns identical to family_indicators parent model.
