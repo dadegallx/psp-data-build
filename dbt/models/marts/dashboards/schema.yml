@@ -3,62 +3,64 @@ version: 2
 models:
   - name: family_indicators
     description: >
-      **Wide, denormalized mart for Tableau visualization with zero joins required.**
+      **Simplified, business-user-friendly dashboard for poverty indicator analysis.**
 
-      **Grain:** Family × Indicator × Snapshot (latest snapshots only, where is_last = true)
+      **Grain:** Family × Indicator × Snapshot (latest snapshots only)
 
-      **Purpose:** Single source of truth for dashboard creation. All dimension attributes
-      pre-joined and flattened for drag-and-drop visualization in Tableau/Superset.
-
-      **Row Count:** Approximately 75,000 rows (one per family-indicator combination for latest surveys)
+      **Columns:** 17 total (reduced from 23)
+      - 4 date columns
+      - 2 family identifiers
+      - 2 organization context
+      - 5 indicator definition
+      - 4 poverty status flags (boolean)
 
       **Key Features:**
-      - ✅ No joins needed in BI tool - all attributes denormalized
+      - ✅ Laser-focused on indicators - removed technical/privacy fields
+      - ✅ Boolean flags for easy counting: is_red, is_yellow, is_green, is_skipped
+      - ✅ Simple aggregation: SUM(is_red::int), AVG(is_green::int) * 100
       - ✅ Two-level indicator architecture: master (English) + survey (localized)
       - ✅ Latest snapshots only (current family status)
-      - ✅ Includes skipped indicators (NULL values) for completeness analysis
-      - ✅ Includes anonymous families (privacy-protected)
 
-      **Tableau Usage Patterns:**
+      **Superset/Tableau Usage Patterns:**
 
-      1. **Most Red/Yellow Indicators Chart:**
-         - Group by: `indicator_name` (English)
-         - Measure: COUNT(CASE WHEN indicator_status_value = 1...)
+      1. **Most Critical Indicators (Top Red Count):**
+         - Group by: `indicator_name`
+         - Metric: `SUM(is_red::int)` or `COUNT(*) FILTER (WHERE is_red)`
          - Sort: Red count DESC
+         - Chart: Horizontal bar chart
 
-      2. **All Indicators Overview:**
-         - Group by: `indicator_name`, `dimension_name`
-         - Measure: COUNT by status value
-         - Filter: organization_name, snapshot_year
+      2. **Poverty Distribution by Dimension:**
+         - Group by: `dimension_name`
+         - Metrics:
+           * Red: `SUM(is_red::int)`
+           * Yellow: `SUM(is_yellow::int)`
+           * Green: `SUM(is_green::int)`
+         - Chart: Stacked bar chart or pie chart
 
-      3. **Geographic Map:**
-         - Dimensions: latitude, longitude
-         - Color: indicator_status_value
-         - Filter: indicator_name = specific indicator
+      3. **Progress Over Time:**
+         - X-axis: `snapshot_year` and `snapshot_quarter`
+         - Metrics:
+           * Green %: `AVG(is_green::int) * 100`
+           * Red %: `AVG(is_red::int) * 100`
+         - Chart: Line chart or area chart
 
-      4. **Organizational Comparison:**
-         - Group by: organization_name, application_name
-         - Measure: AVG(indicator_status_value) for aggregate score
-         - Filter: country_code, dimension_name
+      4. **Organization Comparison:**
+         - Group by: `organization_name`
+         - Metrics:
+           * Total families: `COUNT(DISTINCT family_id)`
+           * Red %: `AVG(is_red::int) * 100`
+           * Green %: `AVG(is_green::int) * 100`
+         - Chart: Table or grouped bar chart
+
+      5. **Indicator Detail Drill-Down:**
+         - Filter: `indicator_name` = specific indicator
+         - Group by: `survey_indicator_short_name` (localized name)
+         - Show: `survey_indicator_question_text` for full context
+         - Metrics: Red/Yellow/Green counts
 
     columns:
       # ========================================================================
-      # SNAPSHOT ATTRIBUTES
-      # ========================================================================
-      - name: snapshot_id
-        description: "Unique snapshot identifier from data_collect.snapshot"
-        data_tests:
-          - not_null
-
-      - name: snapshot_number
-        description: "Survey round number: 1=baseline, 2=first follow-up, etc. All rows have snapshot_number >= 1 since only latest is included"
-        data_tests:
-          - not_null
-          - dbt_utils.expression_is_true:
-              expression: ">= 1"
-
-      # ========================================================================
-      # DATE ATTRIBUTES
+      # DATE ATTRIBUTES (4 columns)
       # ========================================================================
       - name: snapshot_date
         description: "Date when survey was completed"
@@ -85,10 +87,10 @@ models:
               values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 
       # ========================================================================
-      # FAMILY ATTRIBUTES
+      # FAMILY IDENTIFIERS (2 columns)
       # ========================================================================
       - name: family_id
-        description: "Natural key - unique family identifier"
+        description: "Unique family identifier - use for counting distinct families"
         data_tests:
           - not_null
 
@@ -97,77 +99,21 @@ models:
         data_tests:
           - not_null
 
-      - name: family_name
-        description: "Family display name. Shows 'ANON_DATA' when is_anonymous = true"
-
-      - name: is_anonymous
-        description: "Privacy flag. When true, family_name and other personal fields are anonymized"
-        data_tests:
-          - not_null
-
-      - name: latitude
-        description: "GPS latitude coordinate for map visualization (-90 to 90)"
-        data_tests:
-          - dbt_utils.expression_is_true:
-              expression: ">= -90 AND <= 90"
-              config:
-                where: "latitude is not null"
-
-      - name: longitude
-        description: "GPS longitude coordinate for map visualization (-180 to 180)"
-        data_tests:
-          - dbt_utils.expression_is_true:
-              expression: ">= -180 AND <= 180"
-              config:
-                where: "longitude is not null"
-
-      - name: family_country_code
-        description: "Country code derived from family member birth country (e.g., 'PY', 'BR')"
-
       # ========================================================================
-      # ORGANIZATION ATTRIBUTES
+      # ORGANIZATION CONTEXT (2 columns)
       # ========================================================================
-      - name: organization_id
-        description: "Natural key - organization identifier"
-        data_tests:
-          - not_null
-
       - name: organization_name
         description: "Organization display name - PRIMARY FILTER for organizational analysis"
         data_tests:
           - not_null
 
-      - name: organization_country_code
-        description: "Country code where organization operates"
-
-      - name: application_id
-        description: "Parent application/hub identifier in organizational hierarchy"
-        data_tests:
-          - not_null
-
       - name: application_name
-        description: "Parent application/hub name - for regional rollups"
-        data_tests:
-          - not_null
-
-      - name: application_country_code
-        description: "Country code where application/hub is based"
-
-      # ========================================================================
-      # SURVEY ATTRIBUTES
-      # ========================================================================
-      - name: survey_definition_id
-        description: "Survey template/version identifier"
-        data_tests:
-          - not_null
-
-      - name: survey_title
-        description: "Survey template name (e.g., 'Paraguay Baseline Survey v2')"
+        description: "Parent application/hub name - for regional rollups and multi-org analysis"
         data_tests:
           - not_null
 
       # ========================================================================
-      # MASTER INDICATOR ATTRIBUTES (for aggregation)
+      # INDICATOR DEFINITION (5 columns)
       # ========================================================================
       - name: indicator_name
         description: >
@@ -184,9 +130,6 @@ models:
           - accepted_values:
               values: ['Education and Culture', 'Health and Environment', 'Housing and Infrastructure', 'Income and Employment', 'Interiority and Motivation', 'Organization and Participation']
 
-      # ========================================================================
-      # SURVEY INDICATOR ATTRIBUTES (for drill-down)
-      # ========================================================================
       - name: survey_indicator_short_name
         description: >
           Localized indicator name shown to families in the survey (e.g., 'Ingresos', 'Renda', 'Income').
@@ -199,27 +142,52 @@ models:
         description: "Localized aspirational description of green status. Helps explain what success looks like."
 
       # ========================================================================
-      # MEASURE
+      # POVERTY STATUS FLAGS (4 columns) - Boolean for easy counting/averaging
       # ========================================================================
-      - name: indicator_status_value
+      - name: is_red
         description: >
-          **PRIMARY MEASURE** - Stoplight poverty assessment:
-          - 1 = Red (critical poverty/unmet need)
-          - 2 = Yellow (moderate poverty/vulnerability)
-          - 3 = Green (non-poor/need met)
-          - NULL = Skipped/not applicable
+          **CRITICAL POVERTY FLAG** - TRUE when indicator shows critical poverty/unmet need (value = 1).
 
-          **Tableau Calculations:**
-          - Red count: SUM(IF indicator_status_value = 1 THEN 1 ELSE 0 END)
-          - Yellow count: SUM(IF indicator_status_value = 2 THEN 1 ELSE 0 END)
-          - Green count: SUM(IF indicator_status_value = 3 THEN 1 ELSE 0 END)
-          - Aggregate score: AVG(indicator_status_value) -- Range: 1.0 to 3.0
+          **Business User Calculations:**
+          - Count red indicators: `SUM(is_red::int)` or `COUNT(*) FILTER (WHERE is_red)`
+          - Red percentage: `AVG(is_red::int) * 100`
+          - Filter to reds only: `WHERE is_red = TRUE`
         data_tests:
-          - accepted_values:
-              values: [1, 2, 3]
-              config:
-                severity: warn
-                where: "indicator_status_value is not null"
+          - not_null
+
+      - name: is_yellow
+        description: >
+          **MODERATE POVERTY FLAG** - TRUE when indicator shows moderate poverty/vulnerability (value = 2).
+
+          **Business User Calculations:**
+          - Count yellow indicators: `SUM(is_yellow::int)` or `COUNT(*) FILTER (WHERE is_yellow)`
+          - Yellow percentage: `AVG(is_yellow::int) * 100`
+          - Filter to yellows only: `WHERE is_yellow = TRUE`
+        data_tests:
+          - not_null
+
+      - name: is_green
+        description: >
+          **SUCCESS FLAG** - TRUE when indicator shows non-poor/need met (value = 3).
+
+          **Business User Calculations:**
+          - Count green indicators: `SUM(is_green::int)` or `COUNT(*) FILTER (WHERE is_green)`
+          - Green percentage (success rate): `AVG(is_green::int) * 100`
+          - Filter to greens only: `WHERE is_green = TRUE`
+          - Track progress: Compare green % over time
+        data_tests:
+          - not_null
+
+      - name: is_skipped
+        description: >
+          **SKIPPED/NOT APPLICABLE FLAG** - TRUE when indicator was not assessed (value = NULL).
+
+          **Business User Calculations:**
+          - Count skipped indicators: `SUM(is_skipped::int)` or `COUNT(*) FILTER (WHERE is_skipped)`
+          - Skipped percentage: `AVG(is_skipped::int) * 100`
+          - Data completeness: `100 - AVG(is_skipped::int) * 100`
+        data_tests:
+          - not_null
 
   - name: family_indicators_signal
     description: >

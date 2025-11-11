@@ -9,14 +9,23 @@
 -- family_indicators
 -- ==============================================================================
 --
--- Wide, denormalized mart for Tableau visualization with zero joins required.
--- Grain: Family × Indicator × Snapshot (latest only).
+-- Simplified, business-user-friendly dashboard for poverty indicator analysis.
+-- Laser-focused on indicators with easy-to-use boolean flags for BI tools.
 --
--- USAGE IN TABLEAU:
--- - Group by indicator_name for cross-survey aggregation (e.g., "Income")
--- - Drill down with survey_indicator_* fields for localized details
--- - Filter by organization, country, date attributes
--- - No joins needed - all attributes pre-joined
+-- Grain: Family × Indicator × Snapshot (latest only)
+-- Columns: 17 (down from 23) - removed technical/privacy fields
+--
+-- BUSINESS USER FEATURES:
+-- ✅ Easy counting: SUM(is_red::int), SUM(is_yellow::int), SUM(is_green::int)
+-- ✅ Easy percentages: AVG(is_red::int) * 100
+-- ✅ Easy filtering: WHERE is_red = TRUE
+-- ✅ Clear status flags: is_red, is_yellow, is_green, is_skipped
+--
+-- SUPERSET/TABLEAU USAGE:
+-- - Red indicator count: SUM(is_red::int) or COUNT(*) FILTER (WHERE is_red)
+-- - Most critical indicators: GROUP BY indicator_name, ORDER BY SUM(is_red::int) DESC
+-- - Progress tracking: Compare SUM(is_green::int) over time
+-- - Dimension analysis: GROUP BY dimension_name, calculate % red/yellow/green
 --
 -- ==============================================================================
 
@@ -48,13 +57,7 @@ dim_survey_definition as (
 denormalized as (
     select
         -- ====================================================================
-        -- SNAPSHOT ATTRIBUTES
-        -- ====================================================================
-        fact.snapshot_id,
-        fact.snapshot_number,
-
-        -- ====================================================================
-        -- DATE ATTRIBUTES
+        -- DATE ATTRIBUTES (4 columns)
         -- ====================================================================
         dim_date.date_actual as snapshot_date,
         dim_date.year_number as snapshot_year,
@@ -62,49 +65,36 @@ denormalized as (
         dim_date.month_number as snapshot_month,
 
         -- ====================================================================
-        -- FAMILY ATTRIBUTES
+        -- FAMILY IDENTIFIERS (2 columns)
         -- ====================================================================
         dim_family.family_id,
         dim_family.family_code,
-        dim_family.family_name,
-        dim_family.is_anonymous,
-        dim_family.latitude,
-        dim_family.longitude,
-        dim_family.country_code as family_country_code,
 
         -- ====================================================================
-        -- ORGANIZATION ATTRIBUTES
+        -- ORGANIZATION CONTEXT (2 columns)
         -- ====================================================================
-        dim_organization.organization_id,
         dim_organization.organization_name,
-        dim_organization.organization_country_code,
-        dim_organization.application_id,
         dim_organization.application_name,
-        dim_organization.application_country_code,
 
         -- ====================================================================
-        -- SURVEY ATTRIBUTES
+        -- INDICATOR DEFINITION (5 columns)
         -- ====================================================================
-        dim_survey_definition.survey_definition_id,
-        dim_survey_definition.survey_title,
+        -- Master indicator (for aggregation across surveys - English)
+        dim_indicator.indicator_name,           -- Primary: "Income", "Health"
+        dim_indicator.dimension_name,           -- Category: "Income and Employment"
+
+        -- Survey-specific indicator (for drill-down - localized)
+        dim_indicator.survey_indicator_short_name,      -- Localized: "Ingresos", "Renda"
+        dim_indicator.survey_indicator_question_text,   -- Full translated question text
+        dim_indicator.survey_indicator_description,     -- Aspirational green-level description
 
         -- ====================================================================
-        -- MASTER INDICATOR ATTRIBUTES (for aggregation - English)
+        -- POVERTY STATUS FLAGS (4 columns) - Easy counting and averaging
         -- ====================================================================
-        dim_indicator.indicator_name,           -- Primary field for dashboards: "Income"
-        dim_indicator.dimension_name,           -- Poverty dimension category
-
-        -- ====================================================================
-        -- SURVEY INDICATOR ATTRIBUTES (for drill-down - localized)
-        -- ====================================================================
-        dim_indicator.survey_indicator_short_name,      -- "Ingresos", "Renda"
-        dim_indicator.survey_indicator_question_text,   -- Full translated question
-        dim_indicator.survey_indicator_description,     -- Translated description
-
-        -- ====================================================================
-        -- MEASURE
-        -- ====================================================================
-        fact.indicator_status_value             -- 1=Red, 2=Yellow, 3=Green, NULL=Skipped
+        (fact.indicator_status_value = 1) as is_red,        -- Critical poverty/unmet need
+        (fact.indicator_status_value = 2) as is_yellow,     -- Moderate poverty/vulnerability
+        (fact.indicator_status_value = 3) as is_green,      -- Non-poor/need met
+        (fact.indicator_status_value not in (1, 2, 3) or fact.indicator_status_value is null) as is_skipped -- Not assessed/not applicable/invalid
 
     from fact
     inner join dim_date
