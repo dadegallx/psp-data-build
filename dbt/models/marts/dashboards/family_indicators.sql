@@ -13,19 +13,21 @@
 -- Laser-focused on indicators with easy-to-use boolean flags for BI tools.
 --
 -- Grain: Family × Indicator × Snapshot (latest only)
--- Columns: 17 (down from 23) - removed technical/privacy fields
+-- Columns: 20 - removed technical/privacy fields, added color criteria
 --
 -- BUSINESS USER FEATURES:
 -- ✅ Easy counting: SUM(is_red::int), SUM(is_yellow::int), SUM(is_green::int)
 -- ✅ Easy percentages: AVG(is_red::int) * 100
 -- ✅ Easy filtering: WHERE is_red = TRUE
 -- ✅ Clear status flags: is_red, is_yellow, is_green, is_skipped
+-- ✅ Color criteria: Explains what each poverty level means for each indicator
 --
 -- SUPERSET/TABLEAU USAGE:
 -- - Red indicator count: SUM(is_red::int) or COUNT(*) FILTER (WHERE is_red)
 -- - Most critical indicators: GROUP BY indicator_name, ORDER BY SUM(is_red::int) DESC
 -- - Progress tracking: Compare SUM(is_green::int) over time
 -- - Dimension analysis: GROUP BY dimension_name, calculate % red/yellow/green
+-- - Tooltip context: Show red/yellow/green criteria descriptions
 --
 -- ==============================================================================
 
@@ -77,7 +79,7 @@ denormalized as (
         dim_organization.application_name,
 
         -- ====================================================================
-        -- INDICATOR DEFINITION (5 columns)
+        -- INDICATOR DEFINITION (8 columns)
         -- ====================================================================
         -- Master indicator (for aggregation across surveys - English)
         dim_indicator.indicator_name,           -- Primary: "Income", "Health"
@@ -87,6 +89,11 @@ denormalized as (
         dim_indicator.survey_indicator_short_name,      -- Localized: "Ingresos", "Renda"
         dim_indicator.survey_indicator_question_text,   -- Full translated question text
         dim_indicator.survey_indicator_description,     -- Aspirational green-level description
+
+        -- Color-level criteria (what each poverty threshold means)
+        dim_indicator.red_criteria_description,         -- Critical poverty criteria
+        dim_indicator.yellow_criteria_description,      -- Moderate poverty criteria
+        dim_indicator.green_criteria_description,       -- Non-poor criteria
 
         -- ====================================================================
         -- POVERTY STATUS FLAGS (4 columns) - Easy counting and averaging

@@ -148,6 +148,21 @@ models:
           - accepted_values:
               values: ['Education and Culture', 'Health and Environment', 'Housing and Infrastructure', 'Income and Employment', 'Interiority and Motivation', 'Organization and Participation']
 
+      - name: red_criteria_description
+        description: >
+          Description of the critical poverty threshold for this indicator (stoplight value = 1).
+          Explains what conditions qualify as "red" status. Example: "Family income is less than $2/day"
+
+      - name: yellow_criteria_description
+        description: >
+          Description of the moderate poverty threshold for this indicator (stoplight value = 2).
+          Explains what conditions qualify as "yellow" status. Example: "Family income is between $2-$4/day"
+
+      - name: green_criteria_description
+        description: >
+          Description of the non-poor/need met threshold for this indicator (stoplight value = 3).
+          Explains what conditions qualify as "green" status. Example: "Family income exceeds $4/day"
+
   - name: dim_family
     description: >
       Family identity and geography dimension.

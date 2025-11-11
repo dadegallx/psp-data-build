@@ -13,6 +13,10 @@ survey_stoplight_indicator as (
     select * from {{ ref('stg_survey_stoplight_indicator') }}
 ),
 
+survey_stoplight_color as (
+    select * from {{ ref('stg_survey_stoplight_color') }}
+),
+
 joined as (
     select
         -- Survey-specific indicator (instance)
@@ -31,11 +35,18 @@ joined as (
         survey_stoplight_indicator.indicator_description as indicator_description,
 
         -- Dimension attributes
-        survey_stoplight_indicator.dimension_id
+        survey_stoplight_indicator.dimension_id,
+
+        -- Color criteria descriptions (what each color level means)
+        survey_stoplight_color.red_criteria_description,
+        survey_stoplight_color.yellow_criteria_description,
+        survey_stoplight_color.green_criteria_description
 
     from survey_stoplight
     left join survey_stoplight_indicator
         on survey_stoplight.indicator_template_id = survey_stoplight_indicator.indicator_template_id
+    left join survey_stoplight_color
+        on survey_stoplight.indicator_id = survey_stoplight_color.survey_indicator_id
 ),
 
 final as (
@@ -62,7 +73,12 @@ final as (
         -- DIMENSION ATTRIBUTES
         dimension_id,
         survey_dimension_name as dimension_name,
-        null as dimension_code  -- Not available in source
+        null as dimension_code,  -- Not available in source
+
+        -- COLOR CRITERIA DESCRIPTIONS (what each poverty level means for this indicator)
+        red_criteria_description,      -- Critical poverty threshold description
+        yellow_criteria_description,   -- Moderate poverty threshold description
+        green_criteria_description     -- Non-poor threshold description
 
     from joined
 )

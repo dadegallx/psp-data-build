@@ -184,3 +184,23 @@ models:
         description: "Unique template code"
         data_tests:
           - not_null
+
+  - name: stg_survey_stoplight_color
+    description: >
+      Pivoted color criteria descriptions from long format to wide format.
+
+      Transforms 3 rows per indicator (red/yellow/green criteria) into
+      1 row with 3 columns. Used by dim_indicator to provide color-level
+      threshold descriptions for each poverty indicator.
+    columns:
+      - name: survey_indicator_id
+        description: "Primary key - survey-specific indicator ID"
+        data_tests:
+          - unique
+          - not_null
+      - name: red_criteria_description
+        description: "Description of critical poverty threshold (value=1)"
+      - name: yellow_criteria_description
+        description: "Description of moderate poverty threshold (value=2)"
+      - name: green_criteria_description
+        description: "Description of non-poor threshold (value=3)"

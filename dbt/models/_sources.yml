@@ -200,6 +200,18 @@ sources:
           - name: survey_indicator_id
             description: "Foreign key to survey_stoplight_indicator (master template)"
 
+      - name: survey_stoplight_color
+        description: "Color-level criteria descriptions for each stoplight indicator (3 rows per indicator: red/yellow/green)"
+        columns:
+          - name: id
+            description: "Primary key"
+          - name: survey_stoplight_id
+            description: "Foreign key to survey_stoplight (survey-specific indicator)"
+          - name: value
+            description: "Stoplight color value: 1=Red, 2=Yellow, 3=Green"
+          - name: description
+            description: "Criteria description for this color level"
+
       - name: translation
         description: "Multi-language translation key-value store for indicator and dimension names"
         columns:

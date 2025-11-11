@@ -7,11 +7,11 @@ models:
 
       **Grain:** Family × Indicator × Snapshot (latest snapshots only)
 
-      **Columns:** 17 total (reduced from 23)
+      **Columns:** 20 total
       - 4 date columns
       - 2 family identifiers
       - 2 organization context
-      - 5 indicator definition
+      - 8 indicator definition (including color criteria)
       - 4 poverty status flags (boolean)
 
       **Key Features:**
@@ -113,7 +113,7 @@ models:
           - not_null
 
       # ========================================================================
-      # INDICATOR DEFINITION (5 columns)
+      # INDICATOR DEFINITION (8 columns)
       # ========================================================================
       - name: indicator_name
         description: >
@@ -140,6 +140,24 @@ models:
 
       - name: survey_indicator_description
         description: "Localized aspirational description of green status. Helps explain what success looks like."
+
+      - name: red_criteria_description
+        description: >
+          Description of critical poverty threshold for this indicator (value=1).
+          Explains what conditions qualify as "red" status.
+          **Use in dashboards:** Tooltip text, drill-down details, explanation cards
+
+      - name: yellow_criteria_description
+        description: >
+          Description of moderate poverty threshold for this indicator (value=2).
+          Explains what conditions qualify as "yellow" status.
+          **Use in dashboards:** Tooltip text, drill-down details, explanation cards
+
+      - name: green_criteria_description
+        description: >
+          Description of non-poor threshold for this indicator (value=3).
+          Explains what conditions qualify as "green" status.
+          **Use in dashboards:** Tooltip text, drill-down details, explanation cards
 
       # ========================================================================
       # POVERTY STATUS FLAGS (4 columns) - Boolean for easy counting/averaging
