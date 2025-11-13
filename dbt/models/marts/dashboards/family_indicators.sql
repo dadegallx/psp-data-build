@@ -49,7 +49,7 @@ dim_organization as (
 ),
 
 dim_indicator as (
-    select * from {{ ref('dim_indicator') }}
+    select * from {{ ref('dim_indicator_questions') }}
 ),
 
 dim_survey_definition as (

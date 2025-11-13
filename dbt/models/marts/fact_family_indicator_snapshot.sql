@@ -22,7 +22,7 @@ organizations as (
 ),
 
 indicators as (
-    select * from {{ ref('dim_indicator') }}
+    select * from {{ ref('dim_indicator_questions') }}
 ),
 
 survey_definitions as (
