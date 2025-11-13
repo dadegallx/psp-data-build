@@ -1,4 +1,4 @@
-name: Daily dbt Build
+name: Daily dbt build
 
 on:
   # Run daily at 3 AM UTC
