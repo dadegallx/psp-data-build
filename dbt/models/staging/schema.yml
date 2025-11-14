@@ -35,7 +35,12 @@ models:
           - not_null
 
   - name: stg_families
-    description: "Cleaned family records with geography and privacy handling"
+    description: >
+      Cleaned family records with geography and privacy handling.
+
+      **Data Quality:** Invalid GPS coordinates (latitude outside -90 to 90,
+      or longitude outside -180 to 180) are automatically set to NULL.
+      Affected families are flagged with has_invalid_coordinates = true.
     columns:
       - name: family_id
         description: "Primary key"
@@ -51,6 +56,12 @@ models:
         description: "Privacy flag - when true, personal data is anonymized"
         data_tests:
           - not_null
+      - name: has_invalid_coordinates
+        description: >
+          Data quality flag indicating whether this family had invalid GPS coordinates
+          in the source data (latitude outside -90 to 90, or longitude outside -180 to 180).
+          Invalid coordinates are automatically cleaned to NULL for data integrity.
+          Use this flag to identify families that may need coordinate verification.
 
   - name: stg_family_members
     description: "Cleaned family member records, used for country derivation"
