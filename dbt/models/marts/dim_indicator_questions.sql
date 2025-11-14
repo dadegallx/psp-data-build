@@ -51,7 +51,7 @@ joined as (
         survey_stoplight_color.green_criteria_description
 
     from survey_stoplight
-    left join survey_stoplight_indicator
+    inner join survey_stoplight_indicator
         on survey_stoplight.indicator_template_id = survey_stoplight_indicator.indicator_template_id
     left join survey_stoplight_dimension
         on survey_stoplight_indicator.dimension_id = survey_stoplight_dimension.id

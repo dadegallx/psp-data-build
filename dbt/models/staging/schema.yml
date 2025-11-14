@@ -50,7 +50,9 @@ models:
       - name: family_code
         description: "Unique family code"
         data_tests:
-          - unique
+          - unique:
+              config:
+                severity: warn  # Source system allows duplicate codes (demo/test data)
           - not_null
       - name: is_anonymous
         description: "Privacy flag - when true, personal data is anonymized"
