@@ -28,13 +28,28 @@ cp .env.template .env            # Create environment file
 ```
 
 **Environment Variables (.env):**
+
+This project supports separate source and target databases for maximum flexibility:
+- **SOURCE**: Read-only database where raw operational data lives (e.g., Neon production instance)
+- **TARGET**: Write database where dbt builds analytics models (e.g., RDS analytics instance)
+
+If your source and target are the same database, simply provide the same values for both.
+
 ```bash
-export DBT_HOST="your-postgres-host"
-export DBT_USER="your-username"
-export DBT_PASSWORD="your-password"
-export DBT_PORT="5432"
-export DBT_DBNAME="your-database-name"
-export DBT_SCHEMA="dbt_dev"      # Your development schema
+# Source Database (Read-only - where raw data lives)
+export SOURCE_DBT_HOST="source-postgres-host"
+export SOURCE_DBT_USER="source-username"
+export SOURCE_DBT_PASSWORD="source-password"
+export SOURCE_DBT_PORT="5432"
+export SOURCE_DBT_DBNAME="source-database-name"
+
+# Target Database (Write - where dbt models are built)
+export TARGET_DBT_HOST="target-postgres-host"
+export TARGET_DBT_USER="target-username"
+export TARGET_DBT_PASSWORD="target-password"
+export TARGET_DBT_PORT="5432"
+export TARGET_DBT_DBNAME="target-database-name"
+export TARGET_DBT_SCHEMA="analytics"      # Your development schema
 ```
 
 ## Common Commands

@@ -4,6 +4,7 @@ sources:
   # Organizational hierarchy and application management
   - name: ps_network
     description: "Organizational hierarchy, hub/application management, and implementing organizations"
+    database: "{{ env_var('SOURCE_DBT_DBNAME') }}"
     schema: ps_network
     tables:
       - name: applications
@@ -53,6 +54,7 @@ sources:
   # Family master data
   - name: ps_families
     description: "Family demographic and location information"
+    database: "{{ env_var('SOURCE_DBT_DBNAME') }}"
     schema: ps_families
     tables:
       - name: family
@@ -100,6 +102,7 @@ sources:
   # Survey data collection and responses
   - name: data_collect
     description: "Survey definitions, snapshots, and stoplight indicator assessments"
+    database: "{{ env_var('SOURCE_DBT_DBNAME') }}"
     schema: data_collect
     tables:
       - name: survey_stoplight_dimension
