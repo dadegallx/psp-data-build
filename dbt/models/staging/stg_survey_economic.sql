@@ -30,8 +30,8 @@ renamed as (
         for_family_member as is_for_family_member,
 
         -- Audit fields
-        created_date,
-        last_modified_date
+        created_at as created_date,
+        updated_at as last_modified_date
 
     from source
 )

@@ -24,10 +24,22 @@ economic_responses as (
         se.snapshot_id,
         se.code_name,
         se.answer_type,
-        se.answer_value,
-        se.answer_number,
-        se.answer_date,
-        se.answer_options,
+
+        -- Map polymorphic answer columns
+        se.value as answer_value,
+        case
+            when se.answer_type = 'number'
+            then se.value::numeric
+        end as answer_number,
+        case
+            when se.answer_type = 'date' and se.value is not null
+            then to_timestamp(se.value::bigint / 1000)
+        end as answer_date,
+        case
+            when se.answer_type = 'checkbox' and se.multiple_value is not null
+            then array_to_string(se.multiple_value, ', ')
+        end as answer_options,
+
         se.created_date,
         se.last_modified_date,
 
@@ -60,10 +72,7 @@ final as (
         er.answer_type,
         er.answer_value,
         er.answer_number,
-        case
-            when er.answer_date is not null
-            then to_timestamp(er.answer_date / 1000)
-        end as answer_date,
+        er.answer_date,
         er.answer_options,
 
         -- Snapshot context
