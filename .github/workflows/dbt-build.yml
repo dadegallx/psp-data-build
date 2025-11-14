@@ -45,12 +45,17 @@ jobs:
       - name: Run dbt build (production)
         working-directory: ./dbt
         env:
-          DBT_HOST: ${{ secrets.DBT_HOST }}
-          DBT_USER: ${{ secrets.DBT_USER }}
-          DBT_PASSWORD: ${{ secrets.DBT_PASSWORD }}
-          DBT_PORT: ${{ secrets.DBT_PORT }}
-          DBT_DBNAME: ${{ secrets.DBT_DBNAME }}
-          DBT_SCHEMA: ${{ secrets.DBT_SCHEMA }}
+          SOURCE_DBT_HOST: ${{ secrets.SOURCE_DBT_HOST }}
+          SOURCE_DBT_USER: ${{ secrets.SOURCE_DBT_USER }}
+          SOURCE_DBT_PASSWORD: ${{ secrets.SOURCE_DBT_PASSWORD }}
+          SOURCE_DBT_PORT: ${{ secrets.SOURCE_DBT_PORT }}
+          SOURCE_DBT_DBNAME: ${{ secrets.SOURCE_DBT_DBNAME }}
+          TARGET_DBT_HOST: ${{ secrets.TARGET_DBT_HOST }}
+          TARGET_DBT_USER: ${{ secrets.TARGET_DBT_USER }}
+          TARGET_DBT_PASSWORD: ${{ secrets.TARGET_DBT_PASSWORD }}
+          TARGET_DBT_PORT: ${{ secrets.TARGET_DBT_PORT }}
+          TARGET_DBT_DBNAME: ${{ secrets.TARGET_DBT_DBNAME }}
+          TARGET_DBT_SCHEMA: ${{ secrets.TARGET_DBT_SCHEMA }}
         run: |
           source ../.venv/bin/activate
           dbt build --target prod
