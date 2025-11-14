@@ -286,6 +286,8 @@ models:
 
       - name: survey_title
         description: "Survey title from survey_definition"
+        data_tests:
+          - not_null
 
       - name: survey_language
         description: "Survey language code (e.g., 'en', 'es', 'pt')"
