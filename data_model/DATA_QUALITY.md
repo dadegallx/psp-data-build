@@ -111,6 +111,39 @@ ORDER BY orphaned_response_count DESC;
 
 ---
 
+### Economic Answer Type Inconsistency
+
+**Issue:** Economic survey fields use `answer_type = 'string'` for all data types, including numeric and date fields.
+
+**Impact:**
+- All 3,318 `householdMonthlyIncome` responses stored with `answer_type = 'string'` (should be 'number')
+- All 1,472 currency code responses stored with `answer_type = 'string'` (acceptable for currency codes)
+- Numeric values like "8000" stored in `value` column as text rather than being typed appropriately
+
+**Data Pattern:**
+- Income responses: 3,318 records with `answer_type = 'string'`, value contains numeric strings
+- Currency responses: 1,472 records with `answer_type = 'string'`, value contains ISO currency codes
+- Both fields exist across 1,386 snapshots (overlapping)
+- Income-only: 1,932 snapshots (no currency specified)
+- Currency-only: 86 snapshots (unusual - currency without income amount)
+
+**Solution:** Enhanced staging model to handle numeric conversion from string type.
+
+**Implementation:**
+- Added `'string'` to numeric conversion logic in `stg_snapshot_economic.sql`
+- Validates numeric format with regex before conversion: `value ~ '^[0-9]+\.?[0-9]*$'`
+- Converts valid numeric strings to `answer_number` column for downstream use
+
+**Location in Pipeline:**
+- Implemented in: `dbt/models/staging/stg_snapshot_economic.sql`
+- Logic: `when answer_type in ('number', 'string') and value ~ '^[0-9]+\.?[0-9]*$' then value::numeric`
+
+**Test Coverage:**
+- Added `'string'` to `accepted_values` test for `answer_type` in `dim_economic_questions`
+- Removed income-currency pairing test (incompatible with atomic grain design where income and currency are separate rows)
+
+---
+
 ## Stoplight Indicator Issues
 
 (Document any stoplight-specific data quality issues here in the future)

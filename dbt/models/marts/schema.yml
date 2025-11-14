@@ -264,11 +264,11 @@ models:
         description: "Question displayed to families during survey"
 
       - name: answer_type
-        description: "Response format: text, number, date, select, radio, checkbox"
+        description: "Response format: text, number, date, select, radio, checkbox, string"
         data_tests:
           - not_null
           - accepted_values:
-              values: ['text', 'number', 'date', 'select', 'radio', 'checkbox']
+              values: ['text', 'number', 'date', 'select', 'radio', 'checkbox', 'string']
               config:
                 severity: warn
 

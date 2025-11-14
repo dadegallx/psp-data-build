@@ -28,7 +28,8 @@ economic_responses as (
         -- Map polymorphic answer columns
         se.value as answer_value,
         case
-            when se.answer_type = 'number'
+            when se.answer_type in ('number', 'string')
+            and se.value ~ '^[0-9]+\.?[0-9]*$'  -- Validate numeric format
             then se.value::numeric
         end as answer_number,
         case
