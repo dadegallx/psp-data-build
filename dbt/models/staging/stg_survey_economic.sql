@@ -22,7 +22,10 @@ renamed as (
         question_text,
 
         -- Answer configuration
-        answer_type,
+        case
+            when answer_type = 'string' then 'text'
+            else answer_type
+        end as answer_type,
         answer_options,
 
         -- Scope information
