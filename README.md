@@ -18,14 +18,20 @@ Think of dbt as "software engineering best practices for data transformations."
 
 ```
 ├── data_model/                   # Data warehouse design documentation
-│   ├── SCHEMA_REFERENCE.md      # Star schema specifications
-│   └── BUSINESS_QUESTIONS_DOCS.md  # Business questions and metrics
+│   ├── schema_docs/             # Detailed schema documentation
+│   │   ├── SCHEMA_REFERENCE.md  # Star schema specifications
+│   │   ├── STAR_SCHEMA_DESIGN.md # Design principles
+│   │   ├── STAR_SCHEMA_ERD.md   # Entity relationship diagrams
+│   │   └── BUSINESS_QUESTIONS_DOCS.md # Business requirements
+│   └── DATA_QUALITY.md         # Data quality issues and resolutions
 ├── dbt/                          # dbt project directory
 │   ├── models/                   # SQL transformation models
 │   │   ├── _sources.yml         # Source table definitions
 │   │   ├── staging/             # Raw data cleaning models
-│   │   ├── intermediate/        # Business logic transformations
+│   │   ├── intermediate/        # Business logic transformations (future)
 │   │   ├── marts/               # Business-ready analytical models
+│   │   │   ├── dim_*.sql       # Dimension tables
+│   │   │   └── fact_*.sql      # Fact tables
 │   │   └── semantic/            # MetricFlow semantic layer (future)
 │   ├── tests/                   # Custom data quality tests
 │   ├── dbt_project.yml         # Project configuration
@@ -152,6 +158,40 @@ models/
 
 dbt is a batch transformation tool that runs on-demand. For production, dbt runs can be scheduled using orchestration tools like AWS EventBridge, Apache Airflow, or dbt Cloud. The frequency depends on your data freshness requirements.
 
+## Data Model
+
+This project implements a **star schema** with two fact tables:
+
+### Fact Tables
+
+1. **fact_family_indicator_snapshot** - Stoplight poverty indicators
+   - Grain: One row per family, per indicator, per snapshot
+   - Captures poverty status (red/yellow/green) across 50+ indicators
+   - 225,000+ rows covering all poverty assessments
+
+2. **fact_family_economic_snapshot** - Economic survey responses
+   - Grain: One row per family, per economic question, per snapshot
+   - Captures 5 priority economic fields: income, housing, employment, assets, location
+   - 15,000-50,000 rows with type-specific columns for multi-type fields
+
+### Shared Dimensions
+
+Both fact tables share common dimensions:
+- **dim_date** - Time intelligence
+- **dim_family** - Family identity and geography
+- **dim_organization** - Organizational hierarchy
+- **dim_survey_definition** - Survey templates
+
+### Specific Dimensions
+
+Each fact has its own dimension:
+- **dim_indicator_questions** - Stoplight indicator metadata (for fact_family_indicator_snapshot)
+- **dim_economic_questions** - Economic question metadata (for fact_family_economic_snapshot)
+
+**See** `data_model/schema_docs/` **for detailed schema documentation and ERDs.**
+
+---
+
 ## Data Quality & Testing
 
 This project includes comprehensive data quality tests:
@@ -159,6 +199,7 @@ This project includes comprehensive data quality tests:
 - **Schema tests**: Not null, unique, relationships, accepted values
 - **Custom tests**: Business logic validation
 - **Source freshness**: Monitor data pipeline health
+- **Data quality issues**: Documented in `data_model/DATA_QUALITY.md`
 
 Run tests regularly:
 ```bash

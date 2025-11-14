@@ -5,7 +5,7 @@
 
 ---
 
-## FACT TABLE
+## FACT TABLES
 
 ### fact_family_indicator_snapshot
 
@@ -66,6 +66,94 @@ CREATE INDEX idx_fact_indicator_status ON fact_family_indicator_snapshot (indica
 | `is_last` | data_collect.snapshot | is_last | Direct mapping |
 | `indicator_status_value` | data_collect.snapshot_stoplight | value | Direct mapping (1/2/3 or NULL) |
 | `date_key` | data_collect.snapshot | snapshot_date | Convert to YYYYMMDD format |
+
+---
+
+### fact_family_economic_snapshot
+
+**Description:** Captures economic survey responses at atomic grain
+
+**Grain:** One row per family, per economic question, per snapshot (survey completion)
+
+**Estimated Row Count:** 15,000-50,000 current rows, varies by economic question usage
+
+**Priority Fields:** householdMonthlyIncome, housingSituation, activityMain, familyCar, areaOfResidence
+
+---
+
+#### Column Specifications
+
+| Column Name | Data Type | Nullable | Default | Constraints | Description |
+|-------------|-----------|----------|---------|-------------|----------------|
+| `family_economic_snapshot_key` | BIGINT | NOT NULL | - | PRIMARY KEY | Surrogate key for this fact record |
+| `date_key` | INTEGER | NOT NULL | - | FK → dim_date.date_key | Survey date key (YYYYMMDD format) |
+| `family_key` | BIGINT | NOT NULL | - | FK → dim_family.family_key | Family being surveyed |
+| `economic_question_key` | BIGINT | NOT NULL | - | FK → dim_economic_questions.economic_question_key | Economic question being answered |
+| `organization_key` | BIGINT | NOT NULL | - | FK → dim_organization.organization_key | Organization conducting survey |
+| `survey_definition_key` | BIGINT | NOT NULL | - | FK → dim_survey_definition.survey_definition_key | Survey template used |
+| `snapshot_id` | BIGINT | NOT NULL | - | UNIQUE INDEX (with economic_question_key) | Natural key from source (data_collect.snapshot.id) |
+| `snapshot_number` | SMALLINT | NOT NULL | - | CHECK (snapshot_number > 0) | Survey round: 1=baseline, 2=first follow-up, etc. |
+| `is_last` | BOOLEAN | NOT NULL | FALSE | INDEX | True if this is the most recent survey for this family |
+| **Measures - householdMonthlyIncome** |
+| `household_monthly_income` | NUMERIC(15,2) | NULL | - | - | Monthly household income (numeric value) |
+| `income_currency_code` | VARCHAR(10) | NULL | - | - | Currency code (e.g., 'USD', 'EUR', 'BRL') |
+| **Measures - housingSituation** |
+| `housing_situation_single` | VARCHAR(255) | NULL | - | - | Housing situation as single-select response |
+| `housing_situation_multi` | TEXT | NULL | - | - | Housing situation as multi-select response (checkbox) |
+| **Measures - activityMain** |
+| `activity_main_single` | VARCHAR(255) | NULL | - | - | Main economic activity as single-select response |
+| `activity_main_multi` | TEXT | NULL | - | - | Main economic activity as multi-select response |
+| `activity_main_text` | TEXT | NULL | - | - | Main economic activity as free text response |
+| **Measures - familyCar** |
+| `family_car` | BOOLEAN | NULL | - | - | Boolean indicating if family owns a car |
+| **Measures - areaOfResidence** |
+| `area_of_residence_select` | VARCHAR(255) | NULL | - | - | Area of residence as detailed select response |
+| `area_of_residence_radio` | VARCHAR(100) | NULL | - | - | Area of residence as binary radio response (urban/rural) |
+
+#### Indexes
+
+```sql
+-- Primary key
+CREATE UNIQUE INDEX idx_fact_economic_pk ON fact_family_economic_snapshot (family_economic_snapshot_key);
+
+-- Natural key for deduplication
+CREATE UNIQUE INDEX idx_fact_economic_natural_key ON fact_family_economic_snapshot (snapshot_id, economic_question_key);
+
+-- Foreign key indexes for join performance
+CREATE INDEX idx_fact_economic_date ON fact_family_economic_snapshot (date_key);
+CREATE INDEX idx_fact_economic_family ON fact_family_economic_snapshot (family_key);
+CREATE INDEX idx_fact_economic_question ON fact_family_economic_snapshot (economic_question_key);
+CREATE INDEX idx_fact_economic_org ON fact_family_economic_snapshot (organization_key);
+CREATE INDEX idx_fact_economic_survey_def ON fact_family_economic_snapshot (survey_definition_key);
+
+-- Query optimization indexes
+CREATE INDEX idx_fact_economic_is_last ON fact_family_economic_snapshot (is_last) WHERE is_last = TRUE;
+CREATE INDEX idx_fact_economic_snapshot_num ON fact_family_economic_snapshot (snapshot_number);
+
+-- Composite indexes for common queries
+CREATE INDEX idx_fact_economic_family_snapshot ON fact_family_economic_snapshot (family_key, snapshot_id);
+```
+
+#### Source Mapping
+
+| Target Column | Source Table | Source Column | Transformation |
+|---------------|--------------|---------------|----------------|
+| **Keys and Context** |
+| `snapshot_id` | data_collect.snapshot | id | Via snapshot_economic join |
+| `snapshot_number` | data_collect.snapshot | snapshot_number | Via snapshot_economic join |
+| `is_last` | data_collect.snapshot | is_last | Via snapshot_economic join |
+| `date_key` | data_collect.snapshot | snapshot_date | Convert to YYYYMMDD format |
+| **Economic Measures** |
+| `household_monthly_income` | data_collect.snapshot_economic | answer_number | WHERE code_name = 'householdMonthlyIncome' |
+| `income_currency_code` | data_collect.snapshot_economic | answer_value | WHERE code_name LIKE '%currency%' |
+| `housing_situation_single` | data_collect.snapshot_economic | answer_value | WHERE code_name = 'housingSituation' AND answer_type IN ('select','radio') |
+| `housing_situation_multi` | data_collect.snapshot_economic | answer_options | WHERE code_name = 'housingSituation' AND answer_type = 'checkbox' |
+| `activity_main_single` | data_collect.snapshot_economic | answer_value | WHERE code_name = 'activityMain' AND answer_type IN ('select','radio') |
+| `activity_main_multi` | data_collect.snapshot_economic | answer_options | WHERE code_name = 'activityMain' AND answer_type = 'checkbox' |
+| `activity_main_text` | data_collect.snapshot_economic | answer_value | WHERE code_name = 'activityMain' AND answer_type = 'text' |
+| `family_car` | data_collect.snapshot_economic | answer_value | WHERE code_name = 'familyCar' (converted to boolean) |
+| `area_of_residence_select` | data_collect.snapshot_economic | answer_value | WHERE code_name = 'areaOfResidence' AND answer_type = 'select' |
+| `area_of_residence_radio` | data_collect.snapshot_economic | answer_value | WHERE code_name = 'areaOfResidence' AND answer_type = 'radio' |
 
 ---
 
@@ -361,6 +449,66 @@ CREATE INDEX idx_survey_def_status ON dim_survey_definition (survey_status, surv
 | `survey_title` | data_collect.survey_definition | title | Direct mapping |
 | `survey_language` | data_collect.survey_definition | lang | Direct mapping |
 | `survey_is_active` | data_collect.survey_definition | active | Direct mapping |
+
+---
+
+### dim_economic_questions
+
+**Description:** Economic question dimension with metadata about economic survey questions
+
+**Grain:** One row per economic question per survey definition (survey_definition_id + code_name)
+
+**Row Count:** ~100-500 rows (varies by survey versions)
+
+---
+
+#### Column Specifications
+
+| Column Name | Data Type | Nullable | Default | Constraints | Description |
+|-------------|-----------|----------|---------|-------------|-------------|
+| `economic_question_key` | BIGINT | NOT NULL | - | PRIMARY KEY | Surrogate key (generated from survey_definition_id + code_name) |
+| `survey_definition_id` | BIGINT | NOT NULL | - | FK → dim_survey_definition.survey_definition_id | Survey template containing this question |
+| `code_name` | VARCHAR(255) | NOT NULL | - | COMPOSITE UNIQUE (with survey_definition_id) | Question identifier (e.g., 'householdMonthlyIncome', 'familyCar') |
+| `question_text` | TEXT | NULL | - | - | Question displayed to families during survey |
+| `answer_type` | VARCHAR(50) | NOT NULL | - | CHECK (answer_type IN ('text','number','date','select','radio','checkbox')) | Response format type |
+| `answer_options` | TEXT | NULL | - | - | Available choices for select/radio/checkbox types |
+| `scope` | VARCHAR(50) | NULL | - | - | Question scope: family-level or member-level |
+| `is_for_family_member` | BOOLEAN | NULL | FALSE | - | True if question applies to individual family members |
+| `survey_code` | VARCHAR(255) | NULL | - | - | Survey code from survey_definition |
+| `survey_title` | VARCHAR(255) | NULL | - | - | Survey title from survey_definition |
+| `survey_language` | VARCHAR(50) | NULL | - | - | Survey language code (e.g., 'en', 'es', 'pt') |
+
+#### Indexes
+
+```sql
+-- Primary key
+CREATE UNIQUE INDEX idx_economic_question_pk ON dim_economic_questions (economic_question_key);
+
+-- Natural key for lookups
+CREATE UNIQUE INDEX idx_economic_question_natural_key ON dim_economic_questions (survey_definition_id, code_name);
+
+-- Foreign key index
+CREATE INDEX idx_economic_question_survey_def ON dim_economic_questions (survey_definition_id);
+
+-- Lookup indexes
+CREATE INDEX idx_economic_question_code ON dim_economic_questions (code_name);
+CREATE INDEX idx_economic_question_type ON dim_economic_questions (answer_type);
+```
+
+#### Source Mapping
+
+| Target Column | Source Table | Source Column | Transformation |
+|---------------|--------------|---------------|----------------|
+| `survey_definition_id` | data_collect.survey_economic | survey_definition_id | Direct mapping |
+| `code_name` | data_collect.survey_economic | code_name | Direct mapping |
+| `question_text` | data_collect.survey_economic | question_text | Direct mapping |
+| `answer_type` | data_collect.survey_economic | answer_type | Direct mapping |
+| `answer_options` | data_collect.survey_economic | answer_options | Direct mapping |
+| `scope` | data_collect.survey_economic | scope | Direct mapping |
+| `is_for_family_member` | data_collect.survey_economic | for_family_member | Direct mapping |
+| `survey_code` | data_collect.survey_definition | survey_code | Join via survey_definition_id |
+| `survey_title` | data_collect.survey_definition | title | Join via survey_definition_id |
+| `survey_language` | data_collect.survey_definition | lang | Join via survey_definition_id |
 
 ---
 

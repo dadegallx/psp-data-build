@@ -142,11 +142,9 @@ models:
           - not_null
 
       - name: dimension_name
-        description: "Dimension category name (one of 6 poverty dimensions)"
+        description: "Dimension category name (standard: 6 poverty dimensions, custom: organization-specific dimensions)"
         data_tests:
           - not_null
-          - accepted_values:
-              values: ['Education and Culture', 'Health and Environment', 'Housing and Infrastructure', 'Income and Employment', 'Interiority and Motivation', 'Organization and Participation']
 
       - name: red_criteria_description
         description: >
@@ -232,8 +230,68 @@ models:
         data_tests:
           - not_null
 
+  - name: dim_economic_questions
+    description: >
+      Economic question dimension containing metadata about economic survey questions.
+
+      Contains question definitions (income, assets, employment, housing, etc.) that can be
+      included in surveys. Similar structure to dim_indicator_questions but for economic data.
+
+      **Grain:** One row per survey_definition + code_name combination.
+
+      Estimated rows: Varies by number of survey versions, typically 100-500 rows.
+    columns:
+      - name: economic_question_key
+        description: "Surrogate key (generated from survey_definition_id + code_name)"
+        data_tests:
+          - unique
+          - not_null
+
+      - name: survey_definition_id
+        description: "Natural key - foreign key to survey_definition"
+        data_tests:
+          - not_null
+          - relationships:
+              field: survey_definition_id
+              to: ref('dim_survey_definition')
+
+      - name: code_name
+        description: "Question identifier (e.g., 'householdMonthlyIncome', 'familyCar', 'activityMain')"
+        data_tests:
+          - not_null
+
+      - name: question_text
+        description: "Question displayed to families during survey"
+
+      - name: answer_type
+        description: "Response format: text, number, date, select, radio, checkbox"
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['text', 'number', 'date', 'select', 'radio', 'checkbox']
+              config:
+                severity: warn
+
+      - name: answer_options
+        description: "Available choices for select/radio/checkbox types (JSON or delimited string)"
+
+      - name: scope
+        description: "Question scope: family-level or member-level"
+
+      - name: is_for_family_member
+        description: "Boolean flag - true if question is for individual family members"
+
+      - name: survey_code
+        description: "Survey code from survey_definition"
+
+      - name: survey_title
+        description: "Survey title from survey_definition"
+
+      - name: survey_language
+        description: "Survey language code (e.g., 'en', 'es', 'pt')"
+
   # ========================================
-  # FACT TABLE
+  # FACT TABLES
   # ========================================
 
   - name: fact_family_indicator_snapshot
@@ -323,3 +381,125 @@ models:
               config:
                 severity: warn
                 where: "indicator_status_value is not null"
+
+  - name: fact_family_economic_snapshot
+    description: >
+      Fact table capturing economic survey responses at atomic grain.
+
+      **Grain:** One row per family, per economic question, per snapshot (survey completion).
+
+      **Scope:** Currently includes 5 priority economic fields:
+      - householdMonthlyIncome (+ currency)
+      - housingSituation (single-select and multi-select variants)
+      - activityMain (single-select, multi-select, and text variants)
+      - familyCar (boolean)
+      - areaOfResidence (select and radio variants)
+
+      **Multi-type Field Handling:** Fields that exist as different answer types across
+      survey versions are represented as separate columns with behavior suffixes
+      (e.g., housing_situation_single vs housing_situation_multi).
+
+      **Data Quality Note:** Filters out 244 orphaned code_names (responses without
+      matching survey_economic definitions) via inner join in stg_snapshot_economic.
+      See DATA_QUALITY.md for details.
+
+      **Row Count:** Estimated 15,000-50,000 rows depending on economic question
+      usage across surveys. Grows with new snapshots.
+    columns:
+      - name: family_economic_snapshot_key
+        description: "Surrogate key (generated from snapshot_id + economic_question_key)"
+        data_tests:
+          - unique
+          - not_null
+
+      - name: date_key
+        description: "Foreign key to dim_date (survey date in YYYYMMDD format)"
+        data_tests:
+          - not_null
+          - relationships:
+              field: date_key
+              to: ref('dim_date')
+
+      - name: family_key
+        description: "Foreign key to dim_family"
+        data_tests:
+          - not_null
+          - relationships:
+              field: family_key
+              to: ref('dim_family')
+
+      - name: economic_question_key
+        description: "Foreign key to dim_economic_questions"
+        data_tests:
+          - not_null
+          - relationships:
+              field: economic_question_key
+              to: ref('dim_economic_questions')
+
+      - name: organization_key
+        description: "Foreign key to dim_organization"
+        data_tests:
+          - not_null
+          - relationships:
+              field: organization_key
+              to: ref('dim_organization')
+
+      - name: survey_definition_key
+        description: "Foreign key to dim_survey_definition"
+        data_tests:
+          - not_null
+          - relationships:
+              field: survey_definition_key
+              to: ref('dim_survey_definition')
+
+      - name: snapshot_id
+        description: "Degenerate dimension - natural key from source (data_collect.snapshot.id)"
+        data_tests:
+          - not_null
+
+      - name: snapshot_number
+        description: "Degenerate dimension - survey round: 1=baseline, 2=first follow-up, etc."
+        data_tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "> 0"
+
+      - name: is_last
+        description: "Degenerate dimension - true if this is the most recent survey for this family"
+        data_tests:
+          - not_null
+
+      # Measures - householdMonthlyIncome
+      - name: household_monthly_income
+        description: "Measure - Monthly household income (numeric value)"
+
+      - name: income_currency_code
+        description: "Measure - Currency code for household income (e.g., 'USD', 'EUR', 'BRL')"
+
+      # Measures - housingSituation
+      - name: housing_situation_single
+        description: "Measure - Housing situation as single-select response (select/radio types)"
+
+      - name: housing_situation_multi
+        description: "Measure - Housing situation as multi-select response (checkbox type)"
+
+      # Measures - activityMain
+      - name: activity_main_single
+        description: "Measure - Main economic activity as single-select response (select/radio types)"
+
+      - name: activity_main_multi
+        description: "Measure - Main economic activity as multi-select response (checkbox type)"
+
+      - name: activity_main_text
+        description: "Measure - Main economic activity as free text response"
+
+      # Measures - familyCar
+      - name: family_car
+        description: "Measure - Boolean indicating if family owns a car"
+
+      # Measures - areaOfResidence
+      - name: area_of_residence_select
+        description: "Measure - Area of residence as detailed select response (specific areas)"
+
+      - name: area_of_residence_radio
+        description: "Measure - Area of residence as binary radio response (urban/rural)"

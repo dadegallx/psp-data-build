@@ -9,11 +9,13 @@
 
 ## Schema Overview
 
-**Business Process:** Family poverty assessment surveys where families self-assess their status on multiple indicators using the stoplight methodology
+**Business Process:** Family poverty assessment surveys where families self-assess their status on multiple indicators using the stoplight methodology, plus economic survey responses
 
-**Fact Table Grain:** One row per family, per indicator, per snapshot (survey completion)
+**Fact Table Grain:**
+- **Stoplight Indicators:** One row per family, per indicator, per snapshot (survey completion)
+- **Economic Data:** One row per family, per economic question, per snapshot (survey completion)
 
-**Number of Star Schemas:** 1 (all business questions can be answered from this single schema)
+**Number of Star Schemas:** 2 related schemas sharing common dimensions (date, family, organization, survey_definition)
 
 ---
 
@@ -56,6 +58,68 @@
 - Index on `date_key`
 - Index on `is_last` (for current status queries)
 - Index on `snapshot_number` (for baseline/follow-up filtering)
+
+---
+
+## Fact Table: fact_family_economic_snapshot
+
+**Description:** Stores economic survey responses at the most atomic level
+
+**Characteristics:**
+- Atomic grain (one row per family, per economic question, per snapshot)
+- Sparse matrix structure with type-specific columns for multi-type fields
+- Filtered data (excludes 244 orphaned code_names via inner join in staging)
+
+### Columns
+
+**Surrogate Key:**
+- `family_economic_snapshot_key` (BIGINT, PRIMARY KEY) - Surrogate key for grain uniqueness
+
+**Foreign Keys to Dimensions:**
+- `date_key` (INTEGER, NOT NULL) - FK to dim_date (survey date)
+- `family_key` (BIGINT, NOT NULL) - FK to dim_family
+- `economic_question_key` (BIGINT, NOT NULL) - FK to dim_economic_questions
+- `organization_key` (BIGINT, NOT NULL) - FK to dim_organization
+- `survey_definition_key` (BIGINT, NOT NULL) - FK to dim_survey_definition
+
+**Degenerate Dimensions:**
+- `snapshot_id` (BIGINT, NOT NULL) - Natural key from source system (data_collect.snapshot.id)
+- `snapshot_number` (SMALLINT, NOT NULL) - Survey round (1=baseline, 2=first follow-up, etc.)
+- `is_last` (BOOLEAN, NOT NULL) - Flag indicating if this is the most recent survey for this family
+
+**Measures (5 Priority Economic Fields):**
+
+1. **householdMonthlyIncome:**
+   - `household_monthly_income` (NUMERIC(15,2)) - Monthly household income value
+   - `income_currency_code` (VARCHAR(10)) - Currency code (e.g., 'USD', 'BRL')
+
+2. **housingSituation:**
+   - `housing_situation_single` (VARCHAR(255)) - Single-select response (select/radio types)
+   - `housing_situation_multi` (TEXT) - Multi-select response (checkbox type)
+
+3. **activityMain:**
+   - `activity_main_single` (VARCHAR(255)) - Single-select response (select/radio types)
+   - `activity_main_multi` (TEXT) - Multi-select response (checkbox type)
+   - `activity_main_text` (TEXT) - Free text response
+
+4. **familyCar:**
+   - `family_car` (BOOLEAN) - Boolean indicating car ownership
+
+5. **areaOfResidence:**
+   - `area_of_residence_select` (VARCHAR(255)) - Detailed area select response
+   - `area_of_residence_radio` (VARCHAR(100)) - Binary urban/rural radio response
+
+**Indexes:**
+- Primary key on `family_economic_snapshot_key`
+- Natural key composite on (`snapshot_id`, `economic_question_key`)
+- Index on `date_key`
+- Index on `family_key`
+- Index on `economic_question_key`
+- Index on `organization_key`
+- Index on `survey_definition_key`
+- Index on `is_last` (for current status queries)
+- Index on `snapshot_number` (for baseline/follow-up filtering)
+- Composite index on (`family_key`, `snapshot_id`)
 
 ---
 
@@ -250,3 +314,43 @@
 - Primary key on `survey_definition_key`
 - Unique index on `survey_definition_id`
 - Index on `survey_code` (for code-based lookups)
+
+---
+
+### dim_economic_questions
+
+**Description:** Economic question dimension containing metadata about economic survey questions
+
+**Type:** Slowly changing dimension
+
+**Grain:** One row per economic question per survey definition (survey_definition_id + code_name)
+
+**SCD Type:** Type 1 (overwrite changes)
+
+#### Columns
+
+**Surrogate Key:**
+- `economic_question_key` (BIGINT, PRIMARY KEY) - Surrogate key
+
+**Natural Keys:**
+- `survey_definition_id` (BIGINT, NOT NULL, UNIQUE with code_name) - FK to survey_definition
+- `code_name` (VARCHAR(255), NOT NULL, UNIQUE with survey_definition_id) - Question identifier
+
+**Question Attributes:**
+- `question_text` (TEXT) - Question displayed to families during survey
+- `answer_type` (VARCHAR(50), NOT NULL) - Response format: text, number, date, select, radio, checkbox
+- `answer_options` (TEXT) - Available choices for select/radio/checkbox types
+- `scope` (VARCHAR(50)) - Question scope: family-level or member-level
+- `is_for_family_member` (BOOLEAN) - True if question applies to individual family members
+
+**Survey Context:**
+- `survey_code` (VARCHAR(255)) - Survey code from survey_definition
+- `survey_title` (VARCHAR(255)) - Survey title from survey_definition
+- `survey_language` (VARCHAR(50)) - Survey language code (e.g., 'en', 'es', 'pt')
+
+**Indexes:**
+- Primary key on `economic_question_key`
+- Unique composite key on (`survey_definition_id`, `code_name`)
+- Index on `survey_definition_id` (for FK queries)
+- Index on `code_name` (for code-based lookups)
+- Index on `answer_type` (for filtering by response type)

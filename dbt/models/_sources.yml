@@ -102,6 +102,16 @@ sources:
     description: "Survey definitions, snapshots, and stoplight indicator assessments"
     schema: data_collect
     tables:
+      - name: survey_stoplight_dimension
+        description: "Master dimension categories (e.g., Income and Employment, Health and Environment)"
+        columns:
+          - name: id
+            description: "Primary key"
+          - name: code_name
+            description: "Dimension code (e.g., 'incomeAndEmployment')"
+          - name: met_name
+            description: "Translation key for dimension name (e.g., 'incomeAndEmployment.name')"
+
       - name: survey_stoplight_indicator
         description: "Master template catalog of reusable stoplight indicators (346 templates)"
         columns:
@@ -223,3 +233,51 @@ sources:
             description: "Language code (e.g., 'EN', 'ES', 'PT')"
           - name: translation
             description: "Translated text for the given key and language"
+
+      - name: survey_economic
+        description: "Economic question definitions per survey (family-level and member-level economic indicators)"
+        columns:
+          - name: id
+            description: "Primary key"
+          - name: code_name
+            description: "Question identifier (e.g., 'householdMonthlyIncome', 'familyCar')"
+          - name: question_text
+            description: "Question displayed to families"
+          - name: answer_type
+            description: "Response format: text, number, date, select, radio, checkbox"
+          - name: answer_options
+            description: "Available choices for select/radio/checkbox types"
+          - name: scope
+            description: "Question scope: family-level or member-level"
+          - name: for_family_member
+            description: "Boolean flag indicating if question is for family member"
+          - name: survey_definition_id
+            description: "Foreign key to survey_definition"
+          - name: created_date
+            description: "Creation timestamp"
+          - name: last_modified_date
+            description: "Last modification timestamp"
+
+      - name: snapshot_economic
+        description: "Economic survey responses at family level (actual answer values for economic questions)"
+        columns:
+          - name: id
+            description: "Primary key"
+          - name: snapshot_id
+            description: "Foreign key to snapshot"
+          - name: code_name
+            description: "Question identifier matching survey_economic.code_name"
+          - name: answer_type
+            description: "Response format: text, number, date, select, radio, checkbox"
+          - name: answer_value
+            description: "Text response value"
+          - name: answer_number
+            description: "Numeric response value"
+          - name: answer_date
+            description: "Date response value (milliseconds since epoch)"
+          - name: answer_options
+            description: "Selected options for multi-select responses"
+          - name: created_date
+            description: "Creation timestamp"
+          - name: last_modified_date
+            description: "Last modification timestamp"

@@ -17,6 +17,14 @@ survey_stoplight_color as (
     select * from {{ ref('stg_survey_stoplight_color') }}
 ),
 
+survey_stoplight_dimension as (
+    select * from {{ source('data_collect', 'survey_stoplight_dimension') }}
+),
+
+translations as (
+    select * from {{ ref('stg_translations') }}
+),
+
 joined as (
     select
         -- Survey-specific indicator (instance)
@@ -26,7 +34,6 @@ joined as (
         survey_stoplight.indicator_question_text as survey_indicator_question_text,
         survey_stoplight.indicator_description as survey_indicator_description,
         survey_stoplight.indicator_is_required as survey_indicator_is_required,
-        survey_stoplight.dimension_name as survey_dimension_name,
 
         -- Master indicator (template) - for aggregation
         survey_stoplight_indicator.indicator_template_id as indicator_id,
@@ -34,8 +41,9 @@ joined as (
         survey_stoplight_indicator.indicator_name as indicator_name,
         survey_stoplight_indicator.indicator_description as indicator_description,
 
-        -- Dimension attributes
+        -- Dimension attributes (from master dimension table with English translation)
         survey_stoplight_indicator.dimension_id,
+        translations.translation_text as dimension_name,
 
         -- Color criteria descriptions (what each color level means)
         survey_stoplight_color.red_criteria_description,
@@ -45,6 +53,10 @@ joined as (
     from survey_stoplight
     left join survey_stoplight_indicator
         on survey_stoplight.indicator_template_id = survey_stoplight_indicator.indicator_template_id
+    left join survey_stoplight_dimension
+        on survey_stoplight_indicator.dimension_id = survey_stoplight_dimension.id
+    left join translations
+        on survey_stoplight_dimension.met_name = translations.translation_key
     left join survey_stoplight_color
         on survey_stoplight.indicator_id = survey_stoplight_color.survey_indicator_id
 ),
@@ -72,7 +84,7 @@ final as (
 
         -- DIMENSION ATTRIBUTES
         dimension_id,
-        survey_dimension_name as dimension_name,
+        dimension_name,  -- English canonical name from translation table
         null as dimension_code,  -- Not available in source
 
         -- COLOR CRITERIA DESCRIPTIONS (what each poverty level means for this indicator)

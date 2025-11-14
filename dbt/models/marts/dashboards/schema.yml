@@ -124,11 +124,9 @@ models:
           - not_null
 
       - name: dimension_name
-        description: "Poverty dimension category - one of 6 dimensions used to organize indicators"
+        description: "Poverty dimension category (standard: 6 poverty dimensions, custom: organization-specific dimensions like Agricultural Development, Pedagogical practices)"
         data_tests:
           - not_null
-          - accepted_values:
-              values: ['Education and Culture', 'Health and Environment', 'Housing and Infrastructure', 'Income and Employment', 'Interiority and Motivation', 'Organization and Participation']
 
       - name: survey_indicator_short_name
         description: >

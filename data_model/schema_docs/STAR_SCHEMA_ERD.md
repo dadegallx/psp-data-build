@@ -7,7 +7,7 @@
 
 ```mermaid
 erDiagram
-    %% Fact Table (center)
+    %% Fact Tables
     FACT_FAMILY_INDICATOR_SNAPSHOT {
         bigint family_indicator_snapshot_key PK
         integer date_key FK
@@ -19,6 +19,28 @@ erDiagram
         smallint snapshot_number "Degenerate Dim"
         boolean is_last "Degenerate Dim"
         smallint indicator_status_value "MEASURE"
+    }
+
+    FACT_FAMILY_ECONOMIC_SNAPSHOT {
+        bigint family_economic_snapshot_key PK
+        integer date_key FK
+        bigint family_key FK
+        bigint economic_question_key FK
+        bigint organization_key FK
+        bigint survey_definition_key FK
+        bigint snapshot_id "Degenerate Dim"
+        smallint snapshot_number "Degenerate Dim"
+        boolean is_last "Degenerate Dim"
+        numeric household_monthly_income "MEASURE"
+        varchar income_currency_code "MEASURE"
+        varchar housing_situation_single "MEASURE"
+        text housing_situation_multi "MEASURE"
+        varchar activity_main_single "MEASURE"
+        text activity_main_multi "MEASURE"
+        text activity_main_text "MEASURE"
+        boolean family_car "MEASURE"
+        varchar area_of_residence_select "MEASURE"
+        varchar area_of_residence_radio "MEASURE"
     }
 
     %% Dimension Tables
@@ -101,10 +123,31 @@ erDiagram
         boolean survey_is_current
     }
 
-    %% Relationships (Fact to Dimensions)
+    DIM_ECONOMIC_QUESTIONS {
+        bigint economic_question_key PK
+        bigint survey_definition_id NK
+        varchar code_name NK
+        text question_text
+        varchar answer_type
+        text answer_options
+        varchar scope
+        boolean is_for_family_member
+        varchar survey_code
+        varchar survey_title
+        varchar survey_language
+    }
+
+    %% Relationships - Stoplight Fact
     FACT_FAMILY_INDICATOR_SNAPSHOT ||--o{ DIM_DATE : "surveyed_on"
     FACT_FAMILY_INDICATOR_SNAPSHOT ||--o{ DIM_ORGANIZATION : "conducted_by"
     FACT_FAMILY_INDICATOR_SNAPSHOT ||--o{ DIM_INDICATOR : "measures"
     FACT_FAMILY_INDICATOR_SNAPSHOT ||--o{ DIM_FAMILY : "assesses"
     FACT_FAMILY_INDICATOR_SNAPSHOT ||--o{ DIM_SURVEY_DEFINITION : "uses_template"
+
+    %% Relationships - Economic Fact
+    FACT_FAMILY_ECONOMIC_SNAPSHOT ||--o{ DIM_DATE : "surveyed_on"
+    FACT_FAMILY_ECONOMIC_SNAPSHOT ||--o{ DIM_FAMILY : "assesses"
+    FACT_FAMILY_ECONOMIC_SNAPSHOT ||--o{ DIM_ECONOMIC_QUESTIONS : "answers"
+    FACT_FAMILY_ECONOMIC_SNAPSHOT ||--o{ DIM_ORGANIZATION : "conducted_by"
+    FACT_FAMILY_ECONOMIC_SNAPSHOT ||--o{ DIM_SURVEY_DEFINITION : "uses_template"
 ```
