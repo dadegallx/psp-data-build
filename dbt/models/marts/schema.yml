@@ -195,7 +195,7 @@ models:
         description: "GPS latitude coordinate (-90 to 90)"
         data_tests:
           - dbt_utils.expression_is_true:
-              expression: ">= -90 AND <= 90"
+              expression: "BETWEEN -90 AND 90"
               config:
                 where: "latitude is not null"
 
@@ -203,7 +203,7 @@ models:
         description: "GPS longitude coordinate (-180 to 180)"
         data_tests:
           - dbt_utils.expression_is_true:
-              expression: ">= -180 AND <= 180"
+              expression: "BETWEEN -180 AND 180"
               config:
                 where: "longitude is not null"
 
