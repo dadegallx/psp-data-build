@@ -179,11 +179,15 @@ models:
         data_tests:
           - not_null
       - name: dimension_name
-        description: "Dimension category name (one of 6 categories)"
+        description: >
+          Dimension category name - localized across multiple languages.
+          Core English dimensions: Education and Culture, Health and Environment,
+          Housing and Infrastructure, Income and Employment, Interiority and Motivation,
+          Organization and Participation.
+          Note: Dimension names vary by survey language and may include translations
+          in Spanish, French, Arabic, Russian, and many other languages.
         data_tests:
           - not_null
-          - accepted_values:
-              values: ['Education and Culture', 'Health and Environment', 'Housing and Infrastructure', 'Income and Employment', 'Interiority and Motivation', 'Organization and Participation']
 
   - name: stg_survey_stoplight_indicator
     description: "Cleaned master indicator templates"
