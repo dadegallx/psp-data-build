@@ -24,8 +24,16 @@ renamed as (
         anonymous as is_anonymous,
 
         -- Geographic attributes (raw values for validation)
-        latitude::decimal(10,7) as latitude_raw,
-        longitude::decimal(10,7) as longitude_raw,
+        case 
+            when latitude ~ '^-?[0-9]+\.?[0-9]*$' 
+            then latitude::numeric
+            else null
+        end as latitude_raw,
+        case 
+            when longitude ~ '^-?[0-9]+\.?[0-9]*$' 
+            then longitude::numeric
+            else null
+        end as longitude_raw,
         address,
         post_code,
 

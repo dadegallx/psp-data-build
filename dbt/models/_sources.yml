@@ -4,8 +4,8 @@ sources:
   # Organizational hierarchy and application management
   - name: ps_network
     description: "Organizational hierarchy, hub/application management, and implementing organizations"
-    database: "{{ env_var('SOURCE_DBT_DBNAME') }}"
-    schema: ps_network
+    database: "{{ env_var('TARGET_DBT_DBNAME') }}"
+    schema: fdw_remote
     tables:
       - name: applications
         description: "Hub/application definitions serving as platforms for poverty stoplight projects"
@@ -54,8 +54,8 @@ sources:
   # Family master data
   - name: ps_families
     description: "Family demographic and location information"
-    database: "{{ env_var('SOURCE_DBT_DBNAME') }}"
-    schema: ps_families
+    database: "{{ env_var('TARGET_DBT_DBNAME') }}"
+    schema: fdw_remote
     tables:
       - name: family
         description: "Family identity, location, and privacy settings"
@@ -102,8 +102,8 @@ sources:
   # Survey data collection and responses
   - name: data_collect
     description: "Survey definitions, snapshots, and stoplight indicator assessments"
-    database: "{{ env_var('SOURCE_DBT_DBNAME') }}"
-    schema: data_collect
+    database: "{{ env_var('TARGET_DBT_DBNAME') }}"
+    schema: fdw_remote
     tables:
       - name: survey_stoplight_dimension
         description: "Master dimension categories (e.g., Income and Employment, Health and Environment)"
