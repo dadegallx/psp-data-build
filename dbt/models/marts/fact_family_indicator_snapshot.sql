@@ -29,16 +29,16 @@ survey_definitions as (
     select * from {{ ref('dim_survey_definition') }}
 ),
 
--- Join snapshot stoplight values with indicators by indicator_id (clean 1:1 join)
+-- Join snapshot stoplight values with indicators by survey_indicator_id (clean 1:1 join)
 stoplight_with_indicators as (
     select
         snapshot_stoplight.snapshot_id,
         snapshot_stoplight.indicator_status_value,
         indicators.indicator_key,
-        indicators.indicator_id
+        indicators.indicator_template_id
     from snapshot_stoplight
     inner join indicators
-        on snapshot_stoplight.indicator_id = indicators.survey_indicator_id
+        on snapshot_stoplight.survey_indicator_id = indicators.survey_indicator_id
 ),
 
 joined as (

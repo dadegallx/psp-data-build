@@ -11,8 +11,8 @@ with source as (
 
 renamed as (
     select
-        -- Primary key (this becomes indicator_id in dimension)
-        id as indicator_id,
+        -- Primary key (survey-specific indicator ID)
+        id as survey_indicator_id,
 
         -- Foreign keys
         survey_indicator_id as indicator_template_id,

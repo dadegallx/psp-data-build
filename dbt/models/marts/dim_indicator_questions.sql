@@ -28,7 +28,7 @@ translations as (
 joined as (
     select
         -- Survey-specific indicator (instance)
-        survey_stoplight.indicator_id as survey_indicator_id,
+        survey_stoplight.survey_indicator_id,
         survey_stoplight.indicator_code_name as survey_indicator_code_name,
         survey_stoplight.indicator_short_name as survey_indicator_short_name,
         survey_stoplight.indicator_question_text as survey_indicator_question_text,
@@ -36,7 +36,7 @@ joined as (
         survey_stoplight.indicator_is_required as survey_indicator_is_required,
 
         -- Master indicator (template) - for aggregation
-        survey_stoplight_indicator.indicator_template_id as indicator_id,
+        survey_stoplight_indicator.indicator_template_id,
         survey_stoplight_indicator.indicator_template_code_name as indicator_code_name,
         survey_stoplight_indicator.indicator_name as indicator_name,
         survey_stoplight_indicator.indicator_description as indicator_description,
@@ -58,7 +58,7 @@ joined as (
     left join translations
         on survey_stoplight_dimension.met_name = translations.translation_key
     left join survey_stoplight_color
-        on survey_stoplight.indicator_id = survey_stoplight_color.survey_indicator_id
+        on survey_stoplight.survey_indicator_id = survey_stoplight_color.survey_indicator_id
 ),
 
 final as (
@@ -67,8 +67,8 @@ final as (
         {{ dbt_utils.generate_surrogate_key(['survey_indicator_id']) }} as indicator_key,
 
         -- Natural keys
-        survey_indicator_id,  -- Survey-specific ID
-        indicator_id,         -- Master template ID
+        survey_indicator_id,      -- Survey-specific ID
+        indicator_template_id,    -- Master template ID
 
         -- MASTER INDICATOR ATTRIBUTES (for aggregation/grouping)
         indicator_code_name,      -- Template code (e.g., 'income')

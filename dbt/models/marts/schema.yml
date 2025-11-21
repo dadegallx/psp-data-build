@@ -101,7 +101,7 @@ models:
           - unique
           - not_null
 
-      - name: indicator_id
+      - name: indicator_template_id
         description: "Master template ID from survey_stoplight_indicator"
         data_tests:
           - not_null

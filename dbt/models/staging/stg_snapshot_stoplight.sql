@@ -20,7 +20,7 @@ survey_indicators as (
     -- Pre-deduplicate survey_stoplight by picking first order_number per code_name
     -- Handles rare cases (<0.01%) where same code_name appears multiple times in one survey
     select distinct on (survey_definition_id, code_name)
-        id as indicator_id,
+        id as survey_indicator_id,
         survey_definition_id,
         code_name
     from {{ source('data_collect', 'survey_stoplight') }}
@@ -34,7 +34,7 @@ enriched as (
 
         -- Foreign keys
         source.snapshot_id,
-        si.indicator_id,  -- Derived via FK chain: snapshot_stoplight → snapshot → survey_stoplight
+        si.survey_indicator_id,  -- Survey-specific indicator ID (survey_stoplight.id)
 
         -- Attributes
         source.code_name as indicator_code_name,
