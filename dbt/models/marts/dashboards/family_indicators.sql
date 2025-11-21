@@ -12,7 +12,7 @@
 -- Simplified, business-user-friendly dashboard for poverty indicator analysis.
 -- Laser-focused on indicators with easy-to-use boolean flags for BI tools.
 --
--- Grain: Family × Indicator × Snapshot (latest only)
+-- Grain: Family × Indicator × Snapshot (all snapshots)
 -- Columns: 20 - removed technical/privacy fields, added color criteria
 --
 -- BUSINESS USER FEATURES:
@@ -33,7 +33,6 @@
 
 with fact as (
     select * from {{ ref('fact_family_indicator_snapshot') }}
-    where is_last = true  -- Latest snapshots only (current family status)
 ),
 
 dim_date as (
