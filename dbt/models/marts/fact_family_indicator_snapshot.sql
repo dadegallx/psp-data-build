@@ -38,7 +38,7 @@ stoplight_with_indicators as (
         indicators.indicator_id
     from snapshot_stoplight
     inner join indicators
-        on snapshot_stoplight.indicator_id = indicators.indicator_id
+        on snapshot_stoplight.indicator_id = indicators.survey_indicator_id
 ),
 
 joined as (
