@@ -14,7 +14,7 @@ psp_data_build:
       user: "{{ env_var('TARGET_DBT_USER') }}"
       pass: "{{ env_var('TARGET_DBT_PASSWORD') }}"
       dbname: "{{ env_var('TARGET_DBT_DBNAME') }}"
-      schema: "{{ env_var('TARGET_DBT_SCHEMA', 'dbt_dev') }}"
+      schema: analytics
       threads: 4
       keepalives_idle: 0
       sslmode: require
@@ -38,7 +38,7 @@ psp_data_build:
       user: "{{ env_var('TARGET_DBT_USER') }}"
       pass: "{{ env_var('TARGET_DBT_PASSWORD') }}"
       dbname: "{{ env_var('TARGET_DBT_DBNAME') }}"
-      schema: dbt_prod
+      schema: analytics
       threads: 4
       keepalives_idle: 0
       sslmode: require

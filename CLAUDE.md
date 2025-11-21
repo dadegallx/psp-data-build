@@ -49,7 +49,6 @@ export TARGET_DBT_USER="target-username"
 export TARGET_DBT_PASSWORD="target-password"
 export TARGET_DBT_PORT="5432"
 export TARGET_DBT_DBNAME="target-database-name"
-export TARGET_DBT_SCHEMA="analytics"      # Your development schema
 ```
 
 ## Common Commands
