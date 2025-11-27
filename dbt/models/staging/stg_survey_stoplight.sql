@@ -15,6 +15,7 @@ renamed as (
         short_name as indicator_short_name,
         question_text as indicator_question_text,
         description as indicator_description,
+        definition as indicator_definition,
         required as indicator_is_required,
         dimension as dimension_name  -- One of 6 poverty dimensions
 
