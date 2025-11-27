@@ -163,10 +163,8 @@ models:
 
   - name: dim_family
     description: >
-      Family identity and geography dimension.
-      Combines family master data with geographic information.
-      Country derived from first family member's birth_country.
-      Estimated 3,000-10,000 rows.
+      Privacy-focused family dimension with minimal PII.
+      Coordinates rounded to 2 decimals for privacy.
     columns:
       - name: family_key
         description: "Surrogate key"
@@ -180,34 +178,22 @@ models:
           - unique
           - not_null
 
-      - name: family_code
-        description: "Unique family code"
-        data_tests:
-          - unique:
-              config:
-                severity: warn  # Source system allows duplicate codes (demo/test data)
-          - not_null
+      - name: family_is_active
+        description: "Whether the family is currently active"
 
       - name: is_anonymous
-        description: "Privacy flag - when true, family_name shows 'ANON_DATA'"
+        description: "Privacy flag"
         data_tests:
           - not_null
 
+      - name: country
+        description: "Country name"
+
       - name: latitude
-        description: "GPS latitude coordinate (-90 to 90)"
-        data_tests:
-          - dbt_utils.expression_is_true:
-              expression: "BETWEEN -90 AND 90"
-              config:
-                where: "latitude is not null"
+        description: "GPS latitude rounded to 2 decimals for privacy"
 
       - name: longitude
-        description: "GPS longitude coordinate (-180 to 180)"
-        data_tests:
-          - dbt_utils.expression_is_true:
-              expression: "BETWEEN -180 AND 180"
-              config:
-                where: "longitude is not null"
+        description: "GPS longitude rounded to 2 decimals for privacy"
 
   - name: dim_survey_definition
     description: >

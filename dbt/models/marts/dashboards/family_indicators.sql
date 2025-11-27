@@ -60,10 +60,9 @@ denormalized as (
         dim_date.month_number as snapshot_month,
 
         -- ====================================================================
-        -- FAMILY IDENTIFIERS (2 columns)
+        -- FAMILY IDENTIFIER (1 column)
         -- ====================================================================
         dim_family.family_id,
-        dim_family.family_code,
 
         -- ====================================================================
         -- ORGANIZATION CONTEXT (2 columns)

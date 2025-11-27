@@ -8,87 +8,23 @@ renamed as (
         family_id,
 
         -- Attributes
-        code as family_code,
-        case
-            when anonymous then 'ANON_DATA'
-            else name
-        end as family_name,
         is_active as family_is_active,
         anonymous as is_anonymous,
+        country,
 
-        -- Geographic attributes (raw values for validation)
-        case 
-            when latitude ~ '^-?[0-9]+\.?[0-9]*$' 
-            then latitude::numeric
-            else null
-        end as latitude_raw,
-        case 
-            when longitude ~ '^-?[0-9]+\.?[0-9]*$' 
-            then longitude::numeric
-            else null
-        end as longitude_raw,
-        address,
-        post_code,
-
-        -- Audit fields
-        created_date as created_at,
-        last_modified_date as updated_at
+        -- Geographic coordinates: validate format, range, and round to 2 decimals for privacy
+        case
+            when latitude ~ '^-?[0-9]+\.?[0-9]*$'
+                and latitude::numeric between -90 and 90
+            then round(latitude::numeric, 2)
+        end as latitude,
+        case
+            when longitude ~ '^-?[0-9]+\.?[0-9]*$'
+                and longitude::numeric between -180 and 180
+            then round(longitude::numeric, 2)
+        end as longitude
 
     from source
-),
-
-cleaned_coordinates as (
-    select
-        *,
-
-        -- Validate and clean latitude (-90 to 90 degrees)
-        case
-            when latitude_raw IS NOT NULL
-                AND (latitude_raw < -90 OR latitude_raw > 90)
-            then NULL
-            else latitude_raw
-        end as latitude,
-
-        -- Validate and clean longitude (-180 to 180 degrees)
-        case
-            when longitude_raw IS NOT NULL
-                AND (longitude_raw < -180 OR longitude_raw > 180)
-            then NULL
-            else longitude_raw
-        end as longitude,
-
-        -- Data quality flag for monitoring
-        case
-            when (latitude_raw IS NOT NULL AND (latitude_raw < -90 OR latitude_raw > 90))
-                OR (longitude_raw IS NOT NULL AND (longitude_raw < -180 OR longitude_raw > 180))
-            then true
-            else false
-        end as has_invalid_coordinates
-
-    from renamed
 )
 
-select
-    -- Primary key
-    family_id,
-
-    -- Attributes
-    family_code,
-    family_name,
-    family_is_active,
-    is_anonymous,
-
-    -- Geographic attributes (cleaned versions)
-    latitude,
-    longitude,
-    address,
-    post_code,
-
-    -- Data quality flag
-    has_invalid_coordinates,
-
-    -- Audit fields
-    created_at,
-    updated_at
-
-from cleaned_coordinates
+select * from renamed

@@ -87,15 +87,10 @@ models:
               values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 
       # ========================================================================
-      # FAMILY IDENTIFIERS (2 columns)
+      # FAMILY IDENTIFIER (1 column)
       # ========================================================================
       - name: family_id
         description: "Unique family identifier - use for counting distinct families"
-        data_tests:
-          - not_null
-
-      - name: family_code
-        description: "Human-readable family code (e.g., 'FAM-12345')"
         data_tests:
           - not_null
 
