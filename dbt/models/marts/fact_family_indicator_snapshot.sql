@@ -6,6 +6,15 @@ snapshot_stoplight as (
     select * from {{ ref('stg_snapshot_stoplight') }}
 ),
 
+-- Survey indicators for resolving code_name → survey_indicator_id
+survey_indicators as (
+    select
+        id as survey_indicator_id,
+        survey_definition_id,
+        code_name
+    from {{ source('data_collect', 'survey_stoplight') }}
+),
+
 families as (
     select * from {{ ref('dim_family') }}
 ),
@@ -22,16 +31,31 @@ survey_definitions as (
     select * from {{ ref('dim_survey_definition') }}
 ),
 
--- Join snapshot stoplight values with indicators by survey_indicator_id (clean 1:1 join)
+-- Resolve code_name to survey_indicator_id via snapshot → survey_definition
+stoplight_with_survey_indicator as (
+    select
+        ss.snapshot_stoplight_id,
+        ss.snapshot_id,
+        ss.indicator_code_name,
+        ss.indicator_status_value,
+        si.survey_indicator_id
+    from snapshot_stoplight ss
+    inner join snapshots s
+        on ss.snapshot_id = s.snapshot_id
+    inner join survey_indicators si
+        on s.survey_definition_id = si.survey_definition_id
+        and ss.indicator_code_name = si.code_name
+),
+
+-- Join with indicator dimension to get indicator_key
 stoplight_with_indicators as (
     select
-        snapshot_stoplight.snapshot_id,
-        snapshot_stoplight.indicator_status_value,
-        indicators.indicator_key,
-        indicators.indicator_template_id
-    from snapshot_stoplight
-    inner join indicators
-        on snapshot_stoplight.survey_indicator_id = indicators.survey_indicator_id
+        swsi.snapshot_id,
+        swsi.indicator_status_value,
+        ind.indicator_key
+    from stoplight_with_survey_indicator swsi
+    inner join indicators ind
+        on swsi.survey_indicator_id = ind.survey_indicator_id
 ),
 
 joined as (

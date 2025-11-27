@@ -6,6 +6,10 @@ snapshots as (
     select * from {{ ref('stg_snapshots') }}
 ),
 
+survey_economic as (
+    select * from {{ ref('stg_survey_economic') }}
+),
+
 families as (
     select * from {{ ref('dim_family') }}
 ),
@@ -22,14 +26,61 @@ survey_definitions as (
     select * from {{ ref('dim_survey_definition') }}
 ),
 
+-- Enrich snapshot_economic with survey_definition_id and convert answer types
+economic_responses_enriched as (
+    select
+        se.snapshot_economic_id,
+        se.snapshot_id,
+        se.code_name,
+        se.answer_type,
+        se.answer_value,
+
+        -- Convert polymorphic answer values
+        case
+            when se.answer_type in ('number', 'string')
+            and se.answer_value ~ '^[0-9]+\.?[0-9]*$'
+            then se.answer_value::numeric
+        end as answer_number,
+        case
+            when se.answer_type = 'date' and se.answer_value is not null
+            then to_timestamp(se.answer_value::bigint / 1000)
+        end as answer_date,
+        case
+            when se.answer_type = 'checkbox' and se.answer_multiple_value is not null
+            then array_to_string(se.answer_multiple_value, ', ')
+        end as answer_options,
+
+        -- Enriched fields from snapshot
+        s.survey_definition_id,
+        s.family_id,
+        s.organization_id,
+        s.snapshot_date,
+        s.snapshot_number,
+        s.is_last
+
+    from snapshot_economic se
+    inner join snapshots s
+        on se.snapshot_id = s.snapshot_id
+),
+
+-- Filter to valid code_names that exist in survey_economic
+-- This removes orphaned code_names without matching survey definitions
+economic_responses_filtered as (
+    select er.*
+    from economic_responses_enriched er
+    inner join survey_economic sve
+        on er.survey_definition_id = sve.survey_definition_id
+        and er.code_name = sve.code_name
+),
+
 -- Join all dimensions
 economic_responses as (
     select
         -- Snapshot context
-        se.snapshot_id,
-        s.snapshot_number,
-        s.is_last,
-        s.snapshot_date,
+        er.snapshot_id,
+        er.snapshot_number,
+        er.is_last,
+        er.snapshot_date,
 
         -- Foreign keys
         f.family_key,
@@ -38,29 +89,27 @@ economic_responses as (
         sd.survey_definition_key,
 
         -- Question identifier and type
-        se.code_name,
-        se.answer_type,
+        er.code_name,
+        er.answer_type,
 
         -- Answer values (polymorphic)
-        se.answer_value,
-        se.answer_number,
-        se.answer_date,
-        se.answer_options
+        er.answer_value,
+        er.answer_number,
+        er.answer_date,
+        er.answer_options
 
-    from snapshot_economic as se
-    inner join snapshots as s
-        on se.snapshot_id = s.snapshot_id
-    inner join families as f
-        on se.family_id = f.family_id
-    inner join economic_questions as eq
-        on se.survey_definition_id = eq.survey_definition_id
-        and se.code_name = eq.code_name
-    inner join organizations as o
-        on s.organization_id = o.organization_id
-    inner join survey_definitions as sd
-        on s.survey_definition_id = sd.survey_definition_id
+    from economic_responses_filtered er
+    inner join families f
+        on er.family_id = f.family_id
+    inner join economic_questions eq
+        on er.survey_definition_id = eq.survey_definition_id
+        and er.code_name = eq.code_name
+    inner join organizations o
+        on er.organization_id = o.organization_id
+    inner join survey_definitions sd
+        on er.survey_definition_id = sd.survey_definition_id
 
-    where s.snapshot_date is not null
+    where er.snapshot_date is not null
 ),
 
 -- Pivot the 5 priority economic fields with type-specific columns
@@ -140,7 +189,7 @@ final as (
             then er.answer_value
         end as area_of_residence_radio
 
-    from economic_responses as er
+    from economic_responses er
 
     where er.code_name in (
         'householdMonthlyIncome',

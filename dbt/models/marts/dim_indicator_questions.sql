@@ -18,6 +18,35 @@ translations as (
     select * from {{ ref('stg_translations') }}
 ),
 
+-- Pivot color criteria from rows to columns (was in stg_survey_stoplight_color)
+color_criteria_pivoted as (
+    select
+        survey_indicator_id,
+        max(case when color_value = 1 then color_description end) as red_criteria_description,
+        max(case when color_value = 2 then color_description end) as yellow_criteria_description,
+        max(case when color_value = 3 then color_description end) as green_criteria_description
+    from survey_stoplight_color
+    where color_value in (1, 2, 3)
+    group by survey_indicator_id
+),
+
+-- Add English display names to indicator templates (was in stg_survey_stoplight_indicator)
+indicator_templates_with_translations as (
+    select
+        ssi.indicator_template_id,
+        ssi.dimension_id,
+        ssi.indicator_template_code_name,
+        ssi.indicator_template_short_name,
+        ssi.indicator_template_description,
+        name_trans.translation_text as indicator_name,
+        desc_trans.translation_text as indicator_description
+    from survey_stoplight_indicator ssi
+    left join translations name_trans
+        on ssi.indicator_template_short_name = name_trans.translation_key
+    left join translations desc_trans
+        on ssi.indicator_template_description = desc_trans.translation_key
+),
+
 joined as (
     select
         -- Survey-specific indicator (instance)
@@ -29,29 +58,29 @@ joined as (
         survey_stoplight.indicator_is_required as survey_indicator_is_required,
 
         -- Master indicator (template) - for aggregation
-        survey_stoplight_indicator.indicator_template_id,
-        survey_stoplight_indicator.indicator_template_code_name as indicator_code_name,
-        survey_stoplight_indicator.indicator_name as indicator_name,
-        survey_stoplight_indicator.indicator_description as indicator_description,
+        indicator_templates_with_translations.indicator_template_id,
+        indicator_templates_with_translations.indicator_template_code_name as indicator_code_name,
+        indicator_templates_with_translations.indicator_name as indicator_name,
+        indicator_templates_with_translations.indicator_description as indicator_description,
 
         -- Dimension attributes (from master dimension table with English translation)
-        survey_stoplight_indicator.dimension_id,
-        translations.translation_text as dimension_name,
+        indicator_templates_with_translations.dimension_id,
+        dimension_trans.translation_text as dimension_name,
 
         -- Color criteria descriptions (what each color level means)
-        survey_stoplight_color.red_criteria_description,
-        survey_stoplight_color.yellow_criteria_description,
-        survey_stoplight_color.green_criteria_description
+        color_criteria_pivoted.red_criteria_description,
+        color_criteria_pivoted.yellow_criteria_description,
+        color_criteria_pivoted.green_criteria_description
 
     from survey_stoplight
-    inner join survey_stoplight_indicator
-        on survey_stoplight.indicator_template_id = survey_stoplight_indicator.indicator_template_id
+    inner join indicator_templates_with_translations
+        on survey_stoplight.indicator_template_id = indicator_templates_with_translations.indicator_template_id
     left join survey_stoplight_dimension
-        on survey_stoplight_indicator.dimension_id = survey_stoplight_dimension.id
-    left join translations
-        on survey_stoplight_dimension.met_name = translations.translation_key
-    left join survey_stoplight_color
-        on survey_stoplight.survey_indicator_id = survey_stoplight_color.survey_indicator_id
+        on indicator_templates_with_translations.dimension_id = survey_stoplight_dimension.id
+    left join translations dimension_trans
+        on survey_stoplight_dimension.met_name = dimension_trans.translation_key
+    left join color_criteria_pivoted
+        on survey_stoplight.survey_indicator_id = color_criteria_pivoted.survey_indicator_id
 ),
 
 final as (

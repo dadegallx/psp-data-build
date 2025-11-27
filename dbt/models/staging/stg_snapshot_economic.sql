@@ -1,85 +1,28 @@
-with snapshot_economic_source as (
+with source as (
     select * from {{ source('data_collect', 'snapshot_economic') }}
 ),
 
-snapshots as (
-    select * from {{ ref('stg_snapshots') }}
-),
-
-survey_economic as (
-    select * from {{ ref('stg_survey_economic') }}
-),
-
--- Enrich snapshot_economic with survey_definition_id via snapshot join
-economic_responses as (
-    select
-        se.id,
-        se.snapshot_id,
-        se.code_name,
-        se.answer_type,
-
-        -- Map polymorphic answer columns
-        se.value as answer_value,
-        case
-            when se.answer_type in ('number', 'string')
-            and se.value ~ '^[0-9]+\.?[0-9]*$'  -- Validate numeric format
-            then se.value::numeric
-        end as answer_number,
-        case
-            when se.answer_type = 'date' and se.value is not null
-            then to_timestamp(se.value::bigint / 1000)
-        end as answer_date,
-        case
-            when se.answer_type = 'checkbox' and se.multiple_value is not null
-            then array_to_string(se.multiple_value, ', ')
-        end as answer_options,
-
-        se.created_date,
-        se.last_modified_date,
-
-        -- Enriched fields from snapshot
-        s.survey_definition_id,
-        s.family_id,
-        s.snapshot_date
-
-    from snapshot_economic_source as se
-    inner join snapshots as s
-        on se.snapshot_id = s.snapshot_id
-),
-
--- Join to survey_economic to filter out orphaned code_names
--- This inner join removes 244 orphaned code_names without matching survey definitions
-final as (
+renamed as (
     select
         -- Primary key
-        er.id as snapshot_economic_id,
+        id as snapshot_economic_id,
 
         -- Foreign keys
-        er.snapshot_id,
-        er.survey_definition_id,
-        er.family_id,
+        snapshot_id,
 
         -- Question identifier
-        er.code_name,
+        code_name,
 
-        -- Answer type and values
-        er.answer_type,
-        er.answer_value,
-        er.answer_number,
-        er.answer_date,
-        er.answer_options,
-
-        -- Snapshot context
-        er.snapshot_date,
+        -- Answer type and raw value
+        answer_type,
+        value as answer_value,
+        multiple_value as answer_multiple_value,
 
         -- Audit fields
-        er.created_date,
-        er.last_modified_date
+        created_date,
+        last_modified_date
 
-    from economic_responses as er
-    inner join survey_economic as sve
-        on er.survey_definition_id = sve.survey_definition_id
-        and er.code_name = sve.code_name
+    from source
 )
 
-select * from final
+select * from renamed

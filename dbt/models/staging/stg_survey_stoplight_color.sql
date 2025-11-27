@@ -1,31 +1,20 @@
--- ==============================================================================
--- stg_survey_stoplight_color
--- ==============================================================================
---
--- Pivots stoplight color criteria from long format (3 rows per indicator) to
--- wide format (1 row with red/yellow/green columns).
---
--- Source: data_collect.survey_stoplight_color
--- Grain: One row per survey-specific indicator
---
--- ==============================================================================
-
 with source as (
     select * from {{ source('data_collect', 'survey_stoplight_color') }}
 ),
 
-pivoted as (
+renamed as (
     select
+        -- Primary key
+        id as survey_stoplight_color_id,
+
+        -- Foreign keys
         survey_stoplight_id as survey_indicator_id,
 
-        -- Pivot color descriptions from rows to columns
-        max(case when value = 1 then description end) as red_criteria_description,
-        max(case when value = 2 then description end) as yellow_criteria_description,
-        max(case when value = 3 then description end) as green_criteria_description
+        -- Attributes
+        value as color_value,  -- 1=Red, 2=Yellow, 3=Green
+        description as color_description
 
     from source
-    where value in (1, 2, 3)  -- Only valid stoplight values
-    group by survey_stoplight_id
 )
 
-select * from pivoted
+select * from renamed

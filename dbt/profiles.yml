@@ -13,7 +13,7 @@
 psp_data_build:
   target: default
   outputs:
-    dev:
+    default:
       type: postgres
       host: "{{ env_var('DBT_HOST') }}"
       port: "{{ env_var('DBT_PORT', '5432') | as_number }}"
