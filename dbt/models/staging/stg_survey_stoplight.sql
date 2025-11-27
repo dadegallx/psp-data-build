@@ -8,10 +8,11 @@ renamed as (
         id as survey_indicator_id,
 
         -- Foreign keys
+        survey_definition_id,
         survey_indicator_id as indicator_template_id,
 
-        -- Attributes
-        code_name as indicator_code_name,
+        -- Attributes (normalized for joins)
+        lower(trim(code_name)) as indicator_code_name,
         short_name as indicator_short_name,
         question_text as indicator_question_text,
         description as indicator_description,

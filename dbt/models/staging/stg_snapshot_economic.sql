@@ -10,8 +10,8 @@ renamed as (
         -- Foreign keys
         snapshot_id,
 
-        -- Question identifier
-        code_name,
+        -- Question identifier (normalized for joins)
+        lower(trim(code_name)) as code_name,
 
         -- Answer type and raw value
         answer_type,

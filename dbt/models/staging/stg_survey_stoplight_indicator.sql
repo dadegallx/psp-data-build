@@ -10,10 +10,10 @@ renamed as (
         -- Foreign keys
         survey_dimension_id as dimension_id,
 
-        -- Attributes
+        -- Attributes (short_name/description normalized for translation joins)
         code_name as indicator_template_code_name,
-        met_short_name as indicator_template_short_name,
-        met_description as indicator_template_description
+        lower(trim(met_short_name)) as indicator_template_short_name,
+        lower(trim(met_description)) as indicator_template_description
 
     from source
 )

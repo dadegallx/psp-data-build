@@ -10,8 +10,8 @@ renamed as (
         -- Foreign keys
         survey_definition_id,
 
-        -- Question identifiers
-        code_name,
+        -- Question identifiers (normalized for joins)
+        lower(trim(code_name)) as code_name,
         question_text,
 
         -- Answer configuration

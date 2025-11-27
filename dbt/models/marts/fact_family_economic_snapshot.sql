@@ -135,41 +135,41 @@ final as (
 
         -- Measures: householdMonthlyIncome (numeric + currency)
         case
-            when er.code_name = 'householdMonthlyIncome'
+            when er.code_name = 'householdmonthlyincome'
             then er.answer_number
         end as household_monthly_income,
         case
-            when er.code_name like '%currency%' or er.code_name like '%Currency%'
+            when er.code_name like '%currency%'
             then er.answer_value
         end as income_currency_code,
 
         -- Measures: housingSituation (single-select vs multi-select)
         case
-            when er.code_name = 'housingSituation' and er.answer_type in ('select', 'radio')
+            when er.code_name = 'housingsituation' and er.answer_type in ('select', 'radio')
             then er.answer_value
         end as housing_situation_single,
         case
-            when er.code_name = 'housingSituation' and er.answer_type = 'checkbox'
+            when er.code_name = 'housingsituation' and er.answer_type = 'checkbox'
             then er.answer_options
         end as housing_situation_multi,
 
         -- Measures: activityMain (single-select, multi-select, and text)
         case
-            when er.code_name = 'activityMain' and er.answer_type in ('select', 'radio')
+            when er.code_name = 'activitymain' and er.answer_type in ('select', 'radio')
             then er.answer_value
         end as activity_main_single,
         case
-            when er.code_name = 'activityMain' and er.answer_type = 'checkbox'
+            when er.code_name = 'activitymain' and er.answer_type = 'checkbox'
             then er.answer_options
         end as activity_main_multi,
         case
-            when er.code_name = 'activityMain' and er.answer_type = 'text'
+            when er.code_name = 'activitymain' and er.answer_type = 'text'
             then er.answer_value
         end as activity_main_text,
 
         -- Measures: familyCar (boolean/radio)
         case
-            when er.code_name = 'familyCar' and er.answer_type in ('radio', 'checkbox', 'select')
+            when er.code_name = 'familycar' and er.answer_type in ('radio', 'checkbox', 'select')
             then case
                 when lower(er.answer_value) in ('yes', 'true', '1', 'sí', 'sim')
                 then true
@@ -181,26 +181,25 @@ final as (
 
         -- Measures: areaOfResidence (select vs radio)
         case
-            when er.code_name = 'areaOfResidence' and er.answer_type = 'select'
+            when er.code_name = 'areaofresidence' and er.answer_type = 'select'
             then er.answer_value
         end as area_of_residence_select,
         case
-            when er.code_name = 'areaOfResidence' and er.answer_type = 'radio'
+            when er.code_name = 'areaofresidence' and er.answer_type = 'radio'
             then er.answer_value
         end as area_of_residence_radio
 
     from economic_responses er
 
     where er.code_name in (
-        'householdMonthlyIncome',
-        'housingSituation',
-        'activityMain',
-        'familyCar',
-        'areaOfResidence'
+        'householdmonthlyincome',
+        'housingsituation',
+        'activitymain',
+        'familycar',
+        'areaofresidence'
     )
-    -- Also capture currency code responses which often have different code_names
+    -- Also capture currency code responses
     or er.code_name like '%currency%'
-    or er.code_name like '%Currency%'
 )
 
 select * from final

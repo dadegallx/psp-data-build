@@ -10,8 +10,8 @@ renamed as (
         -- Foreign keys
         snapshot_id,
 
-        -- Attributes
-        code_name as indicator_code_name,
+        -- Attributes (normalized for joins)
+        lower(trim(code_name)) as indicator_code_name,
         value as indicator_status_value,  -- 1=Red, 2=Yellow, 3=Green, NULL=Skipped
 
         -- Audit fields

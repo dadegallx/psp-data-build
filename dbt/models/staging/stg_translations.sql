@@ -7,8 +7,8 @@ english_only as (
         -- Primary key
         id as translation_id,
 
-        -- Translation key (e.g., 'income.name')
-        key as translation_key,
+        -- Translation key (normalized for joins)
+        lower(trim(key)) as translation_key,
 
         -- Language code
         lang as language_code,
