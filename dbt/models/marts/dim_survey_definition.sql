@@ -1,10 +1,3 @@
-{{
-  config(
-    materialized='table',
-    tags=['mart', 'dimension', 'survey']
-  )
-}}
-
 with survey_definitions as (
     select * from {{ ref('stg_survey_definitions') }}
 ),

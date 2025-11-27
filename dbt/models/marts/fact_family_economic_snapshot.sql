@@ -1,10 +1,3 @@
-{{
-  config(
-    materialized='table',
-    tags=['mart', 'fact', 'economic']
-  )
-}}
-
 with snapshot_economic as (
     select * from {{ ref('stg_snapshot_economic') }}
 ),

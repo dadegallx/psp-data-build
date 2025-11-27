@@ -1,12 +1,25 @@
+# =============================================================================
 # dbt Project Configuration for Poverty Stoplight Star Schema
+# =============================================================================
+#
+# ARCHITECTURE:
+#   Source Schemas: ps_network, ps_families, data_collect (read replica)
+#   Target Schemas: staging (views), marts (tables)
+#
+# MATERIALIZATION STRATEGY:
+#   - Staging: views (lightweight, always fresh from source)
+#     - Exception: Large join models materialized as tables for performance
+#   - Marts: tables (optimized for query performance)
+#
+# =============================================================================
+
 name: 'psp_data_build'
 version: '1.0.0'
 config-version: 2
 
-# This setting configures which "profile" dbt uses for this project
 profile: 'psp_data_build'
 
-# These configurations specify where dbt should look for different types of files
+# Directory paths
 model-paths: ["models"]
 analysis-paths: ["analyses"]
 test-paths: ["tests"]
@@ -20,37 +33,52 @@ clean-targets:
   - "dbt_packages"
   - "logs"
 
-# Configuring models
-# Full documentation: https://docs.getdbt.com/docs/configuring-models
+# =============================================================================
+# MODEL CONFIGURATIONS
+# =============================================================================
+# Centralized configuration for all models. Model-specific overrides (like
+# indexes) should remain in individual model files using {{ config() }}.
+# =============================================================================
 
 models:
   psp_data_build:
-    # Default configuration for all models
-    +materialized: view
-
+    # -------------------------------------------------------------------------
+    # STAGING LAYER (Silver)
+    # -------------------------------------------------------------------------
+    # Default: views for lightweight data cleaning
+    # Override in model file for tables requiring indexes
     staging:
-      # Staging models: lightweight views for data cleaning
       +materialized: view
-      +tags: ['staging']
+      +tags: ['staging', 'silver']
       +schema: staging
 
+    # -------------------------------------------------------------------------
+    # INTERMEDIATE LAYER (Silver)
+    # -------------------------------------------------------------------------
+    # Complex business logic transformations
     intermediate:
-      # Intermediate models: business logic transformations
       +materialized: view
-      +tags: ['intermediate']
+      +tags: ['intermediate', 'silver']
       +schema: intermediate
 
+    # -------------------------------------------------------------------------
+    # MARTS LAYER (Gold)
+    # -------------------------------------------------------------------------
+    # Final semantic layer - all materialized as tables
     marts:
-      # Marts: final semantic layer tables
       +materialized: table
-      +tags: ['mart', 'semantic_layer']
+      +tags: ['mart', 'gold']
       +schema: marts
 
+      # Dashboard aggregations
       dashboards:
-        # Dashboard marts: pre-aggregated for Superset visualization
         +materialized: table
-        +tags: ['mart', 'dashboard']
-        +schema: dashboards
+        +tags: ['mart', 'dashboard', 'gold']
+        +schema: marts
+
+# =============================================================================
+# SEEDS & SNAPSHOTS
+# =============================================================================
 
 seeds:
   psp_data_build:

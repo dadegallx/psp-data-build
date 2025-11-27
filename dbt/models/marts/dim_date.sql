@@ -1,10 +1,3 @@
-{{
-  config(
-    materialized='table',
-    tags=['mart', 'dimension', 'date']
-  )
-}}
-
 with date_spine as (
     select
         date_day::date as date_actual

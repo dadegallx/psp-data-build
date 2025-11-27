@@ -1,10 +1,3 @@
-{{
-  config(
-    materialized='table',
-    tags=['mart', 'dimension', 'indicator']
-  )
-}}
-
 with survey_stoplight as (
     select * from {{ ref('stg_survey_stoplight') }}
 ),

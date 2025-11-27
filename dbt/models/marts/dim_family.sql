@@ -1,10 +1,3 @@
-{{
-  config(
-    materialized='table',
-    tags=['mart', 'dimension', 'family']
-  )
-}}
-
 with families as (
     select * from {{ ref('stg_families') }}
 ),

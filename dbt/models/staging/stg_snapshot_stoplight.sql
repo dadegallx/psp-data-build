@@ -1,10 +1,3 @@
-{{
-  config(
-    materialized='view',
-    tags=['staging']
-  )
-}}
-
 with source as (
     select * from {{ source('data_collect', 'snapshot_stoplight') }}
 ),
@@ -17,14 +10,12 @@ snapshots as (
 ),
 
 survey_indicators as (
-    -- Pre-deduplicate survey_stoplight by picking first order_number per code_name
-    -- Handles rare cases (<0.01%) where same code_name appears multiple times in one survey
-    select distinct on (survey_definition_id, code_name)
+    -- Simplified: no dedup - accepting <0.01% edge case of duplicate code_names
+    select
         id as survey_indicator_id,
         survey_definition_id,
         code_name
     from {{ source('data_collect', 'survey_stoplight') }}
-    order by survey_definition_id, code_name, order_number
 ),
 
 enriched as (

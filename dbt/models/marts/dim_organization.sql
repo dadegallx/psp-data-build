@@ -1,10 +1,3 @@
-{{
-  config(
-    materialized='table',
-    tags=['mart', 'dimension', 'organization']
-  )
-}}
-
 with organizations as (
     select * from {{ ref('stg_organizations') }}
 ),

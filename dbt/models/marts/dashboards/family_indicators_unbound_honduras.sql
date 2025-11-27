@@ -1,9 +1,5 @@
-{{
-  config(
-    materialized='view',
-    tags=['mart', 'dashboard', 'organization_scoped']
-  )
-}}
+-- View for lightweight organization-scoped filtering
+{{ config(materialized='view') }}
 
 -- ==============================================================================
 -- family_indicators_unbound_honduras

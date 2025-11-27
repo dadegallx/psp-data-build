@@ -1,10 +1,3 @@
-{{
-  config(
-    materialized='table',
-    tags=['mart', 'fact', 'core']
-  )
-}}
-
 with snapshots as (
     select * from {{ ref('stg_snapshots') }}
 ),

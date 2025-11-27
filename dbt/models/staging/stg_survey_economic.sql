@@ -1,10 +1,3 @@
-{{
-  config(
-    materialized='view',
-    tags=['staging', 'economic']
-  )
-}}
-
 with source as (
     select * from {{ source('data_collect', 'survey_economic') }}
 ),

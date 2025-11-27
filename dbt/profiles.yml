@@ -1,46 +1,25 @@
-# dbt Database Connection Profiles
-# This file configures database connection profiles for the TARGET database
-# where dbt will build models (marts, staging, etc.)
+# dbt Database Connection Profile
+# ================================
+# Single connection mode - swap credentials in .env as needed
 #
-# Source database credentials are configured in models/_sources.yml
-# Use environment variables for sensitive information
+# Required Environment Variables:
+#   DBT_HOST     - Database host
+#   DBT_USER     - Database user
+#   DBT_PASSWORD - Database password
+#   DBT_DBNAME   - Database name
+#   DBT_PORT     - Port (default: 5432)
+#   DBT_SCHEMA   - Default schema prefix (default: marts)
 
 psp_data_build:
+  target: default
   outputs:
     dev:
       type: postgres
-      host: "{{ env_var('TARGET_DBT_HOST') }}"
-      port: "{{ env_var('TARGET_DBT_PORT', '5432') | as_number }}"
-      user: "{{ env_var('TARGET_DBT_USER') }}"
-      pass: "{{ env_var('TARGET_DBT_PASSWORD') }}"
-      dbname: "{{ env_var('TARGET_DBT_DBNAME') }}"
-      schema: analytics
+      host: "{{ env_var('DBT_HOST') }}"
+      port: "{{ env_var('DBT_PORT', '5432') | as_number }}"
+      user: "{{ env_var('DBT_USER') }}"
+      pass: "{{ env_var('DBT_PASSWORD') }}"
+      dbname: "{{ env_var('DBT_DBNAME') }}"
+      schema: "{{ env_var('DBT_SCHEMA', 'marts') }}"
       threads: 4
       keepalives_idle: 0
-      sslmode: require
-
-    replica:
-      type: postgres
-      host: "{{ env_var('REPLICA_DBT_HOST') }}"
-      port: "{{ env_var('REPLICA_DBT_PORT', '5432') | as_number }}"
-      user: "{{ env_var('REPLICA_DBT_USER') }}"
-      pass: "{{ env_var('REPLICA_DBT_PASSWORD') }}"
-      dbname: "{{ env_var('REPLICA_DBT_DBNAME') }}"
-      schema: "{{ env_var('REPLICA_DBT_SCHEMA', 'public') }}"
-      threads: 4
-      keepalives_idle: 0
-      sslmode: require
-
-    prod:
-      type: postgres
-      host: "{{ env_var('TARGET_DBT_HOST') }}"
-      port: "{{ env_var('TARGET_DBT_PORT', '5432') | as_number }}"
-      user: "{{ env_var('TARGET_DBT_USER') }}"
-      pass: "{{ env_var('TARGET_DBT_PASSWORD') }}"
-      dbname: "{{ env_var('TARGET_DBT_DBNAME') }}"
-      schema: analytics
-      threads: 4
-      keepalives_idle: 0
-      sslmode: require
-
-  target: dev

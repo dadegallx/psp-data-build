@@ -1,9 +1,3 @@
-{{
-  config(
-    materialized='table',
-    tags=['mart', 'dashboard', 'denormalized']
-  )
-}}
 
 -- ==============================================================================
 -- family_indicators

@@ -1,10 +1,3 @@
-{{
-  config(
-    materialized='view',
-    tags=['staging', 'economic']
-  )
-}}
-
 with snapshot_economic_source as (
     select * from {{ source('data_collect', 'snapshot_economic') }}
 ),

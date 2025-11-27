@@ -1,10 +1,3 @@
-{{
-  config(
-    materialized='table',
-    tags=['mart', 'dimension', 'economic']
-  )
-}}
-
 with survey_economic as (
     select * from {{ ref('stg_survey_economic') }}
 ),
