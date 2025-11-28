@@ -1,0 +1,146 @@
+version: 2
+
+models:
+  - name: mart_family_snapshots_overview
+    description: >
+      **Aggregated poverty metrics per family per snapshot.**
+
+      **Grain:** One row per family per snapshot
+
+      **Use Case:** High-level dashboard showing family progress, geographic distribution,
+      and cohort analysis. Supports filtering by organization, time period, and geography.
+
+      **Key Features:**
+      - Pre-aggregated indicator counts and percentages (red/yellow/green/skipped)
+      - Cohort analysis flag (has_followup_data) to identify families with multiple snapshots
+      - Full denormalization with organization, survey, and geographic context
+      - Latitude/longitude for geographic visualizations
+
+      **BI Usage Patterns:**
+      - Progress over time: Group by snapshot_year/quarter, aggregate percentage_greens
+      - Geographic analysis: Use latitude/longitude for maps, filter by family_country
+      - Organization comparison: Group by organization_name, compare metrics
+      - Cohort analysis: Filter has_followup_data = true for longitudinal studies
+
+    columns:
+      - name: snapshot_id
+        description: "Unique identifier for this family snapshot"
+        data_tests:
+          - not_null
+
+      - name: snapshot_number
+        description: "Sequence number (1 = baseline, 2+ = follow-up)"
+
+      - name: is_last
+        description: "True if this is the most recent snapshot for the family"
+
+      - name: has_followup_data
+        description: "True if family has more than one snapshot (for cohort analysis)"
+
+      - name: snapshot_date
+        description: "Date when survey was completed"
+
+      - name: snapshot_year
+        description: "Year of survey completion"
+
+      - name: snapshot_quarter
+        description: "Quarter of survey completion (1-4)"
+
+      - name: snapshot_month
+        description: "Month of survey completion (1-12)"
+
+      - name: family_id
+        description: "Unique family identifier"
+        data_tests:
+          - not_null
+
+      - name: total_indicators_answered
+        description: "Total number of indicators in the snapshot (including skipped)"
+
+      - name: count_greens
+        description: "Number of indicators with green (non-poor) status"
+
+      - name: count_yellows
+        description: "Number of indicators with yellow (vulnerable) status"
+
+      - name: count_reds
+        description: "Number of indicators with red (critical poverty) status"
+
+      - name: count_skipped
+        description: "Number of indicators that were skipped or not applicable"
+
+      - name: percentage_greens
+        description: "Percentage of indicators that are green"
+
+      - name: percentage_yellows
+        description: "Percentage of indicators that are yellow"
+
+      - name: percentage_reds
+        description: "Percentage of indicators that are red"
+
+      - name: percentage_skipped
+        description: "Percentage of indicators that were skipped"
+
+  - name: mart_family_snapshots_indicators
+    description: >
+      **Detailed indicator-level data with context for drill-down analysis.**
+
+      **Grain:** One row per family per indicator per snapshot
+
+      **Use Case:** Detailed analysis of specific indicators, dimension breakdowns,
+      and understanding which indicators drive poverty status.
+
+      **Key Features:**
+      - Pre-calculated integer flags (is_red, is_yellow, is_green, is_skipped) for easy aggregation
+      - Canonical English indicator_name for cross-survey grouping
+      - Localized indicator text for display
+      - Color criteria descriptions for tooltips and explanation
+
+      **BI Usage Patterns:**
+      - Most critical indicators: GROUP BY indicator_name, SUM(is_red) DESC
+      - Dimension analysis: GROUP BY dimension_name, aggregate status flags
+      - Indicator detail: Filter to specific indicator_name, show localized text
+      - Progress tracking: Compare status flags across snapshot_year
+
+    columns:
+      - name: snapshot_id
+        description: "Unique identifier for this family snapshot"
+        data_tests:
+          - not_null
+
+      - name: family_id
+        description: "Unique family identifier"
+        data_tests:
+          - not_null
+
+      - name: indicator_name
+        description: >
+          **PRIMARY GROUPING FIELD** - Canonical English indicator name.
+          Use for aggregation across surveys regardless of language.
+
+      - name: dimension_name
+        description: "Poverty dimension category (e.g., Housing, Health, Education)"
+
+      - name: is_red
+        description: "1 if critical poverty, 0 otherwise. Use SUM() to count reds."
+        data_tests:
+          - accepted_values:
+              values: [0, 1]
+
+      - name: is_yellow
+        description: "1 if vulnerable/moderate poverty, 0 otherwise. Use SUM() to count yellows."
+        data_tests:
+          - accepted_values:
+              values: [0, 1]
+
+      - name: is_green
+        description: "1 if non-poor/need met, 0 otherwise. Use SUM() to count greens."
+        data_tests:
+          - accepted_values:
+              values: [0, 1]
+
+      - name: is_skipped
+        description: "1 if indicator was skipped/not applicable, 0 otherwise."
+        data_tests:
+          - accepted_values:
+              values: [0, 1]
