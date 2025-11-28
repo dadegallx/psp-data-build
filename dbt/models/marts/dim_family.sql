@@ -4,10 +4,7 @@ with families as (
 
 final as (
     select
-        -- Surrogate key
-        {{ dbt_utils.generate_surrogate_key(['family_id']) }} as family_key,
-
-        -- Natural key
+        -- Primary key
         family_id,
 
         -- Family attributes

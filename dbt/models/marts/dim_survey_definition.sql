@@ -4,10 +4,7 @@ with survey_definitions as (
 
 final as (
     select
-        -- Surrogate key
-        {{ dbt_utils.generate_surrogate_key(['survey_definition_id']) }} as survey_definition_key,
-
-        -- Natural key
+        -- Primary key
         survey_definition_id,
 
         -- Survey attributes

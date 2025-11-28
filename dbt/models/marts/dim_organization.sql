@@ -31,10 +31,7 @@ joined as (
 
 final as (
     select
-        -- Surrogate key
-        {{ dbt_utils.generate_surrogate_key(['organization_id']) }} as organization_key,
-
-        -- Natural key
+        -- Primary key
         organization_id,
 
         -- Organization attributes

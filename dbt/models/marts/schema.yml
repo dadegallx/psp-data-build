@@ -49,14 +49,8 @@ models:
       Contains denormalized hierarchy for easier querying.
       Estimated 100-500 rows.
     columns:
-      - name: organization_key
-        description: "Surrogate key"
-        data_tests:
-          - unique
-          - not_null
-
       - name: organization_id
-        description: "Natural key from ps_network.organizations"
+        description: "Primary key from ps_network.organizations"
         data_tests:
           - unique
           - not_null
@@ -89,14 +83,8 @@ models:
       - For aggregation/grouping: Use indicator_name (English display name)
       - For drill-down/details: Use survey_indicator_* fields (localized)
     columns:
-      - name: indicator_key
-        description: "Surrogate key (based on survey_indicator_id)"
-        data_tests:
-          - unique
-          - not_null
-
       - name: survey_indicator_id
-        description: "Natural key from data_collect.survey_stoplight (survey-specific)"
+        description: "Primary key from data_collect.survey_stoplight (survey-specific)"
         data_tests:
           - unique
           - not_null
@@ -166,14 +154,8 @@ models:
       Privacy-focused family dimension with minimal PII.
       Coordinates rounded to 2 decimals for privacy.
     columns:
-      - name: family_key
-        description: "Surrogate key"
-        data_tests:
-          - unique
-          - not_null
-
       - name: family_id
-        description: "Natural key from ps_families.family"
+        description: "Primary key from ps_families.family"
         data_tests:
           - unique
           - not_null
@@ -201,14 +183,8 @@ models:
       Contains metadata about survey configurations.
       Estimated 20-50 rows.
     columns:
-      - name: survey_definition_key
-        description: "Surrogate key"
-        data_tests:
-          - unique
-          - not_null
-
       - name: survey_definition_id
-        description: "Natural key from data_collect.survey_definition"
+        description: "Primary key from data_collect.survey_definition"
         data_tests:
           - unique
           - not_null
@@ -229,14 +205,8 @@ models:
 
       Estimated rows: Varies by number of survey versions, typically 100-500 rows.
     columns:
-      - name: economic_question_key
-        description: "Surrogate key (generated from survey_definition_id + code_name)"
-        data_tests:
-          - unique
-          - not_null
-
       - name: survey_definition_id
-        description: "Natural key - foreign key to survey_definition"
+        description: "Primary key part 1 - foreign key to survey_definition"
         data_tests:
           - not_null
           - relationships:
@@ -244,7 +214,7 @@ models:
               to: ref('dim_survey_definition')
 
       - name: code_name
-        description: "Question identifier (e.g., 'householdMonthlyIncome', 'familyCar', 'activityMain')"
+        description: "Primary key part 2 - question identifier (e.g., 'householdMonthlyIncome', 'familyCar', 'activityMain')"
         data_tests:
           - not_null
 
@@ -300,12 +270,6 @@ models:
       - Baseline surveys: Filter WHERE snapshot_number = 1
       - Progress analysis: Compare snapshot_number = 1 vs > 1 for same family
     columns:
-      - name: family_indicator_snapshot_key
-        description: "Surrogate key for this fact record"
-        data_tests:
-          - unique
-          - not_null
-
       - name: date_key
         description: "Survey date key in YYYYMMDD format"
         data_tests:
@@ -314,36 +278,36 @@ models:
               field: date_key
               to: ref('dim_date')
 
-      - name: organization_key
-        description: "Foreign key to organization dimension"
-        data_tests:
-          - not_null
-          - relationships:
-              field: organization_key
-              to: ref('dim_organization')
-
-      - name: indicator_key
-        description: "Foreign key to indicator dimension"
-        data_tests:
-          - not_null
-          - relationships:
-              field: indicator_key
-              to: ref('dim_indicator_questions')
-
-      - name: family_key
+      - name: family_id
         description: "Foreign key to family dimension"
         data_tests:
           - not_null
           - relationships:
-              field: family_key
+              field: family_id
               to: ref('dim_family')
 
-      - name: survey_definition_key
+      - name: organization_id
+        description: "Foreign key to organization dimension"
+        data_tests:
+          - not_null
+          - relationships:
+              field: organization_id
+              to: ref('dim_organization')
+
+      - name: survey_indicator_id
+        description: "Foreign key to indicator dimension"
+        data_tests:
+          - not_null
+          - relationships:
+              field: survey_indicator_id
+              to: ref('dim_indicator_questions')
+
+      - name: survey_definition_id
         description: "Foreign key to survey definition dimension"
         data_tests:
           - not_null
           - relationships:
-              field: survey_definition_key
+              field: survey_definition_id
               to: ref('dim_survey_definition')
 
       - name: snapshot_id
@@ -396,12 +360,6 @@ models:
       **Row Count:** Estimated 15,000-50,000 rows depending on economic question
       usage across surveys. Grows with new snapshots.
     columns:
-      - name: family_economic_snapshot_key
-        description: "Surrogate key (generated from snapshot_id + economic_question_key)"
-        data_tests:
-          - unique
-          - not_null
-
       - name: date_key
         description: "Foreign key to dim_date (survey date in YYYYMMDD format)"
         data_tests:
@@ -410,37 +368,34 @@ models:
               field: date_key
               to: ref('dim_date')
 
-      - name: family_key
+      - name: family_id
         description: "Foreign key to dim_family"
         data_tests:
           - not_null
           - relationships:
-              field: family_key
+              field: family_id
               to: ref('dim_family')
 
-      - name: economic_question_key
-        description: "Foreign key to dim_economic_questions"
-        data_tests:
-          - not_null
-          - relationships:
-              field: economic_question_key
-              to: ref('dim_economic_questions')
-
-      - name: organization_key
+      - name: organization_id
         description: "Foreign key to dim_organization"
         data_tests:
           - not_null
           - relationships:
-              field: organization_key
+              field: organization_id
               to: ref('dim_organization')
 
-      - name: survey_definition_key
-        description: "Foreign key to dim_survey_definition"
+      - name: survey_definition_id
+        description: "Foreign key to dim_survey_definition (also part of composite FK to dim_economic_questions)"
         data_tests:
           - not_null
           - relationships:
-              field: survey_definition_key
+              field: survey_definition_id
               to: ref('dim_survey_definition')
+
+      - name: code_name
+        description: "Foreign key part 2 to dim_economic_questions (with survey_definition_id)"
+        data_tests:
+          - not_null
 
       - name: snapshot_id
         description: "Degenerate dimension - natural key from source (data_collect.snapshot.id)"

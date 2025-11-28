@@ -47,12 +47,12 @@ stoplight_with_survey_indicator as (
         and ss.indicator_code_name = si.indicator_code_name
 ),
 
--- Join with indicator dimension to get indicator_key
+-- Join with indicator dimension to validate survey_indicator_id exists
 stoplight_with_indicators as (
     select
         swsi.snapshot_id,
         swsi.indicator_status_value,
-        ind.indicator_key
+        swsi.survey_indicator_id
     from stoplight_with_survey_indicator swsi
     inner join indicators ind
         on swsi.survey_indicator_id = ind.survey_indicator_id
@@ -65,11 +65,11 @@ joined as (
         snapshots.is_last,
         snapshots.snapshot_date,
 
-        -- Foreign keys to dimensions
-        families.family_key,
-        organizations.organization_key,
-        stoplight_with_indicators.indicator_key,
-        survey_definitions.survey_definition_key,
+        -- Foreign keys to dimensions (natural keys)
+        snapshots.family_id,
+        snapshots.organization_id,
+        stoplight_with_indicators.survey_indicator_id,
+        snapshots.survey_definition_id,
 
         -- Measure
         stoplight_with_indicators.indicator_status_value
@@ -87,18 +87,12 @@ joined as (
 
 final as (
     select
-        -- Surrogate key
-        {{ dbt_utils.generate_surrogate_key([
-            'snapshot_id',
-            'indicator_key'
-        ]) }} as family_indicator_snapshot_key,
-
-        -- Foreign keys to dimensions
+        -- Foreign keys to dimensions (natural keys)
         to_char(snapshot_date, 'YYYYMMDD')::integer as date_key,
-        organization_key,
-        indicator_key,
-        family_key,
-        survey_definition_key,
+        family_id,
+        organization_id,
+        survey_indicator_id,
+        survey_definition_id,
 
         -- Degenerate dimensions
         snapshot_id,

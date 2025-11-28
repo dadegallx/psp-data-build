@@ -85,11 +85,8 @@ joined as (
 
 final as (
     select
-        -- Surrogate key (based on survey-specific indicator ID)
-        {{ dbt_utils.generate_surrogate_key(['survey_indicator_id']) }} as indicator_key,
-
-        -- Natural keys
-        survey_indicator_id,      -- Survey-specific ID
+        -- Primary key (survey-specific indicator ID)
+        survey_indicator_id,
         indicator_template_id,    -- Master template ID
 
         -- MASTER INDICATOR ATTRIBUTES (for aggregation/grouping)

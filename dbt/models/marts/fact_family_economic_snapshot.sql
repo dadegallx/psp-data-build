@@ -82,11 +82,10 @@ economic_responses as (
         er.is_last,
         er.snapshot_date,
 
-        -- Foreign keys
-        f.family_key,
-        eq.economic_question_key,
-        o.organization_key,
-        sd.survey_definition_key,
+        -- Foreign keys (natural keys)
+        er.family_id,
+        er.organization_id,
+        er.survey_definition_id,
 
         -- Question identifier and type
         er.code_name,
@@ -115,18 +114,12 @@ economic_responses as (
 -- Pivot the 5 priority economic fields with type-specific columns
 final as (
     select
-        -- Surrogate key
-        {{ dbt_utils.generate_surrogate_key([
-            'er.snapshot_id',
-            'er.economic_question_key'
-        ]) }} as family_economic_snapshot_key,
-
-        -- Foreign keys to dimensions
+        -- Foreign keys to dimensions (natural keys)
         to_char(er.snapshot_date, 'YYYYMMDD')::integer as date_key,
-        er.family_key,
-        er.economic_question_key,
-        er.organization_key,
-        er.survey_definition_key,
+        er.family_id,
+        er.organization_id,
+        er.survey_definition_id,
+        er.code_name,  -- Part of composite key for dim_economic_questions
 
         -- Degenerate dimensions
         er.snapshot_id,

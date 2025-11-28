@@ -8,13 +8,7 @@ survey_definitions as (
 
 final as (
     select
-        -- Surrogate key
-        {{ dbt_utils.generate_surrogate_key([
-            'se.survey_definition_id',
-            'se.code_name'
-        ]) }} as economic_question_key,
-
-        -- Natural keys
+        -- Primary key (composite: survey_definition_id + code_name)
         se.survey_definition_id,
         se.code_name,
 
