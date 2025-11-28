@@ -198,12 +198,18 @@ models:
       Contains question definitions (income, assets, employment, housing, etc.) that can be
       included in surveys. Similar structure to dim_indicator_questions but for economic data.
 
-      **Grain:** One row per survey_definition + code_name combination.
+      **Grain:** One row per economic question definition.
 
       Estimated rows: Varies by number of survey versions, typically 100-500 rows.
     columns:
+      - name: survey_economic_id
+        description: "Primary key from data_collect.survey_economic"
+        data_tests:
+          - unique
+          - not_null
+
       - name: survey_definition_id
-        description: "Primary key part 1 - foreign key to survey_definition"
+        description: "Foreign key to survey_definition"
         data_tests:
           - not_null
           - relationships:
@@ -211,7 +217,7 @@ models:
               to: ref('dim_survey_definition')
 
       - name: code_name
-        description: "Primary key part 2 - question identifier (e.g., 'householdMonthlyIncome', 'familyCar', 'activityMain')"
+        description: "Question identifier (e.g., 'householdMonthlyIncome', 'familyCar', 'activityMain')"
         data_tests:
           - not_null
 
@@ -381,18 +387,21 @@ models:
               field: organization_id
               to: ref('dim_organization')
 
+      - name: survey_economic_id
+        description: "Foreign key to dim_economic_questions"
+        data_tests:
+          - not_null
+          - relationships:
+              field: survey_economic_id
+              to: ref('dim_economic_questions')
+
       - name: survey_definition_id
-        description: "Foreign key to dim_survey_definition (also part of composite FK to dim_economic_questions)"
+        description: "Foreign key to dim_survey_definition"
         data_tests:
           - not_null
           - relationships:
               field: survey_definition_id
               to: ref('dim_survey_definition')
-
-      - name: code_name
-        description: "Foreign key part 2 to dim_economic_questions (with survey_definition_id)"
-        data_tests:
-          - not_null
 
       - name: snapshot_id
         description: "Degenerate dimension - natural key from source (data_collect.snapshot.id)"

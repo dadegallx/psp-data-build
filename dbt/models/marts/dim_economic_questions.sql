@@ -8,7 +8,10 @@ survey_definitions as (
 
 final as (
     select
-        -- Primary key (composite: survey_definition_id + code_name)
+        -- Primary key
+        se.survey_economic_id,
+
+        -- Business key (composite: survey_definition_id + code_name)
         se.survey_definition_id,
         se.code_name,
 

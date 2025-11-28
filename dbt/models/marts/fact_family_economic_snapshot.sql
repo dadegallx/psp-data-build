@@ -65,8 +65,11 @@ economic_responses_enriched as (
 
 -- Filter to valid code_names that exist in survey_economic
 -- This removes orphaned code_names without matching survey definitions
+-- Also resolves composite key to survey_economic_id
 economic_responses_filtered as (
-    select er.*
+    select
+        er.*,
+        sve.survey_economic_id
     from economic_responses_enriched er
     inner join survey_economic sve
         on er.survey_definition_id = sve.survey_definition_id
@@ -86,6 +89,7 @@ economic_responses as (
         er.family_id,
         er.organization_id,
         er.survey_definition_id,
+        er.survey_economic_id,
 
         -- Question identifier and type
         er.code_name,
@@ -101,8 +105,7 @@ economic_responses as (
     inner join families f
         on er.family_id = f.family_id
     inner join economic_questions eq
-        on er.survey_definition_id = eq.survey_definition_id
-        and er.code_name = eq.code_name
+        on er.survey_economic_id = eq.survey_economic_id
     inner join organizations o
         on er.organization_id = o.organization_id
     inner join survey_definitions sd
@@ -118,8 +121,8 @@ final as (
         to_char(er.snapshot_date, 'YYYYMMDD')::integer as date_key,
         er.family_id,
         er.organization_id,
+        er.survey_economic_id,
         er.survey_definition_id,
-        er.code_name,  -- Part of composite key for dim_economic_questions
 
         -- Degenerate dimensions
         er.snapshot_id,
