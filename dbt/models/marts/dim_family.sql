@@ -8,7 +8,6 @@ final as (
         family_id,
 
         -- Family attributes
-        family_is_active,
         is_anonymous,
 
         -- Geographic attributes

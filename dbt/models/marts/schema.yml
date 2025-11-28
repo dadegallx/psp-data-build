@@ -11,7 +11,7 @@ models:
       Contains ~7,300 rows covering 20 years (2015-2035).
     columns:
       - name: date_key
-        description: "Surrogate key in YYYYMMDD format (e.g., 20240315)"
+        description: "Primary key in YYYYMMDD integer format (e.g., 20240315)"
         data_tests:
           - unique
           - not_null
@@ -159,9 +159,6 @@ models:
         data_tests:
           - unique
           - not_null
-
-      - name: family_is_active
-        description: "Whether the family is currently active"
 
       - name: is_anonymous
         description: "Privacy flag"
