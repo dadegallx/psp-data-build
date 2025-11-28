@@ -71,44 +71,64 @@ CREATE INDEX idx_fact_indicator_status ON fact_family_indicator_snapshot (indica
 
 ### fact_family_economic_snapshot
 
-**Description:** Captures economic survey responses at atomic grain
+**Description:** Captures economic survey responses at atomic grain using a normalized design with typed value columns
 
 **Grain:** One row per family, per economic question, per snapshot (survey completion)
 
-**Estimated Row Count:** 15,000-50,000 current rows, varies by economic question usage
+**Estimated Row Count:** 50,000-200,000 rows (all economic questions captured)
 
-**Priority Fields:** householdMonthlyIncome, housingSituation, activityMain, familyCar, areaOfResidence
+**Design Pattern:** Normalized (like fact_family_indicator_snapshot) - questions are rows, not columns
+
+**Scope:** Family-level questions only (member-level questions excluded)
 
 ---
 
 #### Column Specifications
 
 | Column Name | Data Type | Nullable | Default | Constraints | Description |
-|-------------|-----------|----------|---------|-------------|----------------|
+|-------------|-----------|----------|---------|-------------|-------------|
+| **Keys** |
 | `family_economic_snapshot_key` | BIGINT | NOT NULL | - | PRIMARY KEY | Surrogate key for this fact record |
 | `date_key` | INTEGER | NOT NULL | - | FK → dim_date.date_key | Survey date key (YYYYMMDD format) |
 | `family_key` | BIGINT | NOT NULL | - | FK → dim_family.family_key | Family being surveyed |
 | `economic_question_key` | BIGINT | NOT NULL | - | FK → dim_economic_questions.economic_question_key | Economic question being answered |
 | `organization_key` | BIGINT | NOT NULL | - | FK → dim_organization.organization_key | Organization conducting survey |
 | `survey_definition_key` | BIGINT | NOT NULL | - | FK → dim_survey_definition.survey_definition_key | Survey template used |
+| **Degenerate Dimensions** |
 | `snapshot_id` | BIGINT | NOT NULL | - | UNIQUE INDEX (with economic_question_key) | Natural key from source (data_collect.snapshot.id) |
 | `snapshot_number` | SMALLINT | NOT NULL | - | CHECK (snapshot_number > 0) | Survey round: 1=baseline, 2=first follow-up, etc. |
 | `is_last` | BOOLEAN | NOT NULL | FALSE | INDEX | True if this is the most recent survey for this family |
-| **Measures - householdMonthlyIncome** |
-| `household_monthly_income` | NUMERIC(15,2) | NULL | - | - | Monthly household income (numeric value) |
-| `income_currency_code` | VARCHAR(10) | NULL | - | - | Currency code (e.g., 'USD', 'EUR', 'BRL') |
-| **Measures - housingSituation** |
-| `housing_situation_single` | VARCHAR(255) | NULL | - | - | Housing situation as single-select response |
-| `housing_situation_multi` | TEXT | NULL | - | - | Housing situation as multi-select response (checkbox) |
-| **Measures - activityMain** |
-| `activity_main_single` | VARCHAR(255) | NULL | - | - | Main economic activity as single-select response |
-| `activity_main_multi` | TEXT | NULL | - | - | Main economic activity as multi-select response |
-| `activity_main_text` | TEXT | NULL | - | - | Main economic activity as free text response |
-| **Measures - familyCar** |
-| `family_car` | BOOLEAN | NULL | - | - | Boolean indicating if family owns a car |
-| **Measures - areaOfResidence** |
-| `area_of_residence_select` | VARCHAR(255) | NULL | - | - | Area of residence as detailed select response |
-| `area_of_residence_radio` | VARCHAR(100) | NULL | - | - | Area of residence as binary radio response (urban/rural) |
+| `answer_type` | VARCHAR(50) | NOT NULL | - | CHECK (answer_type IN ('text','number','date','select','radio','checkbox')) | Response format type for filtering |
+| **Typed Value Measures** |
+| `value_text` | TEXT | NULL | - | - | Text/select/radio responses; checkbox values as pipe-separated (e.g., "option1\|option2") |
+| `value_number` | NUMERIC(15,2) | NULL | - | - | Numeric responses |
+| `value_date` | TIMESTAMP | NULL | - | - | Date responses (converted from milliseconds epoch) |
+| `value_other_text` | TEXT | NULL | - | - | Free text when "other" option is selected |
+| `currency_code` | VARCHAR(10) | NULL | - | - | Currency code for income fields (e.g., 'USD', 'EUR', 'BRL') |
+
+#### Valid answer_type Values
+
+| Value | Description | Primary Storage Column |
+|-------|-------------|------------------------|
+| `text` | Free text input | `value_text` |
+| `number` | Numeric input | `value_number` |
+| `date` | Date picker | `value_date` |
+| `select` | Dropdown single-select | `value_text` |
+| `radio` | Radio button single-select | `value_text` |
+| `checkbox` | Multi-select checkboxes | `value_text` (pipe-separated) |
+
+#### Value Column Usage by Answer Type
+
+| answer_type | value_text | value_number | value_date | value_other_text | currency_code |
+|-------------|------------|--------------|------------|------------------|---------------|
+| text | response | - | - | - | - |
+| number | - | response | - | - | if income field |
+| date | - | - | response | - | - |
+| select | selected option | - | - | if "other" selected | - |
+| radio | selected option | - | - | if "other" selected | - |
+| checkbox | pipe-separated options | - | - | if "other" selected | - |
+
+**Note:** Only one value column should be populated per row based on `answer_type`. Use `answer_type` to filter when querying specific response types.
 
 #### Indexes
 
@@ -117,7 +137,7 @@ CREATE INDEX idx_fact_indicator_status ON fact_family_indicator_snapshot (indica
 CREATE UNIQUE INDEX idx_fact_economic_pk ON fact_family_economic_snapshot (family_economic_snapshot_key);
 
 -- Natural key for deduplication
-CREATE UNIQUE INDEX idx_fact_economic_natural_key ON fact_family_economic_snapshot (snapshot_id, economic_question_key);
+CREATE UNIQUE INDEX idx_fact_economic_natural ON fact_family_economic_snapshot (snapshot_id, economic_question_key);
 
 -- Foreign key indexes for join performance
 CREATE INDEX idx_fact_economic_date ON fact_family_economic_snapshot (date_key);
@@ -128,7 +148,7 @@ CREATE INDEX idx_fact_economic_survey_def ON fact_family_economic_snapshot (surv
 
 -- Query optimization indexes
 CREATE INDEX idx_fact_economic_is_last ON fact_family_economic_snapshot (is_last) WHERE is_last = TRUE;
-CREATE INDEX idx_fact_economic_snapshot_num ON fact_family_economic_snapshot (snapshot_number);
+CREATE INDEX idx_fact_economic_answer_type ON fact_family_economic_snapshot (answer_type);
 
 -- Composite indexes for common queries
 CREATE INDEX idx_fact_economic_family_snapshot ON fact_family_economic_snapshot (family_key, snapshot_id);
@@ -139,21 +159,57 @@ CREATE INDEX idx_fact_economic_family_snapshot ON fact_family_economic_snapshot 
 | Target Column | Source Table | Source Column | Transformation |
 |---------------|--------------|---------------|----------------|
 | **Keys and Context** |
-| `snapshot_id` | data_collect.snapshot | id | Via snapshot_economic join |
-| `snapshot_number` | data_collect.snapshot | snapshot_number | Via snapshot_economic join |
-| `is_last` | data_collect.snapshot | is_last | Via snapshot_economic join |
+| `snapshot_id` | data_collect.snapshot_economic | snapshot_id | Direct mapping |
+| `snapshot_number` | data_collect.snapshot | snapshot_number | Via snapshot join |
+| `is_last` | data_collect.snapshot | is_last | Via snapshot join |
 | `date_key` | data_collect.snapshot | snapshot_date | Convert to YYYYMMDD format |
-| **Economic Measures** |
-| `household_monthly_income` | data_collect.snapshot_economic | answer_number | WHERE code_name = 'householdMonthlyIncome' |
-| `income_currency_code` | data_collect.snapshot_economic | answer_value | WHERE code_name LIKE '%currency%' |
-| `housing_situation_single` | data_collect.snapshot_economic | answer_value | WHERE code_name = 'housingSituation' AND answer_type IN ('select','radio') |
-| `housing_situation_multi` | data_collect.snapshot_economic | answer_options | WHERE code_name = 'housingSituation' AND answer_type = 'checkbox' |
-| `activity_main_single` | data_collect.snapshot_economic | answer_value | WHERE code_name = 'activityMain' AND answer_type IN ('select','radio') |
-| `activity_main_multi` | data_collect.snapshot_economic | answer_options | WHERE code_name = 'activityMain' AND answer_type = 'checkbox' |
-| `activity_main_text` | data_collect.snapshot_economic | answer_value | WHERE code_name = 'activityMain' AND answer_type = 'text' |
-| `family_car` | data_collect.snapshot_economic | answer_value | WHERE code_name = 'familyCar' (converted to boolean) |
-| `area_of_residence_select` | data_collect.snapshot_economic | answer_value | WHERE code_name = 'areaOfResidence' AND answer_type = 'select' |
-| `area_of_residence_radio` | data_collect.snapshot_economic | answer_value | WHERE code_name = 'areaOfResidence' AND answer_type = 'radio' |
+| `answer_type` | data_collect.snapshot_economic | answer_type | Direct mapping |
+| **Typed Value Measures** |
+| `value_text` | data_collect.snapshot_economic | answer_value | Direct for text/select/radio |
+| `value_text` | data_collect.snapshot_economic | answer_multiple_value | Pipe-join for checkbox: `array_to_string(array_agg(...), '\|')` |
+| `value_number` | data_collect.snapshot_economic | answer_number | Cast to NUMERIC(15,2) |
+| `value_date` | data_collect.snapshot_economic | answer_date | `TO_TIMESTAMP(answer_date/1000)` |
+| `value_other_text` | data_collect.snapshot_economic | other_text | Direct mapping |
+| `currency_code` | data_collect.snapshot_economic | answer_value | WHERE code_name LIKE '%currency%' (joined to income row) |
+
+#### Query Examples
+
+**Get all income values with currency:**
+```sql
+SELECT
+    f.family_key,
+    f.value_number AS income,
+    f.currency_code
+FROM fact_family_economic_snapshot f
+JOIN dim_economic_questions q ON f.economic_question_key = q.economic_question_key
+WHERE q.code_name = 'householdmonthlyincome'
+  AND f.is_last = TRUE;
+```
+
+**Get housing situation (handles both single and multi-select):**
+```sql
+SELECT
+    f.family_key,
+    f.answer_type,
+    f.value_text AS housing_response
+FROM fact_family_economic_snapshot f
+JOIN dim_economic_questions q ON f.economic_question_key = q.economic_question_key
+WHERE q.code_name = 'housingsituation'
+  AND f.is_last = TRUE;
+```
+
+**Pivot to wide format for specific questions:**
+```sql
+SELECT
+    f.family_key,
+    MAX(CASE WHEN q.code_name = 'householdmonthlyincome' THEN f.value_number END) AS income,
+    MAX(CASE WHEN q.code_name = 'familycar' THEN f.value_text END) AS has_car,
+    MAX(CASE WHEN q.code_name = 'areaofresidence' THEN f.value_text END) AS area
+FROM fact_family_economic_snapshot f
+JOIN dim_economic_questions q ON f.economic_question_key = q.economic_question_key
+WHERE f.is_last = TRUE
+GROUP BY f.family_key;
+```
 
 ---
 
@@ -166,6 +222,8 @@ CREATE INDEX idx_fact_economic_family_snapshot ON fact_family_economic_snapshot 
 **Grain:** One row per calendar day
 
 **Row Count:** ~7,300 rows (20 years of dates)
+
+**SCD Type:** Not applicable (static calendar)
 
 ---
 
@@ -209,6 +267,8 @@ CREATE INDEX idx_date_year_quarter ON dim_date (year_quarter);
 **Grain:** One row per organization
 
 **Row Count:** ~100-500 organizations
+
+**SCD Type:** Type 1 (overwrite changes)
 
 ---
 
@@ -269,6 +329,8 @@ CREATE INDEX idx_org_country ON dim_organization (organization_country_code);
 **Usage Pattern:**
 - **Dashboard Aggregation**: Use `indicator_name` (English, e.g., "Income")
 - **Detail Drill-down**: Use `survey_indicator_*` fields (localized, e.g., "Ingresos", "Renda")
+
+**SCD Type:** Type 1 (overwrite changes)
 
 ---
 
@@ -362,6 +424,8 @@ One indicator concept across multiple surveys:
 
 **Row Count:** ~3,000-10,000 families
 
+**SCD Type:** Type 1 (overwrite changes)
+
 ---
 
 #### Column Specifications
@@ -414,6 +478,8 @@ CREATE INDEX idx_family_anonymous ON dim_family (is_anonymous);
 
 **Row Count:** ~20-50 survey definitions
 
+**SCD Type:** Type 1 (overwrite changes)
+
 ---
 
 #### Column Specifications
@@ -459,6 +525,8 @@ CREATE INDEX idx_survey_def_status ON dim_survey_definition (survey_status, surv
 **Grain:** One row per economic question per survey definition (survey_definition_id + code_name)
 
 **Row Count:** ~100-500 rows (varies by survey versions)
+
+**SCD Type:** Type 1 (overwrite changes)
 
 ---
 
@@ -570,3 +638,150 @@ CREATE INDEX idx_economic_question_type ON dim_economic_questions (answer_type);
 1. **Fact-Dimension Consistency:** All dimension keys in fact table must exist in dimension tables
 2. **Date Range:** snapshot dates should be within reasonable range (2018-present)
 3. **Geographic Validity:** Latitude (-90 to 90), Longitude (-180 to 180)
+
+---
+
+## Entity Relationship Diagram
+
+```mermaid
+erDiagram
+    %% Fact Tables
+    FACT_FAMILY_INDICATOR_SNAPSHOT {
+        bigint family_indicator_snapshot_key PK
+        integer date_key FK
+        bigint organization_key FK
+        bigint indicator_key FK
+        bigint family_key FK
+        bigint survey_definition_key FK
+        bigint snapshot_id "Degenerate Dim"
+        smallint snapshot_number "Degenerate Dim"
+        boolean is_last "Degenerate Dim"
+        smallint indicator_status_value "MEASURE"
+    }
+
+    FACT_FAMILY_ECONOMIC_SNAPSHOT {
+        bigint family_economic_snapshot_key PK
+        integer date_key FK
+        bigint family_key FK
+        bigint economic_question_key FK
+        bigint organization_key FK
+        bigint survey_definition_key FK
+        bigint snapshot_id "Degenerate Dim"
+        smallint snapshot_number "Degenerate Dim"
+        boolean is_last "Degenerate Dim"
+        varchar answer_type "Degenerate Dim"
+        text value_text "MEASURE"
+        numeric value_number "MEASURE"
+        timestamp value_date "MEASURE"
+        text value_other_text "MEASURE"
+        varchar currency_code "MEASURE"
+    }
+
+    %% Dimension Tables
+    DIM_DATE {
+        integer date_key PK
+        date date_actual
+        varchar day_of_week
+        smallint day_of_week_number
+        smallint day_of_month
+        smallint day_of_year
+        smallint week_of_year
+        smallint month_number
+        varchar month_name
+        varchar month_abbr
+        smallint quarter_number
+        varchar quarter_name
+        smallint year_number
+        varchar year_quarter
+        varchar year_month
+        boolean is_weekend
+    }
+
+    DIM_ORGANIZATION {
+        bigint organization_key PK
+        bigint organization_id NK
+        varchar organization_name
+        varchar organization_description
+        boolean organization_is_active
+        varchar organization_country
+        varchar organization_country_code
+        varchar organization_type
+        bigint application_id "Hierarchy"
+        varchar application_name "Hierarchy"
+        varchar application_description "Hierarchy"
+        boolean application_is_active "Hierarchy"
+        varchar application_country "Hierarchy"
+        varchar application_country_code "Hierarchy"
+    }
+
+    DIM_INDICATOR {
+        bigint indicator_key PK
+        bigint indicator_id NK
+        varchar indicator_code_name
+        varchar indicator_short_name
+        varchar indicator_question_text
+        text indicator_description
+        boolean indicator_is_required
+        bigint dimension_id "Hierarchy"
+        varchar dimension_name "Hierarchy"
+        varchar dimension_code "Hierarchy"
+        bigint indicator_template_id
+        varchar indicator_template_code_name
+    }
+
+    DIM_FAMILY {
+        bigint family_key PK
+        bigint family_id NK
+        varchar family_code
+        varchar family_name
+        boolean family_is_active
+        boolean is_anonymous
+        varchar country
+        varchar country_code
+        decimal latitude
+        decimal longitude
+        varchar address
+        varchar post_code
+    }
+
+    DIM_SURVEY_DEFINITION {
+        bigint survey_definition_key PK
+        bigint survey_definition_id NK
+        varchar survey_code
+        varchar survey_title
+        varchar survey_description
+        varchar survey_language
+        varchar survey_country_code
+        boolean survey_is_active
+        varchar survey_status
+        boolean survey_is_current
+    }
+
+    DIM_ECONOMIC_QUESTIONS {
+        bigint economic_question_key PK
+        bigint survey_definition_id NK
+        varchar code_name NK
+        text question_text
+        varchar answer_type
+        text answer_options
+        varchar scope
+        boolean is_for_family_member
+        varchar survey_code
+        varchar survey_title
+        varchar survey_language
+    }
+
+    %% Relationships - Stoplight Fact
+    FACT_FAMILY_INDICATOR_SNAPSHOT ||--o{ DIM_DATE : "surveyed_on"
+    FACT_FAMILY_INDICATOR_SNAPSHOT ||--o{ DIM_ORGANIZATION : "conducted_by"
+    FACT_FAMILY_INDICATOR_SNAPSHOT ||--o{ DIM_INDICATOR : "measures"
+    FACT_FAMILY_INDICATOR_SNAPSHOT ||--o{ DIM_FAMILY : "assesses"
+    FACT_FAMILY_INDICATOR_SNAPSHOT ||--o{ DIM_SURVEY_DEFINITION : "uses_template"
+
+    %% Relationships - Economic Fact
+    FACT_FAMILY_ECONOMIC_SNAPSHOT ||--o{ DIM_DATE : "surveyed_on"
+    FACT_FAMILY_ECONOMIC_SNAPSHOT ||--o{ DIM_FAMILY : "assesses"
+    FACT_FAMILY_ECONOMIC_SNAPSHOT ||--o{ DIM_ECONOMIC_QUESTIONS : "answers"
+    FACT_FAMILY_ECONOMIC_SNAPSHOT ||--o{ DIM_ORGANIZATION : "conducted_by"
+    FACT_FAMILY_ECONOMIC_SNAPSHOT ||--o{ DIM_SURVEY_DEFINITION : "uses_template"
+```
