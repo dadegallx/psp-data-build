@@ -79,7 +79,7 @@ CREATE INDEX idx_fact_indicator_status ON fact_family_indicator_snapshot (indica
 
 **Design Pattern:** Normalized (like fact_family_indicator_snapshot) - questions are rows, not columns
 
-**Scope:** Family-level questions only (member-level questions excluded)
+**Scope:** All economic questions (both family-level and member-level)
 
 ---
 
@@ -87,15 +87,14 @@ CREATE INDEX idx_fact_indicator_status ON fact_family_indicator_snapshot (indica
 
 | Column Name | Data Type | Nullable | Default | Constraints | Description |
 |-------------|-----------|----------|---------|-------------|-------------|
-| **Keys** |
-| `family_economic_snapshot_key` | BIGINT | NOT NULL | - | PRIMARY KEY | Surrogate key for this fact record |
+| **Foreign Keys (Natural Keys)** |
 | `date_key` | INTEGER | NOT NULL | - | FK → dim_date.date_key | Survey date key (YYYYMMDD format) |
-| `family_key` | BIGINT | NOT NULL | - | FK → dim_family.family_key | Family being surveyed |
-| `economic_question_key` | BIGINT | NOT NULL | - | FK → dim_economic_questions.economic_question_key | Economic question being answered |
-| `organization_key` | BIGINT | NOT NULL | - | FK → dim_organization.organization_key | Organization conducting survey |
-| `survey_definition_key` | BIGINT | NOT NULL | - | FK → dim_survey_definition.survey_definition_key | Survey template used |
+| `family_id` | BIGINT | NOT NULL | - | FK → dim_family.family_id | Family being surveyed |
+| `survey_economic_id` | BIGINT | NOT NULL | - | FK → dim_economic_questions.survey_economic_id | Economic question being answered |
+| `organization_id` | BIGINT | NOT NULL | - | FK → dim_organization.organization_id | Organization conducting survey |
+| `survey_definition_id` | BIGINT | NOT NULL | - | FK → dim_survey_definition.survey_definition_id | Survey template used |
 | **Degenerate Dimensions** |
-| `snapshot_id` | BIGINT | NOT NULL | - | UNIQUE INDEX (with economic_question_key) | Natural key from source (data_collect.snapshot.id) |
+| `snapshot_id` | BIGINT | NOT NULL | - | UNIQUE INDEX (with survey_economic_id) | Natural key from source (data_collect.snapshot.id) |
 | `snapshot_number` | SMALLINT | NOT NULL | - | CHECK (snapshot_number > 0) | Survey round: 1=baseline, 2=first follow-up, etc. |
 | `is_last` | BOOLEAN | NOT NULL | FALSE | INDEX | True if this is the most recent survey for this family |
 | `answer_type` | VARCHAR(50) | NOT NULL | - | CHECK (answer_type IN ('text','number','date','select','radio','checkbox')) | Response format type for filtering |
@@ -133,25 +132,22 @@ CREATE INDEX idx_fact_indicator_status ON fact_family_indicator_snapshot (indica
 #### Indexes
 
 ```sql
--- Primary key
-CREATE UNIQUE INDEX idx_fact_economic_pk ON fact_family_economic_snapshot (family_economic_snapshot_key);
-
--- Natural key for deduplication
-CREATE UNIQUE INDEX idx_fact_economic_natural ON fact_family_economic_snapshot (snapshot_id, economic_question_key);
+-- Natural key for deduplication (composite primary key)
+CREATE UNIQUE INDEX idx_fact_economic_natural ON fact_family_economic_snapshot (snapshot_id, survey_economic_id);
 
 -- Foreign key indexes for join performance
 CREATE INDEX idx_fact_economic_date ON fact_family_economic_snapshot (date_key);
-CREATE INDEX idx_fact_economic_family ON fact_family_economic_snapshot (family_key);
-CREATE INDEX idx_fact_economic_question ON fact_family_economic_snapshot (economic_question_key);
-CREATE INDEX idx_fact_economic_org ON fact_family_economic_snapshot (organization_key);
-CREATE INDEX idx_fact_economic_survey_def ON fact_family_economic_snapshot (survey_definition_key);
+CREATE INDEX idx_fact_economic_family ON fact_family_economic_snapshot (family_id);
+CREATE INDEX idx_fact_economic_question ON fact_family_economic_snapshot (survey_economic_id);
+CREATE INDEX idx_fact_economic_org ON fact_family_economic_snapshot (organization_id);
+CREATE INDEX idx_fact_economic_survey_def ON fact_family_economic_snapshot (survey_definition_id);
 
 -- Query optimization indexes
 CREATE INDEX idx_fact_economic_is_last ON fact_family_economic_snapshot (is_last) WHERE is_last = TRUE;
 CREATE INDEX idx_fact_economic_answer_type ON fact_family_economic_snapshot (answer_type);
 
 -- Composite indexes for common queries
-CREATE INDEX idx_fact_economic_family_snapshot ON fact_family_economic_snapshot (family_key, snapshot_id);
+CREATE INDEX idx_fact_economic_family_snapshot ON fact_family_economic_snapshot (family_id, snapshot_id);
 ```
 
 #### Source Mapping
@@ -177,11 +173,11 @@ CREATE INDEX idx_fact_economic_family_snapshot ON fact_family_economic_snapshot 
 **Get all income values with currency:**
 ```sql
 SELECT
-    f.family_key,
+    f.family_id,
     f.value_number AS income,
     f.currency_code
 FROM fact_family_economic_snapshot f
-JOIN dim_economic_questions q ON f.economic_question_key = q.economic_question_key
+JOIN dim_economic_questions q ON f.survey_economic_id = q.survey_economic_id
 WHERE q.code_name = 'householdmonthlyincome'
   AND f.is_last = TRUE;
 ```
@@ -189,11 +185,11 @@ WHERE q.code_name = 'householdmonthlyincome'
 **Get housing situation (handles both single and multi-select):**
 ```sql
 SELECT
-    f.family_key,
+    f.family_id,
     f.answer_type,
     f.value_text AS housing_response
 FROM fact_family_economic_snapshot f
-JOIN dim_economic_questions q ON f.economic_question_key = q.economic_question_key
+JOIN dim_economic_questions q ON f.survey_economic_id = q.survey_economic_id
 WHERE q.code_name = 'housingsituation'
   AND f.is_last = TRUE;
 ```
@@ -201,14 +197,14 @@ WHERE q.code_name = 'housingsituation'
 **Pivot to wide format for specific questions:**
 ```sql
 SELECT
-    f.family_key,
+    f.family_id,
     MAX(CASE WHEN q.code_name = 'householdmonthlyincome' THEN f.value_number END) AS income,
     MAX(CASE WHEN q.code_name = 'familycar' THEN f.value_text END) AS has_car,
     MAX(CASE WHEN q.code_name = 'areaofresidence' THEN f.value_text END) AS area
 FROM fact_family_economic_snapshot f
-JOIN dim_economic_questions q ON f.economic_question_key = q.economic_question_key
+JOIN dim_economic_questions q ON f.survey_economic_id = q.survey_economic_id
 WHERE f.is_last = TRUE
-GROUP BY f.family_key;
+GROUP BY f.family_id;
 ```
 
 ---
@@ -660,12 +656,11 @@ erDiagram
     }
 
     FACT_FAMILY_ECONOMIC_SNAPSHOT {
-        bigint family_economic_snapshot_key PK
         integer date_key FK
-        bigint family_key FK
-        bigint economic_question_key FK
-        bigint organization_key FK
-        bigint survey_definition_key FK
+        bigint family_id FK
+        bigint survey_economic_id FK
+        bigint organization_id FK
+        bigint survey_definition_id FK
         bigint snapshot_id "Degenerate Dim"
         smallint snapshot_number "Degenerate Dim"
         boolean is_last "Degenerate Dim"

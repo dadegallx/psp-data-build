@@ -341,28 +341,26 @@ models:
 
   - name: fact_family_economic_snapshot
     description: >
-      Fact table capturing economic survey responses at atomic grain.
+      Fact table capturing economic survey responses at atomic grain using a normalized design.
 
       **Grain:** One row per family, per economic question, per snapshot (survey completion).
 
-      **Scope:** Currently includes 5 priority economic fields:
-      - householdMonthlyIncome (+ currency)
-      - housingSituation (single-select and multi-select variants)
-      - activityMain (single-select, multi-select, and text variants)
-      - familyCar (boolean)
-      - areaOfResidence (select and radio variants)
+      **Design Pattern:** Normalized (like fact_family_indicator_snapshot) - questions are rows, not columns.
+      Each economic question response is stored as a separate row with typed value columns.
 
-      **Multi-type Field Handling:** Fields that exist as different answer types across
-      survey versions are represented as separate columns with behavior suffixes
-      (e.g., housing_situation_single vs housing_situation_multi).
+      **Scope:** All economic questions (both family-level and member-level).
 
-      **Data Quality Note:** Filters out 244 orphaned code_names (responses without
-      matching survey_economic definitions) via inner join in stg_snapshot_economic.
-      See DATA_QUALITY.md for details.
+      **Typed Value Columns:** Based on answer_type, responses are stored in the appropriate column:
+      - value_text: text/select/radio responses; checkbox values as pipe-separated
+      - value_number: numeric responses
+      - value_date: date responses (converted from milliseconds epoch)
 
-      **Row Count:** Estimated 15,000-50,000 rows depending on economic question
-      usage across surveys. Grows with new snapshots.
+      **Data Quality Note:** Filters out orphaned code_names (responses without
+      matching survey_economic definitions) via inner join.
+
+      **Row Count:** Estimated 50,000-200,000 rows (all economic questions captured).
     columns:
+      # Foreign Keys (Natural Keys)
       - name: date_key
         description: "Foreign key to dim_date (survey date in YYYYMMDD format)"
         data_tests:
@@ -403,6 +401,7 @@ models:
               field: survey_definition_id
               to: ref('dim_survey_definition')
 
+      # Degenerate Dimensions
       - name: snapshot_id
         description: "Degenerate dimension - natural key from source (data_collect.snapshot.id)"
         data_tests:
@@ -420,37 +419,24 @@ models:
         data_tests:
           - not_null
 
-      # Measures - householdMonthlyIncome
-      - name: household_monthly_income
-        description: "Measure - Monthly household income (numeric value)"
+      - name: code_name
+        description: "Degenerate dimension - question identifier (e.g., 'householdmonthlyincome')"
+        data_tests:
+          - not_null
 
-      - name: income_currency_code
-        description: "Measure - Currency code for household income (e.g., 'USD', 'EUR', 'BRL')"
+      - name: answer_type
+        description: "Degenerate dimension - response format type for filtering"
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['text', 'number', 'date', 'select', 'radio', 'checkbox', 'string']
 
-      # Measures - housingSituation
-      - name: housing_situation_single
-        description: "Measure - Housing situation as single-select response (select/radio types)"
+      # Typed Value Measures
+      - name: value_text
+        description: "Text/select/radio responses; checkbox values as pipe-separated (e.g., 'option1|option2')"
 
-      - name: housing_situation_multi
-        description: "Measure - Housing situation as multi-select response (checkbox type)"
+      - name: value_number
+        description: "Numeric responses"
 
-      # Measures - activityMain
-      - name: activity_main_single
-        description: "Measure - Main economic activity as single-select response (select/radio types)"
-
-      - name: activity_main_multi
-        description: "Measure - Main economic activity as multi-select response (checkbox type)"
-
-      - name: activity_main_text
-        description: "Measure - Main economic activity as free text response"
-
-      # Measures - familyCar
-      - name: family_car
-        description: "Measure - Boolean indicating if family owns a car"
-
-      # Measures - areaOfResidence
-      - name: area_of_residence_select
-        description: "Measure - Area of residence as detailed select response (specific areas)"
-
-      - name: area_of_residence_radio
-        description: "Measure - Area of residence as binary radio response (urban/rural)"
+      - name: value_date
+        description: "Date responses (converted from milliseconds epoch)"
