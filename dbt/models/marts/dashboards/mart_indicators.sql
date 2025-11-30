@@ -36,6 +36,10 @@ stg_projects as (
     select * from {{ ref('stg_projects') }}
 ),
 
+dim_survey_definition as (
+    select * from {{ ref('dim_survey_definition') }}
+),
+
 final as (
     select
         -- Snapshot context
@@ -55,6 +59,9 @@ final as (
         -- Organization context
         dim_organization.organization_name,
         dim_organization.application_name,
+
+        -- Survey context
+        dim_survey_definition.survey_title,
 
         -- Project context (nullable - only ~1.3% of snapshots have projects)
         stg_projects.project_name,
@@ -94,6 +101,8 @@ final as (
         on fact.organization_id = dim_organization.organization_id
     inner join dim_indicator_questions
         on fact.survey_indicator_id = dim_indicator_questions.survey_indicator_id
+    inner join dim_survey_definition
+        on fact.survey_definition_id = dim_survey_definition.survey_definition_id
     left join stg_projects
         on fact.project_id = stg_projects.project_id
 )
