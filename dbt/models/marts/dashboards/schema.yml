@@ -144,3 +144,6 @@ models:
         data_tests:
           - accepted_values:
               values: [0, 1]
+
+      - name: has_followup_data
+        description: "True if family has more than one snapshot (for cohort/longitudinal analysis)"

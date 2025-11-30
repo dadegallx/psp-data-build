@@ -66,7 +66,10 @@ final as (
             when fact.indicator_status_value = 2 then 'Yellow'
             when fact.indicator_status_value = 3 then 'Green'
             else 'Skipped'
-        end as indicator_label
+        end as indicator_label,
+
+        -- Cohort analysis flag (true if family has at least one follow-up survey)
+        max(fact.snapshot_number) over (partition by dim_family.family_id) > 1 as has_followup_data
 
     from fact
     inner join dim_date
