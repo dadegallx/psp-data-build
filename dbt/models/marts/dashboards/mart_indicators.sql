@@ -59,12 +59,14 @@ final as (
         dim_indicator_questions.yellow_criteria_description,
         dim_indicator_questions.green_criteria_description,
 
-        -- Pre-calculated poverty status flags (integers for easy aggregation)
-        case when fact.indicator_status_value = 1 then 1 else 0 end as is_red,
-        case when fact.indicator_status_value = 2 then 1 else 0 end as is_yellow,
-        case when fact.indicator_status_value = 3 then 1 else 0 end as is_green,
-        case when fact.indicator_status_value is null
-              or fact.indicator_status_value not in (1, 2, 3) then 1 else 0 end as is_skipped
+        -- Indicator status value and label
+        fact.indicator_status_value as indicator_value,
+        case
+            when fact.indicator_status_value = 1 then 'Red'
+            when fact.indicator_status_value = 2 then 'Yellow'
+            when fact.indicator_status_value = 3 then 'Green'
+            else 'Skipped'
+        end as indicator_label
 
     from fact
     inner join dim_date
