@@ -1,7 +1,7 @@
 version: 2
 
 models:
-  - name: mart_family_snapshots_overview
+  - name: mart_surveys
     description: >
       **Aggregated poverty metrics per family per snapshot.**
 
@@ -81,7 +81,7 @@ models:
       - name: percentage_skipped
         description: "Percentage of indicators that were skipped"
 
-  - name: mart_family_snapshots_indicators
+  - name: mart_indicators
     description: >
       **Detailed indicator-level data with context for drill-down analysis.**
 
