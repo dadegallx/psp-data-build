@@ -190,6 +190,19 @@ models:
         data_tests:
           - not_null
 
+  - name: stg_survey_stoplight_dimension
+    description: "Cleaned poverty dimension categories (6 canonical + custom dimensions)"
+    columns:
+      - name: dimension_id
+        description: "Primary key"
+        data_tests:
+          - unique
+          - not_null
+      - name: dimension_code
+        description: "Dimension code (e.g., 'incomeAndEmployment')"
+      - name: dimension_met_name
+        description: "Normalized translation key for dimension name lookup (lowercase)"
+
   - name: stg_survey_stoplight_color
     description: >
       Color criteria descriptions for each survey indicator.

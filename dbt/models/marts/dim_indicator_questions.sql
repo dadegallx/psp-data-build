@@ -11,7 +11,7 @@ survey_stoplight_color as (
 ),
 
 survey_stoplight_dimension as (
-    select * from {{ source('data_collect', 'survey_stoplight_dimension') }}
+    select * from {{ ref('stg_survey_stoplight_dimension') }}
 ),
 
 translations as (
@@ -66,6 +66,7 @@ joined as (
         -- Dimension attributes (from master dimension table with English translation)
         indicator_templates_with_translations.dimension_id,
         dimension_trans.translation_text as dimension_name,
+        survey_stoplight_dimension.dimension_code,
 
         -- Color criteria descriptions (what each color level means)
         color_criteria_pivoted.red_criteria_description,
@@ -76,9 +77,9 @@ joined as (
     inner join indicator_templates_with_translations
         on survey_stoplight.indicator_template_id = indicator_templates_with_translations.indicator_template_id
     left join survey_stoplight_dimension
-        on indicator_templates_with_translations.dimension_id = survey_stoplight_dimension.id
+        on indicator_templates_with_translations.dimension_id = survey_stoplight_dimension.dimension_id
     left join translations dimension_trans
-        on survey_stoplight_dimension.met_name = dimension_trans.translation_key
+        on survey_stoplight_dimension.dimension_met_name = dimension_trans.translation_key
     left join color_criteria_pivoted
         on survey_stoplight.survey_indicator_id = color_criteria_pivoted.survey_indicator_id
 ),
@@ -104,7 +105,7 @@ final as (
         -- DIMENSION ATTRIBUTES
         dimension_id,
         dimension_name,  -- English canonical name from translation table
-        null as dimension_code,  -- Not available in source
+        dimension_code,  -- Dimension code (e.g., 'incomeAndEmployment')
 
         -- COLOR CRITERIA DESCRIPTIONS (what each poverty level means for this indicator)
         red_criteria_description,      -- Critical poverty threshold description
