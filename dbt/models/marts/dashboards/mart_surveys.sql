@@ -1,7 +1,14 @@
 {{
     config(
         materialized='table',
-        tags=['dashboard']
+        tags=['dashboard'],
+        indexes=[
+            {'columns': ['snapshot_number', 'has_followup_data']},
+            {'columns': ['organization_name']},
+            {'columns': ['application_name']},
+            {'columns': ['snapshot_year']},
+            {'columns': ['family_country']}
+        ]
     )
 }}
 
