@@ -50,6 +50,26 @@ sources:
           - name: last_modified_date
             description: "Last modification timestamp"
 
+      - name: projects
+        description: "Projects within organizations for grouping families and snapshots"
+        columns:
+          - name: id
+            description: "Primary key"
+          - name: title
+            description: "Project name"
+          - name: description
+            description: "Project description"
+          - name: organization_id
+            description: "Foreign key to ps_network.organizations"
+          - name: active
+            description: "Whether project is currently active"
+          - name: from_date
+            description: "Project start date"
+          - name: to_date
+            description: "Project end date"
+          - name: created_at
+            description: "Creation timestamp"
+
   # Family master data
   - name: ps_families
     description: "Family demographic and location information"

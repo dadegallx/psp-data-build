@@ -32,6 +32,10 @@ dim_survey_definition as (
     select * from {{ ref('dim_survey_definition') }}
 ),
 
+stg_projects as (
+    select * from {{ ref('stg_projects') }}
+),
+
 -- Aggregate indicators per family per snapshot
 aggregated as (
     select
@@ -47,6 +51,7 @@ aggregated as (
         max(fact.date_key) as date_key,
         max(fact.organization_id) as organization_id,
         max(fact.survey_definition_id) as survey_definition_id,
+        max(fact.project_id) as project_id,  -- Nullable
 
         -- Counts
         count(*) as total_indicators_answered,
@@ -112,6 +117,10 @@ denormalized as (
         dim_survey_definition.survey_language,
         dim_survey_definition.survey_is_active,
 
+        -- Project attributes (nullable - only ~1.3% of snapshots have projects)
+        stg_projects.project_id,
+        stg_projects.project_name,
+
         -- Aggregated metrics
         agg.total_indicators_answered,
         agg.count_greens,
@@ -128,6 +137,7 @@ denormalized as (
     inner join dim_family on agg.family_id = dim_family.family_id
     inner join dim_organization on agg.organization_id = dim_organization.organization_id
     inner join dim_survey_definition on agg.survey_definition_id = dim_survey_definition.survey_definition_id
+    left join stg_projects on agg.project_id = stg_projects.project_id
 )
 
 select * from denormalized

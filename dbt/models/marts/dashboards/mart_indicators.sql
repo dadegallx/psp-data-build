@@ -32,6 +32,10 @@ dim_indicator_questions as (
     select * from {{ ref('dim_indicator_questions') }}
 ),
 
+stg_projects as (
+    select * from {{ ref('stg_projects') }}
+),
+
 final as (
     select
         -- Snapshot context
@@ -51,6 +55,9 @@ final as (
         -- Organization context
         dim_organization.organization_name,
         dim_organization.application_name,
+
+        -- Project context (nullable - only ~1.3% of snapshots have projects)
+        stg_projects.project_name,
 
         -- Indicator definition (canonical English for aggregation)
         dim_indicator_questions.indicator_name,
@@ -87,6 +94,8 @@ final as (
         on fact.organization_id = dim_organization.organization_id
     inner join dim_indicator_questions
         on fact.survey_indicator_id = dim_indicator_questions.survey_indicator_id
+    left join stg_projects
+        on fact.project_id = stg_projects.project_id
 )
 
 select * from final

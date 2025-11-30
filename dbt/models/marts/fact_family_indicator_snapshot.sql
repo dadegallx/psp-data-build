@@ -70,6 +70,7 @@ joined as (
         snapshots.organization_id,
         stoplight_with_indicators.survey_indicator_id,
         snapshots.survey_definition_id,
+        snapshots.project_id,  -- Nullable: not all snapshots have a project
 
         -- Measure
         stoplight_with_indicators.indicator_status_value
@@ -93,6 +94,7 @@ final as (
         organization_id,
         survey_indicator_id,
         survey_definition_id,
+        project_id,  -- Nullable: not all snapshots have a project
 
         -- Degenerate dimensions
         snapshot_id,

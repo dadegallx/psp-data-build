@@ -12,6 +12,7 @@ renamed as (
         organization_id,
         application_id,
         survey_definition_id,
+        project_id,  -- Nullable: not all snapshots have a project
 
         -- Attributes
         snapshot_number,
