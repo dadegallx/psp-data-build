@@ -125,14 +125,10 @@ models:
         description: "Whether indicator is required in this survey"
 
       - name: dimension_id
-        description: "Dimension category ID"
-        data_tests:
-          - not_null
+        description: "Dimension category ID (NULL for indicators without dimension assignment)"
 
       - name: dimension_name
-        description: "Dimension category name (standard: 6 poverty dimensions, custom: organization-specific dimensions)"
-        data_tests:
-          - not_null
+        description: "Dimension category name (standard: 6 poverty dimensions, custom: organization-specific dimensions, NULL if no dimension)"
 
       - name: red_criteria_description
         description: >
