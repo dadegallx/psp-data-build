@@ -113,7 +113,6 @@ joined as (
         snapshots.survey_definition_id,
 
         -- Answer metadata (degenerate dimension)
-        economic_typed.code_name,
         economic_typed.answer_type,
 
         -- Typed value measures
@@ -145,7 +144,6 @@ final as (
         snapshot_id,
         snapshot_number,
         is_last,
-        code_name,
         answer_type,
 
         -- Typed value measures

@@ -415,11 +415,6 @@ models:
         data_tests:
           - not_null
 
-      - name: code_name
-        description: "Degenerate dimension - question identifier (e.g., 'householdmonthlyincome')"
-        data_tests:
-          - not_null
-
       - name: answer_type
         description: "Degenerate dimension - response format type for filtering"
         data_tests:
