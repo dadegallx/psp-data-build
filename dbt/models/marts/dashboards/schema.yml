@@ -29,6 +29,11 @@ models:
         data_tests:
           - not_null
 
+      - name: application_id
+        description: "Application/hub ID for RLS filtering"
+        data_tests:
+          - not_null
+
       - name: organization_name
         description: "Name of the organization conducting the survey"
 

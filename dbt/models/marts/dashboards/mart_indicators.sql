@@ -4,6 +4,7 @@
         tags=['dashboard'],
         indexes=[
             {'columns': ['family_id']},
+            {'columns': ['application_id']},
             {'columns': ['organization_name']},
             {'columns': ['application_name']},
             {'columns': ['indicator_name']},
@@ -174,6 +175,7 @@ final as (
         p.family_id,
 
         -- Organization context
+        dim_organization.application_id,
         dim_organization.organization_name,
         dim_organization.application_name,
 
