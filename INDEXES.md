@@ -18,13 +18,14 @@ Last updated: 2025-12-01
 | `dee911cf60897333abc67833ca992321` | `application_name` | dbt config | Dropdown filter |
 | `idx_mart_indicators_baseline_label` | `baseline_label` | Manual | GROUP BY |
 | `idx_mart_indicators_dimension_name` | `dimension_name` | Manual | WHERE + GROUP BY |
+| `idx_mart_indicators_organization_name` | `organization_name` | Manual | Dropdown filter (DISTINCT) |
 | `idx_mart_indicators_first_followup_label` | `first_followup_label` | Manual | GROUP BY |
 | `idx_mart_indicators_first_followup_value` | `first_followup_value` | Manual | CASE aggregations |
 | `idx_mart_indicators_latest_followup_label` | `latest_followup_label` | Manual | GROUP BY |
 | `idx_mart_indicators_project_name` | `project_name` | Manual | Dropdown filter |
 | `idx_mart_indicators_survey_title` | `survey_title` | Manual | Dropdown filter |
 
-**Total: 13 indexes**
+**Total: 14 indexes**
 
 ---
 
@@ -193,6 +194,7 @@ When `dbt run` rebuilds `mart_indicators`, it will:
 ```sql
 indexes=[
     -- existing indexes...
+    {'columns': ['organization_name']},   -- critical for dropdown filter
     {'columns': ['dimension_name']},
     {'columns': ['survey_title']},
     {'columns': ['project_name']},
@@ -209,3 +211,5 @@ The following duplicate indexes were dropped:
 - `99fae4b1e73509767e8f4d63fd47e03a` (duplicate `baseline_value`)
 - `idx_mart_indicators_org_name` (duplicate)
 - `idx_mart_indicators_baseline_value` (duplicate)
+
+**Note:** `organization_name` index was accidentally fully removed during cleanup and recreated as `idx_mart_indicators_organization_name`. This reduced DISTINCT query time from 22s → 1.4s.
