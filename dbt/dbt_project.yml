@@ -53,15 +53,6 @@ models:
       +schema: staging
 
     # -------------------------------------------------------------------------
-    # INTERMEDIATE LAYER (Silver)
-    # -------------------------------------------------------------------------
-    # Complex business logic transformations
-    intermediate:
-      +materialized: view
-      +tags: ['intermediate', 'silver']
-      +schema: intermediate
-
-    # -------------------------------------------------------------------------
     # MARTS LAYER (Gold)
     # -------------------------------------------------------------------------
     # Final semantic layer - all materialized as tables
@@ -75,15 +66,3 @@ models:
         +materialized: table
         +tags: ['mart', 'dashboard', 'gold']
         +schema: marts
-
-# =============================================================================
-# SEEDS & SNAPSHOTS
-# =============================================================================
-
-seeds:
-  psp_data_build:
-    +schema: seeds
-
-snapshots:
-  psp_data_build:
-    +target_schema: snapshots
