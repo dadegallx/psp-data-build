@@ -275,3 +275,45 @@ models:
         description: "Response format type"
         data_tests:
           - not_null
+
+  - name: stg_snapshot_stoplight_priority
+    description: "Cleaned priority indicators from snapshot_stoplight_priority"
+    columns:
+      - name: snapshot_stoplight_priority_id
+        description: "Primary key"
+        data_tests:
+          - unique
+          - not_null
+      - name: snapshot_stoplight_id
+        description: "Foreign key to snapshot_stoplight"
+        data_tests:
+          - not_null
+          - relationships:
+              field: snapshot_stoplight_id
+              to: ref('stg_snapshot_stoplight')
+      - name: reason
+        description: "Reason given for selecting this priority"
+      - name: action
+        description: "Planned action to address the priority"
+      - name: estimated_date
+        description: "Months to improve (estimated)"
+
+  - name: stg_snapshot_stoplight_achievement
+    description: "Cleaned achievement records from snapshot_stoplight_achievement"
+    columns:
+      - name: snapshot_stoplight_achievement_id
+        description: "Primary key"
+        data_tests:
+          - unique
+          - not_null
+      - name: snapshot_stoplight_id
+        description: "Foreign key to snapshot_stoplight"
+        data_tests:
+          - not_null
+          - relationships:
+              field: snapshot_stoplight_id
+              to: ref('stg_snapshot_stoplight')
+      - name: action
+        description: "Action taken to achieve the result"
+      - name: roadmap
+        description: "Steps taken/planned"

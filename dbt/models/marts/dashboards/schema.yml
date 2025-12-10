@@ -118,3 +118,68 @@ models:
         description: "True if family has at least one follow-up survey (first_followup_value is not null)"
         data_tests:
           - not_null
+
+  - name: mart_surveys
+    description: >
+      **Aggregated Survey Summary for Dashboards.**
+      
+      **Grain:** One row per Snapshot.
+      
+      **Use Case:** High-level executive dashboard showing total surveys, priority counts, achievement counts, and stoplight status (Red/Yellow/Green) breakdown.
+      optimized as a table for fast performance.
+    columns:
+      - name: snapshot_id
+        description: "Primary key"
+        data_tests:
+          - unique
+          - not_null
+      - name: snapshot_date
+        description: "Date the survey was taken"
+      - name: count_red_indicators
+        description: "Total number of RED indicators in this survey"
+      - name: count_priorities
+        description: "Total number of priorities set in this survey"
+      - name: count_achievements
+        description: "Total number of achievements recorded in this survey"
+      - name: family_id
+        description: "Foreign key to family"
+
+  - name: mart_family_members
+    description: >
+      **Family Member Demographics for Dashboards.**
+      
+      **Grain:** One row per Family Member.
+      
+      **Use Case:** Analyze demographics (Gender, Country of Origin) across the beneficiary population.
+    columns:
+      - name: family_member_id
+        description: "Primary key"
+        data_tests:
+          - unique
+          - not_null
+      - name: gender
+        description: "Normalized gender (Male, Female, Other)"
+      - name: birth_country
+        description: "Normalized country of birth (ISO Alpha-2 code)"
+      - name: family_country
+        description: "Country where the family lives"
+
+  - name: mart_families
+    description: >
+      **Family Locations and Context for Dashboards.**
+      
+      **Grain:** One row per Family.
+      
+      **Use Case:** Geospatial analysis (Maps) and Organization-level filtering.
+    columns:
+      - name: family_id
+        description: "Primary key"
+        data_tests:
+          - unique
+          - not_null
+      - name: latitude
+        description: "GPS Latitude"
+      - name: longitude
+        description: "GPS Longitude"
+      - name: organization_name
+        description: "Name of the implementing organization"

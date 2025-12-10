@@ -9,6 +9,7 @@ final as (
 
         -- Family attributes
         is_anonymous,
+        organization_id,
 
         -- Geographic attributes
         country,

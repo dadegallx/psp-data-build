@@ -170,6 +170,14 @@ models:
       - name: longitude
         description: "GPS longitude rounded to 2 decimals for privacy"
 
+      - name: organization_id
+        description: "Foreign key to dim_organization"
+        data_tests:
+          - not_null
+          - relationships:
+              field: organization_id
+              to: ref('dim_organization')
+
   - name: dim_survey_definition
     description: >
       Survey template/definition dimension.

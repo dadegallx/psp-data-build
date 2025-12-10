@@ -301,3 +301,31 @@ sources:
             description: "Creation timestamp"
           - name: last_modified_date
             description: "Last modification timestamp"
+
+      - name: snapshot_stoplight_priority
+        description: "Priority indicators for improvement"
+        columns:
+          - name: id
+            description: "Primary key"
+          - name: snapshot_stoplight_id
+            description: "Foreign key to snapshot_stoplight"
+          - name: reason
+            description: "Reason for priority"
+          - name: action
+            description: "Planned action"
+          - name: estimated_date
+            description: "Months to improve"
+          - name: created_at
+            description: "Creation timestamp"
+
+      - name: snapshot_stoplight_achievement
+        description: "Achievements and roadmaps for improvements"
+        columns:
+          - name: id
+            description: "Primary key"
+          - name: snapshot_stoplight_id
+            description: "Foreign key to snapshot_stoplight"
+          - name: action
+            description: "Action taken/planned"
+          - name: roadmap
+            description: "Steps to achieve"

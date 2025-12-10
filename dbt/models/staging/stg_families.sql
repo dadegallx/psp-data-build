@@ -11,6 +11,7 @@ renamed as (
         is_active as family_is_active,
         anonymous as is_anonymous,
         country,
+        organization_id,
 
         -- Geographic coordinates: validate format, range, and round to 2 decimals for privacy
         case

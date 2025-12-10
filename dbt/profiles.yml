@@ -20,6 +20,6 @@ psp_data_build:
       user: "{{ env_var('DBT_USER') }}"
       pass: "{{ env_var('DBT_PASSWORD') }}"
       dbname: "{{ env_var('DBT_DBNAME') }}"
-      schema: "{{ env_var('DBT_SCHEMA', 'marts') }}"
+      schema: "{{ env_var('DBT_SCHEMA', 'analytics') }}"
       threads: 4
       keepalives_idle: 0
