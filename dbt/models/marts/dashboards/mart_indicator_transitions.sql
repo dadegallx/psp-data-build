@@ -4,12 +4,14 @@
         alias='Indicator Transitions',
         tags=['dashboard'],
         indexes=[
+            {'columns': ['family_id']},
             {'columns': ['application_id']},
             {'columns': ['hub_name']},
             {'columns': ['organization_name']},
             {'columns': ['indicator_name']},
             {'columns': ['dimension_name']},
-            {'columns': ['survey_title']}
+            {'columns': ['survey_title']},
+            {'columns': ['transition_type']}
         ]
     )
 }}
@@ -17,9 +19,9 @@
 {#
     INDICATOR TRANSITIONS MODEL FOR BASELINE VS LATEST COMPARISON
 
-    Grain: One row per indicator_name × survey_definition_id
+    Grain: One row per family × indicator (family_id × survey_indicator_id)
 
-    This model aggregates indicator transitions to enable analysis of:
+    This model pairs baseline and latest indicator values to enable analysis of:
     - Which indicators are improving/worsening across the portfolio
     - Comparison between baseline (snapshot_number = 1) and latest (is_last = true)
 
@@ -86,16 +88,19 @@ paired as (
         and b.survey_indicator_id = l.survey_indicator_id
 ),
 
--- Join dimension attributes before aggregation
-with_dimensions as (
+-- Join dimension attributes
+final as (
     select
+        -- Primary key
+        paired.family_id,
+
         -- RLS and hierarchy
         dim_organization.application_id,
         dim_organization.application_name as hub_name,
         dim_organization.organization_name,
         stg_projects.project_name,  -- nullable
 
-        -- Dimensions for grouping
+        -- Dimensions
         dim_indicator_questions.indicator_name,
         dim_indicator_questions.dimension_name,
         dim_survey_definition.survey_title,
@@ -108,9 +113,35 @@ with_dimensions as (
         dim_indicator_questions.yellow_criteria_description,
         dim_indicator_questions.green_criteria_description,
 
-        -- Values for aggregation
+        -- Baseline value and label
         paired.baseline_value,
-        paired.latest_value
+        case
+            when paired.baseline_value = 1 then 'Red'
+            when paired.baseline_value = 2 then 'Yellow'
+            when paired.baseline_value = 3 then 'Green'
+            else 'Skipped'
+        end as baseline_label,
+
+        -- Latest value and label
+        paired.latest_value,
+        case
+            when paired.latest_value = 1 then 'Red'
+            when paired.latest_value = 2 then 'Yellow'
+            when paired.latest_value = 3 then 'Green'
+            else 'Skipped'
+        end as latest_label,
+
+        -- Transition (computed for easy filtering/grouping)
+        case
+            when paired.baseline_value = 1 and paired.latest_value = 3 then 'Red to Green'
+            when paired.baseline_value = 1 and paired.latest_value = 2 then 'Red to Yellow'
+            when paired.baseline_value = 2 and paired.latest_value = 3 then 'Yellow to Green'
+            when paired.baseline_value = 3 and paired.latest_value = 1 then 'Green to Red'
+            when paired.baseline_value = 3 and paired.latest_value = 2 then 'Green to Yellow'
+            when paired.baseline_value = 2 and paired.latest_value = 1 then 'Yellow to Red'
+            when paired.baseline_value = paired.latest_value then 'No Change'
+            else 'Other'
+        end as transition_type
 
     from paired
     inner join dim_organization
@@ -121,111 +152,6 @@ with_dimensions as (
         on paired.survey_definition_id = dim_survey_definition.survey_definition_id
     left join stg_projects
         on paired.project_id = stg_projects.project_id
-),
-
--- Aggregate by indicator × survey dimensions
-aggregated as (
-    select
-        -- RLS and hierarchy
-        application_id,
-        hub_name,
-        organization_name,
-        project_name,
-
-        -- Dimensions
-        indicator_name,
-        dimension_name,
-        survey_title,
-
-        -- Indicator details (use MIN since they're the same within group)
-        min(survey_indicator_short_name) as survey_indicator_short_name,
-        min(survey_indicator_question_text) as survey_indicator_question_text,
-        min(survey_indicator_description) as survey_indicator_description,
-        min(red_criteria_description) as red_criteria_description,
-        min(yellow_criteria_description) as yellow_criteria_description,
-        min(green_criteria_description) as green_criteria_description,
-
-        -- Baseline Status Metrics
-        count(*) filter (where baseline_value in (1, 2, 3)) as baseline_valid_responses,
-        count(*) filter (where baseline_value is null or baseline_value not in (1, 2, 3)) as baseline_skipped,
-        count(*) filter (where baseline_value = 3) as baseline_green_count,
-        count(*) filter (where baseline_value = 2) as baseline_yellow_count,
-        count(*) filter (where baseline_value = 1) as baseline_red_count,
-
-        -- Latest Status Metrics
-        count(*) filter (where latest_value in (1, 2, 3)) as latest_valid_responses,
-        count(*) filter (where latest_value is null or latest_value not in (1, 2, 3)) as latest_skipped,
-        count(*) filter (where latest_value = 3) as latest_green_count,
-        count(*) filter (where latest_value = 2) as latest_yellow_count,
-        count(*) filter (where latest_value = 1) as latest_red_count,
-
-        -- Impact Metrics: Improvements (Baseline → Latest)
-        count(*) filter (where baseline_value = 1 and latest_value = 3) as improved_red_to_green,
-        count(*) filter (where baseline_value = 1 and latest_value = 2) as improved_red_to_yellow,
-        count(*) filter (where baseline_value = 2 and latest_value = 3) as improved_yellow_to_green,
-
-        -- Impact Metrics: Declines (Baseline → Latest)
-        count(*) filter (where baseline_value = 3 and latest_value = 1) as worsened_green_to_red,
-        count(*) filter (where baseline_value = 3 and latest_value = 2) as worsened_green_to_yellow,
-        count(*) filter (where baseline_value = 2 and latest_value = 1) as worsened_yellow_to_red
-
-    from with_dimensions
-    group by
-        application_id,
-        hub_name,
-        organization_name,
-        project_name,
-        indicator_name,
-        dimension_name,
-        survey_title
-),
-
-final as (
-    select
-        -- RLS and hierarchy
-        application_id,
-        hub_name,
-        organization_name,
-        project_name,
-
-        -- Dimensions
-        indicator_name,
-        dimension_name,
-        survey_title,
-
-        -- Indicator Details
-        survey_indicator_short_name,
-        survey_indicator_question_text,
-        survey_indicator_description,
-        red_criteria_description,
-        yellow_criteria_description,
-        green_criteria_description,
-
-        -- Baseline Status Metrics
-        baseline_valid_responses,
-        baseline_skipped,
-        baseline_green_count,
-        baseline_yellow_count,
-        baseline_red_count,
-
-        -- Latest Status Metrics
-        latest_valid_responses,
-        latest_skipped,
-        latest_green_count,
-        latest_yellow_count,
-        latest_red_count,
-
-        -- Impact Metrics: Improvements
-        improved_red_to_green,
-        improved_red_to_yellow,
-        improved_yellow_to_green,
-
-        -- Impact Metrics: Declines
-        worsened_green_to_red,
-        worsened_green_to_yellow,
-        worsened_yellow_to_red
-
-    from aggregated
 )
 
 select * from final
