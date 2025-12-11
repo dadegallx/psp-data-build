@@ -40,7 +40,7 @@ latest_snapshot_org as (
     select
         family_id,
         organization_id
-    from {{ ref('stg_snapshots') }}
+    from {{ ref('int_snapshots') }}
     where is_last = true
 ),
 
@@ -51,7 +51,7 @@ snapshot_agg as (
         count(*) as surveys_taken,
         min(case when snapshot_number = 1 then snapshot_date end)::date as baseline_date,
         max(case when is_last = true then snapshot_date end)::date as latest_date
-    from {{ ref('stg_snapshots') }}
+    from {{ ref('int_snapshots') }}
     group by family_id
 ),
 

@@ -16,7 +16,7 @@ renamed as (
 
         -- Attributes
         snapshot_number,
-        is_last,
+
         anonymous,
 
         -- Date fields (already in seconds, convert to timestamp)

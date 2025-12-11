@@ -1,5 +1,5 @@
 with snapshots as (
-    select * from {{ ref('stg_snapshots') }}
+    select * from {{ ref('int_snapshots') }}
 ),
 
 snapshot_stoplight as (

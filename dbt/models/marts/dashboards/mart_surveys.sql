@@ -1,7 +1,7 @@
 {{ config(materialized='table', alias='Surveys') }}
 
 with snapshots as (
-    select * from {{ ref('stg_snapshots') }}
+    select * from {{ ref('int_snapshots') }}
 ),
 
 indicator_agg as (
