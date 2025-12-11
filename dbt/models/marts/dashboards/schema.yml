@@ -166,23 +166,97 @@ models:
 
   - name: mart_families
     description: >
-      **Family Locations and Context for Dashboards.**
-      
+      **Families Dashboard - Complete Family Profile.**
+
       **Grain:** One row per Family.
-      
-      **Use Case:** Geospatial analysis (Maps) and Organization-level filtering.
+
+      **Use Case:** Analyze the current status, history, and progress of families
+      in the Poverty Stoplight program. Includes member demographics, survey history,
+      and geographic location.
+
+      **Key Features:**
+      - Organization context from latest snapshot (handles multi-org families)
+      - Member counts by gender
+      - Survey frequency metrics
+      - Geographic coordinates for mapping
+
+      **BI Usage Patterns:**
+      - Family counts: COUNT(family_id) grouped by organization, hub, country
+      - Demographics: SUM(members_male), SUM(members_female), etc.
+      - Follow-up rates: Filter surveys_taken > 1
+      - Survey cadence: AVG(avg_days_between_surveys)
     columns:
       - name: family_id
-        description: "Primary key"
+        description: "Unique identifier for each family"
         data_tests:
           - unique
           - not_null
-      - name: latitude
-        description: "GPS Latitude"
-      - name: longitude
-        description: "GPS Longitude"
+
+      - name: application_id
+        description: "Application ID for Row Level Security (RLS) filtering"
+        data_tests:
+          - not_null
+
       - name: organization_name
-        description: "Name of the implementing organization"
+        description: "The name of the organization or partner managing the family"
+        data_tests:
+          - not_null
+
+      - name: hub_name
+        description: "The regional or functional hub (application) the organization belongs to"
+        data_tests:
+          - not_null
+
+      - name: country
+        description: "The country where the family is located (ISO code from application)"
+        data_tests:
+          - not_null
+
+      - name: latitude
+        description: "Geographic latitude of the family location"
+
+      - name: longitude
+        description: "Geographic longitude of the family location"
+
+      - name: baseline_date
+        description: "The date the family took their very first survey"
+        data_tests:
+          - not_null
+
+      - name: latest_date
+        description: "The date the family took their latest survey"
+        data_tests:
+          - not_null
+
+      - name: members_count
+        description: "The total number of family members"
+        data_tests:
+          - not_null
+
+      - name: members_male
+        description: "Count of family members whose gender is Male"
+        data_tests:
+          - not_null
+
+      - name: members_female
+        description: "Count of family members whose gender is Female"
+        data_tests:
+          - not_null
+
+      - name: members_other
+        description: "Count of family members whose gender is Other"
+        data_tests:
+          - not_null
+
+      - name: surveys_taken
+        description: "The total number of surveys a family has completed to date"
+        data_tests:
+          - not_null
+
+      - name: avg_days_between_surveys
+        description: >
+          Average days between surveys. Calculated as (latest_date - baseline_date) / (surveys_taken - 1).
+          NULL for families with only one survey.
 
   - name: mart_assessments
     description: >
