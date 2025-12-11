@@ -330,3 +330,155 @@ models:
 
       - name: days_since_last_survey
         description: "Days elapsed since previous survey for this family (NULL for baselines)"
+
+  - name: mart_indicator_transitions
+    description: >
+      **Aggregated Indicator Transitions for Baseline vs Latest Comparison.**
+
+      **Grain:** One row per indicator_name × survey_definition_id × organization × project.
+
+      **Use Case:** Analyze which poverty indicators are improving or worsening
+      across the portfolio. Compares baseline (snapshot_number = 1) to latest
+      (is_last = true) survey responses.
+
+      **Key Features:**
+      - Only includes indicators present in BOTH baseline AND latest snapshots
+      - Pre-aggregated counts for fast dashboard performance
+      - Transition metrics showing movement between poverty levels
+      - Filterable by hub, organization, project, survey, and dimension
+      - RLS-enabled via application_id
+
+      **BI Usage Patterns:**
+      - Impact analysis: Sum improved_* columns vs worsened_* columns
+      - Problem indicators: Sort by baseline_red_count DESC
+      - Progress tracking: Compare baseline_green_count to latest_green_count
+      - Drill-down: Filter by dimension_name or indicator_name
+    columns:
+      - name: application_id
+        description: "Application ID for Row Level Security (RLS) filtering"
+        data_tests:
+          - not_null
+
+      - name: hub_name
+        description: "Regional/functional hub (application) the organization belongs to"
+        data_tests:
+          - not_null
+
+      - name: organization_name
+        description: "Name of the organization conducting surveys"
+        data_tests:
+          - not_null
+
+      - name: project_name
+        description: "Project or funding source (nullable - not all surveys have projects)"
+
+      - name: indicator_name
+        description: "Canonical English indicator name - primary grouping field"
+        data_tests:
+          - not_null
+
+      - name: dimension_name
+        description: "Poverty dimension category (e.g., Housing, Health, Education)"
+
+      - name: survey_title
+        description: "Title of the survey definition"
+        data_tests:
+          - not_null
+
+      - name: survey_indicator_short_name
+        description: "Localized short name for display"
+
+      - name: survey_indicator_question_text
+        description: "Full localized question text"
+
+      - name: survey_indicator_description
+        description: "Localized indicator description"
+
+      - name: red_criteria_description
+        description: "Description of what constitutes Red (critical poverty) status"
+
+      - name: yellow_criteria_description
+        description: "Description of what constitutes Yellow (moderate poverty) status"
+
+      - name: green_criteria_description
+        description: "Description of what constitutes Green (non-poor) status"
+
+      - name: baseline_valid_responses
+        description: "Count of families with valid baseline response (Red, Yellow, or Green)"
+        data_tests:
+          - not_null
+
+      - name: baseline_skipped
+        description: "Count of families who skipped this indicator at baseline"
+        data_tests:
+          - not_null
+
+      - name: baseline_green_count
+        description: "Count of families marked Green at baseline"
+        data_tests:
+          - not_null
+
+      - name: baseline_yellow_count
+        description: "Count of families marked Yellow at baseline"
+        data_tests:
+          - not_null
+
+      - name: baseline_red_count
+        description: "Count of families marked Red at baseline"
+        data_tests:
+          - not_null
+
+      - name: latest_valid_responses
+        description: "Count of families with valid latest response (Red, Yellow, or Green)"
+        data_tests:
+          - not_null
+
+      - name: latest_skipped
+        description: "Count of families who skipped this indicator in latest survey"
+        data_tests:
+          - not_null
+
+      - name: latest_green_count
+        description: "Count of families marked Green in latest survey"
+        data_tests:
+          - not_null
+
+      - name: latest_yellow_count
+        description: "Count of families marked Yellow in latest survey"
+        data_tests:
+          - not_null
+
+      - name: latest_red_count
+        description: "Count of families marked Red in latest survey"
+        data_tests:
+          - not_null
+
+      - name: improved_red_to_green
+        description: "Count of families that moved from Red (baseline) to Green (latest)"
+        data_tests:
+          - not_null
+
+      - name: improved_red_to_yellow
+        description: "Count of families that moved from Red (baseline) to Yellow (latest)"
+        data_tests:
+          - not_null
+
+      - name: improved_yellow_to_green
+        description: "Count of families that moved from Yellow (baseline) to Green (latest)"
+        data_tests:
+          - not_null
+
+      - name: worsened_green_to_red
+        description: "Count of families that moved from Green (baseline) to Red (latest)"
+        data_tests:
+          - not_null
+
+      - name: worsened_green_to_yellow
+        description: "Count of families that moved from Green (baseline) to Yellow (latest)"
+        data_tests:
+          - not_null
+
+      - name: worsened_yellow_to_red
+        description: "Count of families that moved from Yellow (baseline) to Red (latest)"
+        data_tests:
+          - not_null
