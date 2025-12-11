@@ -183,3 +183,76 @@ models:
         description: "GPS Longitude"
       - name: organization_name
         description: "Name of the implementing organization"
+
+  - name: mart_assessments
+    description: >
+      **Operational Survey Tracking for Dashboards.**
+
+      **Grain:** One row per survey submission (assessment/snapshot).
+
+      **Use Case:** Analyze field activity, monitor survey volume by partner,
+      and track the frequency of family interactions over time.
+
+      **Key Features:**
+      - Survey cadence tracking via days_since_last_survey
+      - Dynamic snapshot type labels (Baseline, 1st Follow-up, etc.)
+      - Full organizational hierarchy (Hub → Organization → Project)
+      - RLS-enabled via application_id
+
+      **BI Usage Patterns:**
+      - Families Surveyed: COUNT DISTINCT(family_id)
+      - Avg Days Since Last: AVG(days_since_last_survey) - auto-excludes NULLs
+      - Survey volume trends: Group by survey_date, organization_name, hub_name
+      - Baseline vs Follow-up: Filter by snapshot_type or snapshot_sequence
+    columns:
+      - name: snapshot_id
+        description: "Primary key - unique identifier for each assessment"
+        data_tests:
+          - unique
+          - not_null
+
+      - name: family_id
+        description: "Family receiving the assessment (for counting unique families)"
+        data_tests:
+          - not_null
+
+      - name: survey_date
+        description: "Date the survey was completed"
+        data_tests:
+          - not_null
+
+      - name: organization_name
+        description: "Organization or partner managing the survey"
+        data_tests:
+          - not_null
+
+      - name: hub_name
+        description: "Regional/functional hub (application) the organization belongs to"
+        data_tests:
+          - not_null
+
+      - name: application_id
+        description: "Application ID for Row Level Security (RLS) filtering"
+        data_tests:
+          - not_null
+
+      - name: project_name
+        description: "Project or funding source (nullable - not all surveys have projects)"
+
+      - name: survey_name
+        description: "Name of the survey model used"
+        data_tests:
+          - not_null
+
+      - name: snapshot_type
+        description: "Type of assessment: Baseline, 1st Follow-up, 2nd Follow-up, etc."
+        data_tests:
+          - not_null
+
+      - name: snapshot_sequence
+        description: "Numerical order of the survey for that family (1=First, 2=Second, etc.)"
+        data_tests:
+          - not_null
+
+      - name: days_since_last_survey
+        description: "Days elapsed since previous survey for this family (NULL for baselines)"
