@@ -1,4 +1,4 @@
-{{ config(materialized='table') }}
+{{ config(materialized='table', alias='Family Members') }}
 
 with members as (
     select * from {{ ref('stg_family_members') }}

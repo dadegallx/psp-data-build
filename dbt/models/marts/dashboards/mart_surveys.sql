@@ -1,4 +1,4 @@
-{{ config(materialized='table') }}
+{{ config(materialized='table', alias='Surveys') }}
 
 with snapshots as (
     select * from {{ ref('stg_snapshots') }}

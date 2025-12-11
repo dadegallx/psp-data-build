@@ -61,8 +61,13 @@ models:
       +tags: ['mart', 'gold']
       +schema: marts
 
-      # Dashboard aggregations
+      # Core star schema (dimensions and facts)
+      core:
+        +tags: ['mart', 'core', 'gold']
+        # Inherits +schema: marts from parent
+
+      # Superset-ready dashboard tables
       dashboards:
         +materialized: table
-        +tags: ['mart', 'dashboard', 'gold']
-        +schema: marts
+        +tags: ['superset', 'dashboards', 'gold']
+        +schema: superset

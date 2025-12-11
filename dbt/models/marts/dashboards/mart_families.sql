@@ -1,4 +1,4 @@
-{{ config(materialized='table') }}
+{{ config(materialized='table', alias='Families') }}
 
 with families as (
     select * from {{ ref('dim_family') }}

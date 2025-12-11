@@ -1,6 +1,7 @@
 {{
     config(
         materialized='table',
+        alias='Indicators',
         tags=['dashboard'],
         indexes=[
             {'columns': ['family_id']},
