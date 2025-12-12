@@ -432,3 +432,107 @@ models:
         description: "Count of indicator responses with this transition (Sankey flow width)"
         data_tests:
           - not_null
+
+  - name: mart_indicator_progress
+    description: >
+      **Flow-Based Indicator Progress Model for Multi-Visualization Support.**
+
+      **Grain:** One row per indicator × snapshot_number × is_last × max_wave_reached
+      × baseline_label × previous_label × current_label × organization.
+
+      **Use Case:** Supports Sankey diagrams, line charts, bar charts, and cohort analysis
+      from a single table by preserving transition information (baseline→previous→current).
+
+      **Key Insight:** Unlike wide tables with status counts, this flow-based design
+      preserves the connection between start and end states for Sankey visualization.
+
+      **Key Features:**
+      - Transition columns: baseline_label, previous_label, current_label
+      - Cohort filtering via max_wave_reached (survivor curves)
+      - Pre-aggregated family_count for fast queries
+      - net_change_numeric for avg improvement calculations
+      - RLS-enabled via application_id
+
+      **BI Usage Patterns:**
+      - Sankey: baseline_label (source) → current_label (target) → SUM(family_count) WHERE is_last = TRUE
+      - Line Chart: % Green = SUM(family_count) FILTER (WHERE current_label = 'Green') / SUM(family_count)
+      - Bar Chart: Compare GROUP BY baseline_label vs GROUP BY current_label
+      - Survivor Curve: WHERE max_wave_reached >= N
+    columns:
+      - name: snapshot_type
+        description: "Survey type label: 'Baseline', '1st Follow-up', '2nd Follow-up', etc."
+        data_tests:
+          - not_null
+
+      - name: snapshot_number
+        description: "Numeric sequence (1=Baseline, 2=1st Follow-up, etc.) - use for X-axis on line charts"
+        data_tests:
+          - not_null
+
+      - name: is_last
+        description: "TRUE if this is the family's most recent snapshot - use for 'Current Portfolio' filter"
+        data_tests:
+          - not_null
+
+      - name: max_wave_reached
+        description: "Furthest wave this family reached - use for survivor curve filtering"
+        data_tests:
+          - not_null
+
+      - name: application_id
+        description: "Application ID for Row Level Security (RLS) filtering"
+        data_tests:
+          - not_null
+
+      - name: hub_name
+        description: "Regional/functional hub (application) name"
+        data_tests:
+          - not_null
+
+      - name: organization_name
+        description: "Name of the organization conducting surveys"
+        data_tests:
+          - not_null
+
+      - name: project_name
+        description: "Project or funding source (nullable)"
+
+      - name: indicator_name
+        description: "Canonical English indicator name - primary grouping field"
+        data_tests:
+          - not_null
+
+      - name: dimension_name
+        description: "Poverty dimension category (e.g., Housing, Health, Education)"
+
+      - name: survey_title
+        description: "Title of the survey definition"
+        data_tests:
+          - not_null
+
+      - name: baseline_label
+        description: "Color at Wave 1 - Sankey Source A: 'Red', 'Yellow', 'Green', 'Skipped'"
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['Red', 'Yellow', 'Green', 'Skipped']
+
+      - name: previous_label
+        description: "Color at Wave N-1 - Sankey Source B (NULL for baseline rows)"
+
+      - name: current_label
+        description: "Color at current wave - Sankey Target: 'Red', 'Yellow', 'Green', 'Skipped'"
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['Red', 'Yellow', 'Green', 'Skipped']
+
+      - name: family_count
+        description: "Number of families in this transition group - Sankey flow width"
+        data_tests:
+          - not_null
+
+      - name: net_change_numeric
+        description: "SUM(current_score - baseline_score) for calculating average improvement"
+        data_tests:
+          - not_null
