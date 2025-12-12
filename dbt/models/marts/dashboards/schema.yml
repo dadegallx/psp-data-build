@@ -3,23 +3,23 @@ version: 2
 models:
   - name: mart_indicators
     description: >
-      **Pre-Aggregated Indicator Model for Time-Series Analysis.**
+      **Pre-Aggregated Indicator Model for Time-Series Analysis (Long Format).**
 
-      **Grain:** One row per indicator × snapshot_type × organization dimensions
+      **Grain:** One row per indicator × snapshot_type × status_label × organization dimensions
 
-      **Use Case:** Time-series charts showing Green/Yellow/Red counts across
-      Baseline, 1st Follow-up, 2nd Follow-up, etc. Pre-aggregated for fast queries.
+      **Use Case:** Time-series charts showing indicator status distribution across
+      Baseline, 1st Follow-up, 2nd Follow-up, etc. Long format for flexible BI analysis.
 
       **Key Features:**
-      - Pre-computed counts (green_count, yellow_count, red_count, skipped_count)
-      - Long structure with snapshot_type column for time-series
+      - Long format: one row per status type (Green, Yellow, Red, Skipped)
+      - Single metric column (indicator_count) for simple schema
       - Canonical English indicator_name for cross-survey grouping
       - Indicator details for tooltips
       - Indexed for dashboard performance
 
       **BI Usage Patterns:**
-      - Time-series % Green: green_count / total_responses by snapshot_type
-      - Dimension breakdown: Group by dimension_name or indicator_name
+      - Stacked bar/pie charts: Group by status_label, sum indicator_count
+      - % Green calculation: SUM(indicator_count) FILTER (WHERE status_label = 'Green') / SUM(indicator_count)
       - Cohort filtering: Filter by hub_name, organization_name, survey_title
       - Use snapshot_sequence for sorting (1, 2, 3, ...)
 
@@ -85,28 +85,15 @@ models:
       - name: green_criteria_description
         description: "Description of what constitutes Green (non-poor) status"
 
-      - name: total_responses
-        description: "Total number of indicator responses (families) in this group"
+      - name: status_label
+        description: "Indicator status: 'Green', 'Yellow', 'Red', or 'Skipped'"
         data_tests:
           - not_null
+          - accepted_values:
+              values: ['Green', 'Yellow', 'Red', 'Skipped']
 
-      - name: green_count
-        description: "Count of Green (non-poor) responses"
-        data_tests:
-          - not_null
-
-      - name: yellow_count
-        description: "Count of Yellow (moderate poverty) responses"
-        data_tests:
-          - not_null
-
-      - name: red_count
-        description: "Count of Red (critical poverty) responses"
-        data_tests:
-          - not_null
-
-      - name: skipped_count
-        description: "Count of skipped/NULL responses"
+      - name: indicator_count
+        description: "Count of indicator responses with this status"
         data_tests:
           - not_null
 

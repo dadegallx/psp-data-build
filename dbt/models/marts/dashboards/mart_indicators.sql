@@ -9,21 +9,26 @@
             {'columns': ['organization_name']},
             {'columns': ['indicator_name']},
             {'columns': ['dimension_name']},
-            {'columns': ['snapshot_type']}
+            {'columns': ['snapshot_type']},
+            {'columns': ['status_label']}
         ]
     )
 }}
 
 {#
-    INDICATORS MODEL FOR TIME-SERIES ANALYSIS (PRE-AGGREGATED)
+    INDICATORS MODEL FOR TIME-SERIES ANALYSIS (PRE-AGGREGATED, LONG FORMAT)
 
-    Grain: One row per indicator × snapshot_type × organization dimensions
+    Grain: One row per indicator × snapshot_type × status_label × organization dimensions
 
-    This model aggregates indicator responses to show counts of Green/Yellow/Red
-    at each snapshot stage (Baseline, 1st Follow-up, etc.) for time-series analysis.
+    This model aggregates indicator responses into a long format with one row per
+    status type (Green, Yellow, Red, Skipped) for flexible BI analysis.
 
-    Optimization: Aggregates on IDs first, then joins text columns to avoid
-    large temp files during GROUP BY.
+    Use Case:
+    - Time-series charts by snapshot_type
+    - Stacked bar/pie charts by status_label
+    - Percentage calculations in semantic layer: SUM(indicator_count) FILTER (WHERE status_label = 'Green') / SUM(indicator_count)
+
+    Optimization: Aggregates on IDs first, then joins text columns.
 #}
 
 with fact_data as (
@@ -40,7 +45,6 @@ aggregated_counts as (
         fact_data.project_id,
 
         -- Aggregated metrics
-        count(*) as total_responses,
         count(*) filter (where fact_data.indicator_status_value = 3) as green_count,
         count(*) filter (where fact_data.indicator_status_value = 2) as yellow_count,
         count(*) filter (where fact_data.indicator_status_value = 1) as red_count,
@@ -55,7 +59,56 @@ aggregated_counts as (
         fact_data.project_id
 ),
 
--- Step 2: Join dimension tables to add text columns AFTER aggregation
+-- Step 2: Unpivot counts into long format
+unpivoted as (
+    select
+        snapshot_number,
+        organization_id,
+        survey_indicator_id,
+        survey_definition_id,
+        project_id,
+        'Green' as status_label,
+        green_count as indicator_count
+    from aggregated_counts
+
+    union all
+
+    select
+        snapshot_number,
+        organization_id,
+        survey_indicator_id,
+        survey_definition_id,
+        project_id,
+        'Yellow' as status_label,
+        yellow_count as indicator_count
+    from aggregated_counts
+
+    union all
+
+    select
+        snapshot_number,
+        organization_id,
+        survey_indicator_id,
+        survey_definition_id,
+        project_id,
+        'Red' as status_label,
+        red_count as indicator_count
+    from aggregated_counts
+
+    union all
+
+    select
+        snapshot_number,
+        organization_id,
+        survey_indicator_id,
+        survey_definition_id,
+        project_id,
+        'Skipped' as status_label,
+        skipped_count as indicator_count
+    from aggregated_counts
+),
+
+-- Step 3: Join dimension tables to add text columns AFTER aggregation
 dim_organization as (
     select * from {{ ref('dim_organization') }}
 ),
@@ -76,14 +129,14 @@ final as (
     select
         -- Snapshot type
         case
-            when aggregated_counts.snapshot_number = 1 then 'Baseline'
-            when aggregated_counts.snapshot_number = 2 then '1st Follow-up'
-            when aggregated_counts.snapshot_number = 3 then '2nd Follow-up'
-            when aggregated_counts.snapshot_number = 4 then '3rd Follow-up'
-            else (aggregated_counts.snapshot_number - 1)::text || 'th Follow-up'
+            when unpivoted.snapshot_number = 1 then 'Baseline'
+            when unpivoted.snapshot_number = 2 then '1st Follow-up'
+            when unpivoted.snapshot_number = 3 then '2nd Follow-up'
+            when unpivoted.snapshot_number = 4 then '3rd Follow-up'
+            else (unpivoted.snapshot_number - 1)::text || 'th Follow-up'
         end as snapshot_type,
 
-        aggregated_counts.snapshot_number as snapshot_sequence,
+        unpivoted.snapshot_number as snapshot_sequence,
 
         -- RLS and hierarchy
         dim_organization.application_id,
@@ -104,22 +157,19 @@ final as (
         dim_indicator_questions.yellow_criteria_description,
         dim_indicator_questions.green_criteria_description,
 
-        -- Aggregated metrics
-        aggregated_counts.total_responses,
-        aggregated_counts.green_count,
-        aggregated_counts.yellow_count,
-        aggregated_counts.red_count,
-        aggregated_counts.skipped_count
+        -- Status and count (long format)
+        unpivoted.status_label,
+        unpivoted.indicator_count
 
-    from aggregated_counts
+    from unpivoted
     inner join dim_organization
-        on aggregated_counts.organization_id = dim_organization.organization_id
+        on unpivoted.organization_id = dim_organization.organization_id
     inner join dim_indicator_questions
-        on aggregated_counts.survey_indicator_id = dim_indicator_questions.survey_indicator_id
+        on unpivoted.survey_indicator_id = dim_indicator_questions.survey_indicator_id
     inner join dim_survey_definition
-        on aggregated_counts.survey_definition_id = dim_survey_definition.survey_definition_id
+        on unpivoted.survey_definition_id = dim_survey_definition.survey_definition_id
     left join stg_projects
-        on aggregated_counts.project_id = stg_projects.project_id
+        on unpivoted.project_id = stg_projects.project_id
 )
 
 select * from final
