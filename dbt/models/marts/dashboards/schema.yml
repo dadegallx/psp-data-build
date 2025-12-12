@@ -3,29 +3,39 @@ version: 2
 models:
   - name: mart_indicators
     description: >
-      **Pivoted indicator model for baseline vs follow-up comparison.**
+      **Indicator Model for Time-Series Analysis.**
 
-      **Grain:** One row per family per survey_indicator
+      **Grain:** One row per family × indicator × snapshot (family_id × survey_indicator_id × snapshot_id)
 
-      **Use Case:** Compare family progress from baseline to follow-up surveys.
-      Enables side-by-side analysis of indicator changes over time.
+      **Use Case:** Time-series charts showing % Green across Baseline, 1st Follow-up, 2nd Follow-up, etc.
+      Includes ALL snapshots for complete longitudinal analysis.
 
       **Key Features:**
-      - Pivoted structure with baseline, first follow-up, and latest follow-up columns
-      - Delta columns showing improvement/decline between snapshots
+      - Long structure with snapshot_type column (Baseline, 1st Follow-up, 2nd Follow-up, etc.)
+      - Column names consistent with mart_assessments (snapshot_type, snapshot_sequence)
       - Canonical English indicator_name for cross-survey grouping
       - Localized indicator text for display
       - Color criteria descriptions for tooltips
 
       **BI Usage Patterns:**
-      - Improvement analysis: Filter has_followup_data = true, analyze baseline_to_latest_diff
-      - Cohort comparison: Group by total_snapshots to segment by follow-up depth
-      - Indicator trends: Compare baseline_value vs latest_followup_value distributions
-      - Time filtering: Use baseline_date, first_followup_date, latest_followup_date
+      - Time-series % Green: Group by snapshot_type, calculate COUNT(*) FILTER (WHERE status_label = 'Green') / COUNT(*)
+      - Dimension breakdown: Add dimension_name or indicator_name to grouping
+      - Cohort filtering: Filter by hub_name, organization_name, survey_title
+      - Use snapshot_sequence for sorting (1, 2, 3, ...) instead of snapshot_type
 
     columns:
       - name: family_id
         description: "Unique family identifier"
+        data_tests:
+          - not_null
+
+      - name: snapshot_type
+        description: "Survey type label: 'Baseline', '1st Follow-up', '2nd Follow-up', etc. (consistent with mart_assessments)"
+        data_tests:
+          - not_null
+
+      - name: snapshot_sequence
+        description: "Numeric sequence (1=Baseline, 2=1st Follow-up, etc.) - use for sorting"
         data_tests:
           - not_null
 
@@ -34,25 +44,33 @@ models:
         data_tests:
           - not_null
 
+      - name: hub_name
+        description: "Regional/functional hub (application) name"
+        data_tests:
+          - not_null
+
       - name: organization_name
         description: "Name of the organization conducting the survey"
-
-      - name: application_name
-        description: "Parent application/hub name"
-
-      - name: survey_title
-        description: "Title of the survey definition"
+        data_tests:
+          - not_null
 
       - name: project_name
-        description: "Project name (from baseline snapshot, nullable)"
+        description: "Project name (nullable - not all surveys have projects)"
 
       - name: indicator_name
         description: >
           **PRIMARY GROUPING FIELD** - Canonical English indicator name.
           Use for aggregation across surveys regardless of language.
+        data_tests:
+          - not_null
 
       - name: dimension_name
         description: "Poverty dimension category (e.g., Housing, Health, Education)"
+
+      - name: survey_title
+        description: "Title of the survey definition"
+        data_tests:
+          - not_null
 
       - name: survey_indicator_short_name
         description: "Localized short name for display"
@@ -72,50 +90,11 @@ models:
       - name: green_criteria_description
         description: "Description of what constitutes Green (non-poor) status"
 
-      - name: total_snapshots
-        description: "Total number of snapshots for this family × indicator (1 = baseline only, 2+ = has follow-ups)"
-        data_tests:
-          - not_null
+      - name: status_value
+        description: "Indicator status: 1=Red, 2=Yellow, 3=Green, NULL=skipped"
 
-      - name: baseline_date
-        description: "Date of baseline survey (snapshot_number = 1). NULL if indicator was added in follow-up."
-
-      - name: baseline_value
-        description: "Indicator status at baseline: 1=Red, 2=Yellow, 3=Green, NULL=skipped or no baseline"
-
-      - name: baseline_label
-        description: "Human-readable label for baseline status: 'Red', 'Yellow', 'Green', 'Skipped', or NULL"
-
-      - name: first_followup_date
-        description: "Date of first follow-up survey (snapshot_number = 2). NULL if no follow-up."
-
-      - name: first_followup_value
-        description: "Indicator status at first follow-up: 1=Red, 2=Yellow, 3=Green, NULL=skipped or no follow-up"
-
-      - name: first_followup_label
-        description: "Human-readable label for first follow-up status"
-
-      - name: latest_followup_date
-        description: "Date of most recent follow-up survey. NULL if no follow-up."
-
-      - name: latest_followup_value
-        description: "Indicator status at latest follow-up: 1=Red, 2=Yellow, 3=Green, NULL=skipped or no follow-up"
-
-      - name: latest_followup_label
-        description: "Human-readable label for latest follow-up status"
-
-      - name: baseline_to_first_diff
-        description: >
-          Change from baseline to first follow-up (first_followup_value - baseline_value).
-          Positive = improvement, Negative = decline, NULL = missing data.
-
-      - name: baseline_to_latest_diff
-        description: >
-          Change from baseline to latest follow-up (latest_followup_value - baseline_value).
-          Positive = improvement, Negative = decline, NULL = missing data.
-
-      - name: has_followup_data
-        description: "True if family has at least one follow-up survey (first_followup_value is not null)"
+      - name: status_label
+        description: "Human-readable label: 'Red', 'Yellow', 'Green', 'Skipped'"
         data_tests:
           - not_null
 
