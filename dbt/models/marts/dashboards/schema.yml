@@ -310,6 +310,31 @@ models:
       - name: days_since_last_survey
         description: "Days elapsed since previous survey for this family (NULL for baselines)"
 
+      - name: green_count
+        description: "Count of indicators marked Green (value=3) in this snapshot"
+        data_tests:
+          - not_null
+
+      - name: yellow_count
+        description: "Count of indicators marked Yellow (value=2) in this snapshot"
+        data_tests:
+          - not_null
+
+      - name: red_count
+        description: "Count of indicators marked Red (value=1) in this snapshot"
+        data_tests:
+          - not_null
+
+      - name: skipped_count
+        description: "Count of indicators skipped (value=0) in this snapshot"
+        data_tests:
+          - not_null
+
+      - name: valid_indicator_count
+        description: "Count of valid responses (green + yellow + red, excludes skipped and NULL)"
+        data_tests:
+          - not_null
+
   - name: mart_indicator_transitions
     description: >
       **Indicator Transitions for Baseline vs Latest Comparison.**

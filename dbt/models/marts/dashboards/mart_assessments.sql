@@ -40,6 +40,19 @@ projects as (
     select * from {{ ref('stg_projects') }}
 ),
 
+-- Aggregate indicator counts per snapshot
+indicator_counts as (
+    select
+        snapshot_id,
+        count(*) filter (where indicator_status_value = 3) as green_count,
+        count(*) filter (where indicator_status_value = 2) as yellow_count,
+        count(*) filter (where indicator_status_value = 1) as red_count,
+        count(*) filter (where indicator_status_value = 0) as skipped_count,
+        count(*) filter (where indicator_status_value in (1, 2, 3)) as valid_indicator_count
+    from {{ ref('stg_snapshot_stoplight') }}
+    group by snapshot_id
+),
+
 -- Calculate days since previous survey for each family
 snapshots_with_lag as (
     select
@@ -82,7 +95,14 @@ final as (
         case
             when s.snapshot_number = 1 then null  -- Baselines have no previous
             else (s.snapshot_date::date - s.previous_snapshot_date::date)
-        end as days_since_last_survey
+        end as days_since_last_survey,
+
+        -- Indicator counts (aggregated from stg_snapshot_stoplight)
+        coalesce(ic.green_count, 0) as green_count,
+        coalesce(ic.yellow_count, 0) as yellow_count,
+        coalesce(ic.red_count, 0) as red_count,
+        coalesce(ic.skipped_count, 0) as skipped_count,
+        coalesce(ic.valid_indicator_count, 0) as valid_indicator_count
 
     from snapshots_with_lag s
     inner join organizations org
@@ -91,6 +111,8 @@ final as (
         on s.survey_definition_id = sd.survey_definition_id
     left join projects proj
         on s.project_id = proj.project_id
+    left join indicator_counts ic
+        on s.snapshot_id = ic.snapshot_id
 )
 
 select * from final
