@@ -48,7 +48,7 @@ aggregated_counts as (
         count(*) filter (where fact_data.indicator_status_value = 3) as green_count,
         count(*) filter (where fact_data.indicator_status_value = 2) as yellow_count,
         count(*) filter (where fact_data.indicator_status_value = 1) as red_count,
-        count(*) filter (where fact_data.indicator_status_value is null) as skipped_count
+        count(*) filter (where fact_data.indicator_status_value = 0) as skipped_count
 
     from fact_data
     group by
