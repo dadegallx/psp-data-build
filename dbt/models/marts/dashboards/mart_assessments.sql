@@ -10,7 +10,8 @@
             {'columns': ['organization_name']},
             {'columns': ['survey_date']},
             {'columns': ['snapshot_type']},
-            {'columns': ['snapshot_sequence']}
+            {'columns': ['snapshot_sequence']},
+            {'columns': ['is_last']}
         ]
     )
 }}
@@ -102,7 +103,10 @@ final as (
         coalesce(ic.yellow_count, 0) as yellow_count,
         coalesce(ic.red_count, 0) as red_count,
         coalesce(ic.skipped_count, 0) as skipped_count,
-        coalesce(ic.valid_indicator_count, 0) as valid_indicator_count
+        coalesce(ic.valid_indicator_count, 0) as valid_indicator_count,
+
+        -- Latest snapshot flag
+        s.is_last
 
     from snapshots_with_lag s
     inner join organizations org
