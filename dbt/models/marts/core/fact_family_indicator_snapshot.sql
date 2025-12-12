@@ -101,8 +101,12 @@ final as (
         snapshot_number,
         is_last,
 
-        -- Measures
-        indicator_status_value
+        -- Measures (normalized: 0=skipped, 1=red, 2=yellow, 3=green, invalid→NULL)
+        case
+            when indicator_status_value in (1, 2, 3) then indicator_status_value
+            when indicator_status_value = 0 then 0
+            else null
+        end as indicator_status_value
 
     from joined
 )
