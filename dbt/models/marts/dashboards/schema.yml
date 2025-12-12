@@ -3,34 +3,29 @@ version: 2
 models:
   - name: mart_indicators
     description: >
-      **Indicator Model for Time-Series Analysis.**
+      **Pre-Aggregated Indicator Model for Time-Series Analysis.**
 
-      **Grain:** One row per family × indicator × snapshot (family_id × survey_indicator_id × snapshot_id)
+      **Grain:** One row per indicator × snapshot_type × organization dimensions
 
-      **Use Case:** Time-series charts showing % Green across Baseline, 1st Follow-up, 2nd Follow-up, etc.
-      Includes ALL snapshots for complete longitudinal analysis.
+      **Use Case:** Time-series charts showing Green/Yellow/Red counts across
+      Baseline, 1st Follow-up, 2nd Follow-up, etc. Pre-aggregated for fast queries.
 
       **Key Features:**
-      - Long structure with snapshot_type column (Baseline, 1st Follow-up, 2nd Follow-up, etc.)
-      - Column names consistent with mart_assessments (snapshot_type, snapshot_sequence)
+      - Pre-computed counts (green_count, yellow_count, red_count, skipped_count)
+      - Long structure with snapshot_type column for time-series
       - Canonical English indicator_name for cross-survey grouping
-      - Localized indicator text for display
-      - Color criteria descriptions for tooltips
+      - Indicator details for tooltips
+      - Indexed for dashboard performance
 
       **BI Usage Patterns:**
-      - Time-series % Green: Group by snapshot_type, calculate COUNT(*) FILTER (WHERE status_label = 'Green') / COUNT(*)
-      - Dimension breakdown: Add dimension_name or indicator_name to grouping
+      - Time-series % Green: green_count / total_responses by snapshot_type
+      - Dimension breakdown: Group by dimension_name or indicator_name
       - Cohort filtering: Filter by hub_name, organization_name, survey_title
-      - Use snapshot_sequence for sorting (1, 2, 3, ...) instead of snapshot_type
+      - Use snapshot_sequence for sorting (1, 2, 3, ...)
 
     columns:
-      - name: family_id
-        description: "Unique family identifier"
-        data_tests:
-          - not_null
-
       - name: snapshot_type
-        description: "Survey type label: 'Baseline', '1st Follow-up', '2nd Follow-up', etc. (consistent with mart_assessments)"
+        description: "Survey type label: 'Baseline', '1st Follow-up', '2nd Follow-up', etc."
         data_tests:
           - not_null
 
@@ -90,11 +85,28 @@ models:
       - name: green_criteria_description
         description: "Description of what constitutes Green (non-poor) status"
 
-      - name: status_value
-        description: "Indicator status: 1=Red, 2=Yellow, 3=Green, NULL=skipped"
+      - name: total_responses
+        description: "Total number of indicator responses (families) in this group"
+        data_tests:
+          - not_null
 
-      - name: status_label
-        description: "Human-readable label: 'Red', 'Yellow', 'Green', 'Skipped'"
+      - name: green_count
+        description: "Count of Green (non-poor) responses"
+        data_tests:
+          - not_null
+
+      - name: yellow_count
+        description: "Count of Yellow (moderate poverty) responses"
+        data_tests:
+          - not_null
+
+      - name: red_count
+        description: "Count of Red (critical poverty) responses"
+        data_tests:
+          - not_null
+
+      - name: skipped_count
+        description: "Count of skipped/NULL responses"
         data_tests:
           - not_null
 
@@ -337,32 +349,26 @@ models:
 
   - name: mart_indicator_transitions
     description: >
-      **Indicator Transitions for Baseline vs Latest Comparison.**
+      **Pre-aggregated Indicator Transitions for Sankey Diagrams.**
 
-      **Grain:** One row per family × indicator (family_id × survey_indicator_id).
+      **Grain:** One row per (dimension columns) × baseline_label × latest_label.
 
       **Use Case:** Analyze which poverty indicators are improving or worsening
-      across the portfolio. Compares baseline (snapshot_number = 1) to latest
-      (is_last = true) survey responses at the family level.
+      across the portfolio. Pre-aggregated for fast Sankey diagrams and dashboard queries.
 
       **Key Features:**
       - Only includes indicators present in BOTH baseline AND latest snapshots
-      - Individual family-level transitions (not pre-aggregated)
-      - transition_type column for easy filtering/grouping in Superset
-      - Filterable by hub, organization, project, survey, and dimension
+      - Skipped indicators (NULL values) are excluded
+      - Pre-aggregated counts for fast dashboard performance
+      - Sankey-ready: baseline_label (source) → latest_label (target) → indicator_count (metric)
       - RLS-enabled via application_id
 
       **BI Usage Patterns:**
-      - Transition counts: COUNT(*) WHERE transition_type = 'Red to Green'
-      - Impact analysis: Group by indicator_name, transition_type
-      - Family drill-down: Filter by family_id to see all indicator changes
+      - Sankey diagram: Source=baseline_label, Target=latest_label, Metric=SUM(indicator_count)
+      - Transition bar chart: Group by transition_type, Metric=SUM(indicator_count)
+      - Impact by indicator: Filter transition_type, Group by indicator_name
       - Cohort analysis: Filter by hub_name, organization_name, or project_name
     columns:
-      - name: family_id
-        description: "Unique family identifier - part of composite key"
-        data_tests:
-          - not_null
-
       - name: application_id
         description: "Application ID for Row Level Security (RLS) filtering"
         data_tests:
@@ -412,27 +418,30 @@ models:
       - name: green_criteria_description
         description: "Description of what constitutes Green (non-poor) status"
 
-      - name: baseline_value
-        description: "Indicator status at baseline: 1=Red, 2=Yellow, 3=Green, NULL=skipped"
-
       - name: baseline_label
-        description: "Human-readable label for baseline status: 'Red', 'Yellow', 'Green', 'Skipped'"
+        description: "Baseline status for Sankey source node: 'Red', 'Yellow', or 'Green'"
         data_tests:
           - not_null
-
-      - name: latest_value
-        description: "Indicator status at latest survey: 1=Red, 2=Yellow, 3=Green, NULL=skipped"
+          - accepted_values:
+              values: ['Red', 'Yellow', 'Green']
 
       - name: latest_label
-        description: "Human-readable label for latest status: 'Red', 'Yellow', 'Green', 'Skipped'"
+        description: "Latest status for Sankey target node: 'Red', 'Yellow', or 'Green'"
         data_tests:
           - not_null
+          - accepted_values:
+              values: ['Red', 'Yellow', 'Green']
 
       - name: transition_type
         description: >
-          Computed transition category for easy filtering:
+          Computed transition category for filtering:
           'Red to Green', 'Red to Yellow', 'Yellow to Green' (improvements),
           'Green to Red', 'Green to Yellow', 'Yellow to Red' (declines),
-          'No Change', or 'Other' (involves skipped values)
+          'No Change'
+        data_tests:
+          - not_null
+
+      - name: indicator_count
+        description: "Count of indicator responses with this transition (Sankey flow width)"
         data_tests:
           - not_null
