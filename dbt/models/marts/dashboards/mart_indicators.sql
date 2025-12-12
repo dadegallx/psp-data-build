@@ -10,7 +10,8 @@
             {'columns': ['indicator_name']},
             {'columns': ['dimension_name']},
             {'columns': ['snapshot_type']},
-            {'columns': ['status_label']}
+            {'columns': ['status_label']},
+            {'columns': ['is_last']}
         ]
     )
 }}
@@ -39,6 +40,7 @@ with fact_data as (
 aggregated_counts as (
     select
         fact_data.snapshot_number,
+        fact_data.is_last,
         fact_data.organization_id,
         fact_data.survey_indicator_id,
         fact_data.survey_definition_id,
@@ -53,6 +55,7 @@ aggregated_counts as (
     from fact_data
     group by
         fact_data.snapshot_number,
+        fact_data.is_last,
         fact_data.organization_id,
         fact_data.survey_indicator_id,
         fact_data.survey_definition_id,
@@ -63,6 +66,7 @@ aggregated_counts as (
 unpivoted as (
     select
         snapshot_number,
+        is_last,
         organization_id,
         survey_indicator_id,
         survey_definition_id,
@@ -75,6 +79,7 @@ unpivoted as (
 
     select
         snapshot_number,
+        is_last,
         organization_id,
         survey_indicator_id,
         survey_definition_id,
@@ -87,6 +92,7 @@ unpivoted as (
 
     select
         snapshot_number,
+        is_last,
         organization_id,
         survey_indicator_id,
         survey_definition_id,
@@ -99,6 +105,7 @@ unpivoted as (
 
     select
         snapshot_number,
+        is_last,
         organization_id,
         survey_indicator_id,
         survey_definition_id,
@@ -137,6 +144,7 @@ final as (
         end as snapshot_type,
 
         unpivoted.snapshot_number as snapshot_sequence,
+        unpivoted.is_last,
 
         -- RLS and hierarchy
         dim_organization.application_id,
