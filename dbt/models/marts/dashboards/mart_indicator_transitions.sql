@@ -26,8 +26,7 @@
     - Sankey diagrams: baseline_label (source) → latest_label (target) → indicator_count (metric)
 
     Note: Only includes indicators present in BOTH baseline AND latest snapshots.
-          Only valid stoplight values (1=Red, 2=Yellow, 3=Green) are included.
-          Skipped (0, NULL) and invalid values are excluded.
+          Includes "Skipped" as a 4th state (value = 0).
 
     Optimization: Aggregates on IDs first, then joins text columns to avoid
     large temp files during GROUP BY.
@@ -74,8 +73,8 @@ aggregated_counts as (
     inner join latest l
         on b.family_id = l.family_id
         and b.survey_indicator_id = l.survey_indicator_id
-    where b.baseline_value in (1, 2, 3)  -- Red, Yellow, Green only
-      and l.latest_value in (1, 2, 3)
+    where b.baseline_value in (0, 1, 2, 3)  -- Skipped, Red, Yellow, Green
+      and l.latest_value in (0, 1, 2, 3)
     group by
         b.survey_indicator_id,
         b.organization_id,
@@ -125,6 +124,7 @@ final as (
 
         -- Baseline label
         case
+            when aggregated_counts.baseline_value = 0 then 'Skipped'
             when aggregated_counts.baseline_value = 1 then 'Red'
             when aggregated_counts.baseline_value = 2 then 'Yellow'
             when aggregated_counts.baseline_value = 3 then 'Green'
@@ -132,6 +132,7 @@ final as (
 
         -- Latest label
         case
+            when aggregated_counts.latest_value = 0 then 'Skipped'
             when aggregated_counts.latest_value = 1 then 'Red'
             when aggregated_counts.latest_value = 2 then 'Yellow'
             when aggregated_counts.latest_value = 3 then 'Green'
@@ -146,6 +147,7 @@ final as (
             when aggregated_counts.baseline_value = 3 and aggregated_counts.latest_value = 2 then 'Green to Yellow'
             when aggregated_counts.baseline_value = 2 and aggregated_counts.latest_value = 1 then 'Yellow to Red'
             when aggregated_counts.baseline_value = aggregated_counts.latest_value then 'No Change'
+            when aggregated_counts.baseline_value = 0 or aggregated_counts.latest_value = 0 then 'Skipped'
         end as transition_type,
 
         -- Metric
