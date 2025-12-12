@@ -4,13 +4,12 @@
         alias='Indicator Transitions',
         tags=['dashboard'],
         indexes=[
-            {'columns': ['family_id']},
             {'columns': ['application_id']},
             {'columns': ['hub_name']},
             {'columns': ['organization_name']},
             {'columns': ['indicator_name']},
-            {'columns': ['dimension_name']},
-            {'columns': ['survey_title']},
+            {'columns': ['baseline_label']},
+            {'columns': ['latest_label']},
             {'columns': ['transition_type']}
         ]
     )
@@ -19,14 +18,16 @@
 {#
     INDICATOR TRANSITIONS MODEL FOR BASELINE VS LATEST COMPARISON
 
-    Grain: One row per family × indicator (family_id × survey_indicator_id)
+    Grain: One row per (dimension columns) × baseline_label × latest_label
+           Pre-aggregated for Sankey diagrams and fast dashboard queries.
 
     This model pairs baseline and latest indicator values to enable analysis of:
     - Which indicators are improving/worsening across the portfolio
-    - Comparison between baseline (snapshot_number = 1) and latest (is_last = true)
+    - Sankey diagrams: baseline_label (source) → latest_label (target) → indicator_count (metric)
 
     Note: Only includes indicators present in BOTH baseline AND latest snapshots.
-          Indicators added or removed between surveys are excluded.
+          Only valid stoplight values (1=Red, 2=Yellow, 3=Green) are included.
+          Skipped (0, NULL) and invalid values are excluded.
 #}
 
 with fact_data as (
@@ -72,10 +73,9 @@ latest as (
     where is_last = true
 ),
 
--- Pair only indicators that exist in BOTH baseline AND latest
+-- Pair only indicators that exist in BOTH baseline AND latest, only valid stoplight values
 paired as (
     select
-        b.family_id,
         b.survey_indicator_id,
         b.organization_id,
         b.survey_definition_id,
@@ -86,14 +86,13 @@ paired as (
     inner join latest l
         on b.family_id = l.family_id
         and b.survey_indicator_id = l.survey_indicator_id
+    where b.baseline_value in (1, 2, 3)  -- Red, Yellow, Green only
+      and l.latest_value in (1, 2, 3)
 ),
 
--- Join dimension attributes
+-- Join dimension attributes and aggregate
 final as (
     select
-        -- Primary key
-        paired.family_id,
-
         -- RLS and hierarchy
         dim_organization.application_id,
         dim_organization.application_name as hub_name,
@@ -113,25 +112,21 @@ final as (
         dim_indicator_questions.yellow_criteria_description,
         dim_indicator_questions.green_criteria_description,
 
-        -- Baseline value and label
-        paired.baseline_value,
+        -- Baseline label
         case
             when paired.baseline_value = 1 then 'Red'
             when paired.baseline_value = 2 then 'Yellow'
             when paired.baseline_value = 3 then 'Green'
-            else 'Skipped'
         end as baseline_label,
 
-        -- Latest value and label
-        paired.latest_value,
+        -- Latest label
         case
             when paired.latest_value = 1 then 'Red'
             when paired.latest_value = 2 then 'Yellow'
             when paired.latest_value = 3 then 'Green'
-            else 'Skipped'
         end as latest_label,
 
-        -- Transition (computed for easy filtering/grouping)
+        -- Transition type (for non-Sankey filtering)
         case
             when paired.baseline_value = 1 and paired.latest_value = 3 then 'Red to Green'
             when paired.baseline_value = 1 and paired.latest_value = 2 then 'Red to Yellow'
@@ -140,8 +135,10 @@ final as (
             when paired.baseline_value = 3 and paired.latest_value = 2 then 'Green to Yellow'
             when paired.baseline_value = 2 and paired.latest_value = 1 then 'Yellow to Red'
             when paired.baseline_value = paired.latest_value then 'No Change'
-            else 'Other'
-        end as transition_type
+        end as transition_type,
+
+        -- Metric
+        count(*) as indicator_count
 
     from paired
     inner join dim_organization
@@ -152,6 +149,22 @@ final as (
         on paired.survey_definition_id = dim_survey_definition.survey_definition_id
     left join stg_projects
         on paired.project_id = stg_projects.project_id
+    group by
+        dim_organization.application_id,
+        dim_organization.application_name,
+        dim_organization.organization_name,
+        stg_projects.project_name,
+        dim_indicator_questions.indicator_name,
+        dim_indicator_questions.dimension_name,
+        dim_survey_definition.survey_title,
+        dim_indicator_questions.survey_indicator_short_name,
+        dim_indicator_questions.survey_indicator_question_text,
+        dim_indicator_questions.survey_indicator_description,
+        dim_indicator_questions.red_criteria_description,
+        dim_indicator_questions.yellow_criteria_description,
+        dim_indicator_questions.green_criteria_description,
+        paired.baseline_value,
+        paired.latest_value
 )
 
 select * from final
