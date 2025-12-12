@@ -439,3 +439,72 @@ models:
 
       - name: value_date
         description: "Date responses (converted from milliseconds epoch)"
+
+  - name: fact_indicator_enriched
+    description: >
+      Enriched indicator fact table with window function columns for progress analysis.
+
+      **Grain:** One row per family × indicator × snapshot.
+
+      Adds baseline_score and previous_score via window functions partitioned by
+      family_id + survey_indicator_id, enabling:
+      - Sankey diagrams (baseline → current transitions)
+      - Progress analysis (current_score - baseline_score)
+      - Momentum tracking (current_score - previous_score)
+
+      **Key Patterns:**
+      - Sankey diagrams: Filter WHERE is_last = TRUE, map baseline_score → current_score
+      - Progress from start: SELECT *, (current_score - baseline_score) as change
+      - Recent momentum: SELECT *, (current_score - previous_score) as momentum
+    columns:
+      - name: date_key
+        description: "Foreign key to dim_date (YYYYMMDD integer)"
+        data_tests:
+          - not_null
+
+      - name: family_id
+        description: "Foreign key to dim_family"
+        data_tests:
+          - not_null
+
+      - name: organization_id
+        description: "Foreign key to dim_organization"
+        data_tests:
+          - not_null
+
+      - name: survey_indicator_id
+        description: "Foreign key to dim_indicator_questions"
+        data_tests:
+          - not_null
+
+      - name: survey_definition_id
+        description: "Foreign key to dim_survey_definition"
+        data_tests:
+          - not_null
+
+      - name: project_id
+        description: "Foreign key to stg_projects (nullable)"
+
+      - name: snapshot_id
+        description: "Degenerate dimension - source snapshot identifier"
+        data_tests:
+          - not_null
+
+      - name: snapshot_number
+        description: "Survey sequence: 1=baseline, 2+=follow-ups"
+        data_tests:
+          - not_null
+
+      - name: is_last
+        description: "TRUE if this is the family's most recent snapshot"
+        data_tests:
+          - not_null
+
+      - name: current_score
+        description: "Indicator value for this snapshot: 0=Skipped, 1=Red, 2=Yellow, 3=Green"
+
+      - name: baseline_score
+        description: "First recorded score for this family+indicator (FIRST_VALUE window function)"
+
+      - name: previous_score
+        description: "Score from previous snapshot for this family+indicator (LAG window, NULL for baseline)"
