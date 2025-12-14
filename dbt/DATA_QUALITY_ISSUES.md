@@ -81,6 +81,37 @@ All orphaned records created **Nov 26 – Dec 10, 2025** by hundreds of differen
 
 ---
 
+## Snapshot Number vs Date Ordering Inconsistency
+
+**Table:** `data_collect.snapshot`
+**Columns:** `snapshot_number`, `snapshot_date`, `created_at`
+
+The source `snapshot_number` does not always match chronological order by `snapshot_date`:
+
+| Order By | Mismatches | Affected Families | % of Total |
+|----------|------------|-------------------|------------|
+| `snapshot_date` | 24,302 | 10,328 | 2.4% of 1,021,139 snapshots |
+| `created_at` | 275 | 133 | 0.03% |
+
+Most common mismatch patterns (by `snapshot_date`):
+
+| Source # | Chronological # | Count |
+|----------|-----------------|-------|
+| 1 → 2 | 7,603 | "Baseline" dated after 2nd survey |
+| 2 → 1 | 7,102 | "Follow-up" dated before baseline |
+
+These two patterns account for 60% of all mismatches.
+
+**Impact:** Affects longitudinal analysis — baseline/follow-up classification may be incorrect for ~10K families depending on which date field is used.
+
+**Current handling:** `int_snapshots` recomputes `snapshot_number` using `ORDER BY snapshot_date, created_at, id`. This changes the sequence for 24K records.
+
+**Note:** When ordering by `created_at`, the source `snapshot_number` matches 99.97% of records (only 275 mismatches).
+
+**Open question:** Unknown whether source `snapshot_number` is assigned by `created_at` order, manual entry, or another mechanism.
+
+---
+
 ## Duplicate code_name in Survey Definitions
 
 **Table:** `data_collect.survey_stoplight`
