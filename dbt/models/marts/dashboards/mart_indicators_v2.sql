@@ -1,7 +1,7 @@
 {{
     config(
         materialized='table',
-        alias='Indicator Progress',
+        alias='Indicators',
         tags=['dashboard'],
         indexes=[
             {'columns': ['application_id']},
@@ -36,38 +36,10 @@
 #}
 
 with fact_data as (
-    select * from {{ ref('fact_indicator_enriched') }}
+    select * from {{ ref('fact_indicators_v2') }}
 ),
 
--- Step 1: Compute max_wave_reached per family
-family_max_wave as (
-    select
-        family_id,
-        max(snapshot_number) as max_wave_reached
-    from fact_data
-    group by family_id
-),
-
--- Step 2: Add max_wave_reached (keep numeric scores for efficient grouping)
-fact_with_max_wave as (
-    select
-        f.organization_id,
-        f.survey_indicator_id,
-        f.survey_definition_id,
-        f.project_id,
-        f.snapshot_number,
-        f.is_last,
-        fmw.max_wave_reached,
-        f.current_score,
-        f.baseline_score,
-        f.previous_score
-
-    from fact_data f
-    inner join family_max_wave fmw
-        on f.family_id = fmw.family_id
-),
-
--- Step 3: Aggregate on IDs and numeric scores (smallest possible keys)
+-- Aggregate on IDs and numeric scores (smallest possible keys)
 aggregated as (
     select
         organization_id,
@@ -85,7 +57,7 @@ aggregated as (
         count(*) as family_count,
         sum(current_score - baseline_score) as net_change_numeric
 
-    from fact_with_max_wave
+    from fact_data
     group by
         organization_id,
         survey_indicator_id,
@@ -99,7 +71,7 @@ aggregated as (
         current_score
 ),
 
--- Step 4: Join dimension tables for text columns
+-- Join dimension tables for text columns
 dim_organization as (
     select * from {{ ref('dim_organization') }}
 ),

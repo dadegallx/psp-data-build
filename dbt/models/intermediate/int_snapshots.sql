@@ -48,7 +48,12 @@ final as (
             ) = 1
             then true
             else false
-        end as is_last
+        end as is_last,
+
+        -- Max wave reached by this family (for cohort/survivor curve filtering)
+        count(*) over (
+            partition by family_id
+        ) as max_wave_reached
 
     from snapshots
 )

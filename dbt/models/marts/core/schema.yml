@@ -440,7 +440,7 @@ models:
       - name: value_date
         description: "Date responses (converted from milliseconds epoch)"
 
-  - name: fact_indicator_enriched
+  - name: fact_indicators_v2
     description: >
       Enriched indicator fact table with window function columns for progress analysis.
 
@@ -497,6 +497,11 @@ models:
 
       - name: is_last
         description: "TRUE if this is the family's most recent snapshot"
+        data_tests:
+          - not_null
+
+      - name: max_wave_reached
+        description: "Furthest wave this family reached - use for survivor curve filtering"
         data_tests:
           - not_null
 

@@ -433,7 +433,7 @@ models:
         data_tests:
           - not_null
 
-  - name: mart_indicator_progress
+  - name: mart_indicators_v2
     description: >
       **Flow-Based Indicator Progress Model for Multi-Visualization Support.**
 
