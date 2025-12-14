@@ -77,7 +77,6 @@ joined as (
         snapshots.snapshot_number,
         snapshots.is_last,
         snapshots.is_baseline,
-        snapshots.is_followup,
         snapshots.max_snapshot_number,
         snapshots.snapshot_date,
         snapshots.family_id,
@@ -118,7 +117,6 @@ enriched as (
         snapshot_number,
         is_last,
         is_baseline,
-        is_followup,
         max_snapshot_number,
 
         -- Current score (this row's value)

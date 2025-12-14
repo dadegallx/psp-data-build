@@ -72,9 +72,8 @@ final as (
             else false
         end as is_last,
 
-        -- Explicit baseline/followup flags
+        -- Baseline flag (snapshot_number = 1)
         snapshot_number = 1 as is_baseline,
-        snapshot_number > 1 as is_followup,
 
         -- Days elapsed since baseline survey (0 for baseline, positive for follow-ups)
         snapshot_date::date - first_value(snapshot_date::date) over (

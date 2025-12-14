@@ -55,10 +55,6 @@ models:
         description: "True when snapshot_number = 1 (first survey in family+survey journey)"
         data_tests:
           - not_null
-      - name: is_followup
-        description: "True when snapshot_number > 1 (subsequent surveys)"
-        data_tests:
-          - not_null
       - name: days_since_baseline
         description: "Days elapsed since baseline survey (0 for baseline, positive for follow-ups)"
         data_tests:

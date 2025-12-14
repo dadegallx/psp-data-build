@@ -372,9 +372,12 @@ models:
       - Progress analysis (current_score - baseline_score)
       - Momentum tracking (current_score - previous_score)
 
+      **Important:** baseline_score is NULL when an indicator was added after the baseline
+      survey. Filter WHERE baseline_score IS NOT NULL for valid progress comparisons.
+
       **Key Patterns:**
-      - Sankey diagrams: Filter WHERE is_last = TRUE, map baseline_score → current_score
-      - Progress from start: SELECT *, (current_score - baseline_score) as change
+      - Sankey diagrams: Filter WHERE is_last = TRUE AND baseline_score IS NOT NULL
+      - Progress from start: SELECT *, (current_score - baseline_score) as change WHERE baseline_score IS NOT NULL
       - Recent momentum: SELECT *, (current_score - previous_score) as momentum
     columns:
       - name: date_key
@@ -420,16 +423,24 @@ models:
         data_tests:
           - not_null
 
-      - name: max_wave_reached
-        description: "Furthest wave this family reached - use for survivor curve filtering"
+      - name: is_baseline
+        description: "TRUE if this snapshot is the family's baseline survey (snapshot_number = 1)"
+        data_tests:
+          - not_null
+
+      - name: max_snapshot_number
+        description: "Furthest snapshot this family reached - use for cohort/survivor filtering"
         data_tests:
           - not_null
 
       - name: current_score
-        description: "Indicator value for this snapshot: 0=Skipped, 1=Red, 2=Yellow, 3=Green"
+        description: "Indicator value for this snapshot: 0=Skipped, 1=Red, 2=Yellow, 3=Green, NULL=invalid"
 
       - name: baseline_score
-        description: "First recorded score for this family+indicator (FIRST_VALUE window function)"
+        description: >
+          Score from baseline snapshot for this family+indicator.
+          NULL if indicator didn't exist in baseline survey (added later).
+          Use WHERE baseline_score IS NOT NULL for valid progress comparisons.
 
       - name: previous_score
-        description: "Score from previous snapshot for this family+indicator (LAG window, NULL for baseline)"
+        description: "Score from previous snapshot for this family+indicator (NULL for first observation)"
