@@ -1,3 +1,5 @@
+{{ config(enabled=false) }}
+
 with snapshots as (
     select * from {{ ref('int_snapshots') }}
 ),
