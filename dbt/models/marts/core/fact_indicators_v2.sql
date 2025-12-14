@@ -11,14 +11,17 @@
     Grain: One row per family × indicator × snapshot
 
     Adds window function columns for progress analysis:
-    - baseline_score: First recorded value for this family+indicator
-    - previous_score: Value from the previous snapshot (NULL for first)
+    - baseline_score: Value from baseline snapshot (NULL if indicator didn't exist in baseline)
+    - previous_score: Value from the previous snapshot (NULL for first observation)
     - current_score: The value for this specific row
 
     Use Cases:
     - Sankey diagrams: Filter WHERE is_last = TRUE, map baseline_score → current_score
-    - Progress analysis: Compare current_score - baseline_score
+    - Progress analysis: Compare current_score - baseline_score (only valid when baseline_score IS NOT NULL)
     - Momentum: Compare current_score - previous_score
+
+    Note: baseline_score = NULL means the indicator was added after the baseline survey.
+    Filter WHERE baseline_score IS NOT NULL for valid baseline comparisons.
 #}
 
 -- Source CTEs (self-contained, mirrors fact_family_indicator_snapshot logic)
@@ -121,11 +124,9 @@ enriched as (
         -- Current score (this row's value)
         current_score,
 
-        -- Baseline score (first value for this family+indicator)
-        first_value(current_score) over (
+        -- Baseline score (from actual baseline snapshot only, NULL if indicator didn't exist then)
+        max(case when is_baseline then current_score end) over (
             partition by family_id, survey_indicator_id
-            order by snapshot_date, snapshot_id
-            rows between unbounded preceding and unbounded following
         ) as baseline_score,
 
         -- Previous score (NULL for first snapshot)
