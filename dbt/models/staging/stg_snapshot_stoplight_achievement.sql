@@ -2,6 +2,17 @@ with source as (
     select * from {{ source('data_collect', 'snapshot_stoplight_achievement') }}
 ),
 
+-- Deduplicate: keep one achievement per snapshot_stoplight_id (earliest by id)
+deduplicated as (
+    select
+        *,
+        row_number() over (
+            partition by snapshot_stoplight_id
+            order by id
+        ) as row_num
+    from source
+),
+
 renamed as (
     select
         -- Primary key
@@ -18,7 +29,8 @@ renamed as (
         created_date as achievement_created_at,
         last_modified_date as achievement_updated_at
 
-    from source
+    from deduplicated
+    where row_num = 1
 )
 
 select * from renamed

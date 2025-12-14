@@ -2,6 +2,17 @@ with source as (
     select * from {{ source('data_collect', 'snapshot_stoplight_priority') }}
 ),
 
+-- Deduplicate: keep one priority per snapshot_stoplight_id (earliest by id)
+deduplicated as (
+    select
+        *,
+        row_number() over (
+            partition by snapshot_stoplight_id
+            order by id
+        ) as row_num
+    from source
+),
+
 renamed as (
     select
         -- Primary key
@@ -19,7 +30,8 @@ renamed as (
         created_date as priority_created_at,
         last_modified_date as priority_updated_at
 
-    from source
+    from deduplicated
+    where row_num = 1
 )
 
 select * from renamed

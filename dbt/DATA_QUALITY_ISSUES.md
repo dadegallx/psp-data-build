@@ -63,6 +63,35 @@ All records also have null `created_by` and `created_date`. Appears to be legacy
 
 ---
 
+## Duplicate Priority Records
+
+**Table:** `data_collect.snapshot_stoplight_priority`
+**Column:** `snapshot_stoplight_id`
+
+22 stoplight snapshots have exactly 2 priority records each (exact duplicates):
+
+| Metric | Value |
+|--------|-------|
+| Total priority records | 1,453,656 |
+| Unique snapshot_stoplight_ids | 1,453,634 |
+| Duplicates | 22 |
+| Percentage | 0.0015% |
+
+Example duplicate (snapshot_stoplight_id = 18151652):
+
+| id | reason | action | created_at | created_by |
+|----|--------|--------|------------|------------|
+| 1022229 | They don't have enough income | They said that they will try to fix it in the future | 1719675371 | varshini_12 |
+| 1022230 | They don't have enough income | They said that they will try to fix it in the future | 1719675371 | varshini_12 |
+
+**Root cause:** Double-submit bug in the application — same timestamp, same user, identical content.
+
+**Current handling:** `stg_snapshot_stoplight_priority` deduplicates using `ROW_NUMBER() PARTITION BY snapshot_stoplight_id ORDER BY id`, keeping the earliest record.
+
+**Note:** `snapshot_stoplight_achievement` has no duplicates, but the staging model applies the same defensive deduplication pattern.
+
+---
+
 ## Orphaned Stoplight Priorities and Achievements
 
 **Tables:** `data_collect.snapshot_stoplight_priority`, `data_collect.snapshot_stoplight_achievement`
