@@ -145,8 +145,6 @@ models:
         description: "Record creation timestamp"
       - name: snapshot_updated_at
         description: "Record last modified timestamp"
-      - name: created_by
-        description: "User who created the snapshot"
 
   - name: stg_snapshot_stoplight
     description: >

@@ -326,8 +326,6 @@ models:
           - not_null
       - name: snapshot_created_at
         description: "Record creation timestamp"
-      - name: created_by
-        description: "User who created the snapshot"
       - name: snapshot_updated_at
         description: "Record last modified timestamp"
       - name: snapshot_number

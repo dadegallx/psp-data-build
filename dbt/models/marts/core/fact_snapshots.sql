@@ -43,7 +43,6 @@ with_snapshot_number as (
         stoplight_skipped,
         snapshot_date,
         snapshot_created_at,
-        created_by,
         snapshot_updated_at,
 
         -- Re-compute snapshot_number chronologically per family+survey
@@ -79,7 +78,6 @@ final as (
         snapshot_created_at,
 
         -- Audit fields
-        created_by,
         snapshot_updated_at,
 
         -- Snapshot sequencing
