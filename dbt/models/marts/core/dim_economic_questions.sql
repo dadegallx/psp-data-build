@@ -18,7 +18,6 @@ final as (
         sd.survey_description,
         sd.survey_language,
         sd.survey_is_active,
-        sd.country_code as survey_country_code,
 
         -- Question attributes
         se.code_name,
