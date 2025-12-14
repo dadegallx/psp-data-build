@@ -1,5 +1,6 @@
 {{
     config(
+        enabled=false,
         materialized='table',
         alias='Indicators',
         tags=['dashboard'],
