@@ -27,26 +27,6 @@ models:
       - Bar Chart: Compare GROUP BY baseline_label vs GROUP BY current_label
       - Survivor Curve: WHERE max_snapshot_number >= N
     columns:
-      - name: snapshot_type
-        description: "Survey type label: 'Baseline', '1st Follow-up', '2nd Follow-up', etc."
-        data_tests:
-          - not_null
-
-      - name: snapshot_number
-        description: "Numeric sequence (1=Baseline, 2=1st Follow-up, etc.) - use for X-axis on line charts"
-        data_tests:
-          - not_null
-
-      - name: is_last
-        description: "TRUE if this is the family's most recent snapshot - use for 'Current Portfolio' filter"
-        data_tests:
-          - not_null
-
-      - name: max_snapshot_number
-        description: "Furthest wave this family reached - use for survivor curve filtering"
-        data_tests:
-          - not_null
-
       - name: application_id
         description: "Application ID for Row Level Security (RLS) filtering"
         data_tests:
@@ -78,6 +58,26 @@ models:
         data_tests:
           - not_null
 
+      - name: snapshot_type
+        description: "Survey type label: 'Baseline', '1st Follow-up', '2nd Follow-up', etc."
+        data_tests:
+          - not_null
+
+      - name: snapshot_number
+        description: "Numeric sequence (1=Baseline, 2=1st Follow-up, etc.) - use for X-axis on line charts"
+        data_tests:
+          - not_null
+
+      - name: is_last
+        description: "TRUE if this is the family's most recent snapshot - use for 'Current Portfolio' filter"
+        data_tests:
+          - not_null
+
+      - name: max_snapshot_number
+        description: "Furthest wave this family reached - use for survivor curve filtering"
+        data_tests:
+          - not_null
+
       - name: baseline_label
         description: "Color at Wave 1 - Sankey Source A: 'Red', 'Yellow', 'Green', 'Skipped'"
         data_tests:
@@ -95,13 +95,22 @@ models:
           - accepted_values:
               values: ['Red', 'Yellow', 'Green', 'Skipped', 'Unknown']
 
+      - name: is_priority
+        description: "TRUE if family marked this indicator as a priority in this snapshot"
+
+      - name: has_achievement
+        description: "TRUE if family marked this indicator as achieved in this snapshot"
+
+      - name: was_priority_in_previous
+        description: "TRUE if this indicator was a priority in the previous snapshot"
+
+      - name: net_change_numeric
+        description: "SUM(current_score - baseline_score) for calculating average improvement"
+
       - name: family_count
         description: "Number of families in this transition group - Sankey flow width"
         data_tests:
           - not_null
-
-      - name: net_change_numeric
-        description: "SUM(current_score - baseline_score) for calculating average improvement"
 
   - name: mart_surveys
     description: >
@@ -130,9 +139,9 @@ models:
         data_tests:
           - not_null
 
-      - name: days_since_previous
-        description: "Days elapsed since the previous survey (Operational Metric)"
-
       - name: is_last
         description: "Filter for Current Active Portfolio (Most recent snapshot per family)"
+
+      - name: days_since_previous
+        description: "Days elapsed since the previous survey (Operational Metric)"
 

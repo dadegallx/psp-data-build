@@ -50,31 +50,37 @@ stg_projects as (
 
 final as (
     select
-        -- Snapshot Info
+        -- 1. IDENTIFIERS (Snapshot)
         snapshots.snapshot_id,
-        snapshots.snapshot_number,
+        
+        -- 2. MAIN DIMENSIONS (Geography)
+        coalesce(dim_family.country_name, 'Unknown') as country_name,
+
+        -- 3. KEY STATUS FLAGS
         snapshots.is_last,
+        
+        -- 4. OPERATIONAL METRICS
+        snapshots.days_since_previous,
+        snapshots.days_since_baseline,
+
+        -- 5. TEMPORAL / CHRONOLOGY
+        snapshots.snapshot_number,
         snapshots.is_baseline,
         snapshots.snapshot_date,
-        snapshots.days_since_baseline,
-        snapshots.days_since_previous,
 
-        -- Organization Hierarchy (RLS)
+        -- 6. ORGANIZATION HIERARCHY (RLS)
         dim_organization.application_id,
         dim_organization.application_name as hub_name,
         dim_organization.organization_name,
         stg_projects.project_name,
 
-        -- Geographic / Demographics
-        coalesce(dim_family.country_name, 'Unknown') as country_name,
+        -- 7. DETAILED ATTRIBUTES
         dim_family.latitude,
         dim_family.longitude,
         dim_family.is_anonymous,
-
-        -- Survey Context
         dim_survey_definition.survey_title,
         
-        -- Explicit Counts (for easy summing in BI)
+        -- 8. EXPLICIT AGGREGATORS
         1 as survey_count
 
     from snapshots

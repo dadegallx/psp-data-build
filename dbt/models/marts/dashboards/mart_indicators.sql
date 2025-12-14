@@ -100,7 +100,18 @@ stg_projects as (
 
 final as (
     select
-        -- Snapshot type label
+        -- 1. ORGANIZATION / HIERARCHY (RLS)
+        dim_organization.application_id,
+        dim_organization.application_name as hub_name,
+        dim_organization.organization_name,
+        stg_projects.project_name,
+
+        -- 2. INDICATOR CONTEXT
+        dim_indicator_questions.indicator_name,
+        dim_indicator_questions.dimension_name,
+        dim_survey_definition.survey_title,
+
+        -- 3. TEMPORAL / COHORT
         case
             when aggregated.snapshot_number = 1 then 'Baseline'
             when aggregated.snapshot_number = 2 then '1st Follow-up'
@@ -108,23 +119,12 @@ final as (
             when aggregated.snapshot_number = 4 then '3rd Follow-up'
             else (aggregated.snapshot_number - 1)::text || 'th Follow-up'
         end as snapshot_type,
-
+        
         aggregated.snapshot_number,
         aggregated.is_last,
         aggregated.max_snapshot_number,
 
-        -- RLS and hierarchy
-        dim_organization.application_id,
-        dim_organization.application_name as hub_name,
-        dim_organization.organization_name,
-        stg_projects.project_name,
-
-        -- Indicator dimensions
-        dim_indicator_questions.indicator_name,
-        dim_indicator_questions.dimension_name,
-        dim_survey_definition.survey_title,
-
-        -- Transition columns (convert to labels AFTER aggregation)
+        -- 4. FLOW LABELS (TRANSITIONS)
         case
             when aggregated.baseline_score = 0 then 'Skipped'
             when aggregated.baseline_score = 1 then 'Red'
@@ -150,14 +150,14 @@ final as (
             else 'Unknown'
         end as current_label,
 
-        -- Priority and Achievement Dimensions
+        -- 5. PRIORITY & ACHIEVEMENT
         aggregated.is_priority,
         aggregated.has_achievement,
         aggregated.was_priority_in_previous,
 
-        -- Metrics
-        aggregated.family_count,
-        aggregated.net_change_numeric
+        -- 6. METRICS
+        aggregated.net_change_numeric,
+        aggregated.family_count
 
     from aggregated
     inner join dim_organization

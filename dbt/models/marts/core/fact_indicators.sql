@@ -133,41 +133,38 @@ joined as (
 -- Add window function columns
 enriched as (
     select
-        -- Foreign keys to dimensions
-        to_char(snapshot_date, 'YYYYMMDD')::integer as date_key,
+        -- 1. IDENTIFIERS
+        snapshot_stoplight_id,
+        snapshot_id,
         family_id,
         organization_id,
         survey_indicator_id,
         survey_definition_id,
         project_id,
 
-        -- Primary key and degenerate dimensions
-        snapshot_stoplight_id,  -- PK; also FK for priority/achievement joins
-        snapshot_id,
+        -- 2. TEMPORAL / CHRONOLOGY
+        to_char(snapshot_date, 'YYYYMMDD')::integer as date_key,
         snapshot_number,
         is_last,
         is_baseline,
         max_snapshot_number,
 
-        -- Current score (this row's value)
+        -- 3. SCORES
         current_score,
 
-        -- Baseline score (from actual baseline snapshot only, NULL if indicator didn't exist then)
         max(case when is_baseline then current_score end) over (
             partition by family_id, survey_indicator_id
         ) as baseline_score,
 
-        -- Previous score (NULL for first snapshot)
         lag(current_score) over (
             partition by family_id, survey_indicator_id
             order by snapshot_number
         ) as previous_score,
 
-        -- Priority/achievement flags
+        -- 4. FLAGS / ATTRIBUTES
         is_priority,
         has_achievement,
-
-        -- Was this indicator a priority in the previous snapshot? (for achievement analysis)
+        
         lag(is_priority) over (
             partition by family_id, survey_indicator_id
             order by snapshot_number
