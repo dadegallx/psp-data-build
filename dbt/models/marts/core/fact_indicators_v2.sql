@@ -101,7 +101,7 @@ joined as (
         snapshots.survey_definition_id,
         snapshots.project_id,
 
-        -- Degenerate dimension for joining to priority/achievement details
+        -- Primary key; also FK for joining to priority/achievement details
         stoplight_with_survey_indicator.snapshot_stoplight_id,
 
         -- Normalize score: 0=skipped, 1=red, 2=yellow, 3=green, invalid→NULL
@@ -141,13 +141,13 @@ enriched as (
         survey_definition_id,
         project_id,
 
-        -- Degenerate dimensions
+        -- Primary key and degenerate dimensions
+        snapshot_stoplight_id,  -- PK; also FK for priority/achievement joins
         snapshot_id,
         snapshot_number,
         is_last,
         is_baseline,
         max_snapshot_number,
-        snapshot_stoplight_id,  -- For joining to priority/achievement details
 
         -- Current score (this row's value)
         current_score,

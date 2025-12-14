@@ -537,3 +537,22 @@ models:
 
       - name: previous_score
         description: "Score from previous snapshot for this family+indicator (NULL for first observation)"
+
+      - name: snapshot_stoplight_id
+        description: "Primary key - also serves as FK for joining to stg_snapshot_stoplight_priority/achievement"
+        data_tests:
+          - unique
+          - not_null
+
+      - name: is_priority
+        description: "TRUE if family marked this indicator as a priority in this snapshot"
+        data_tests:
+          - not_null
+
+      - name: has_achievement
+        description: "TRUE if family marked this indicator as achieved in this snapshot"
+        data_tests:
+          - not_null
+
+      - name: was_priority_in_previous
+        description: "TRUE if this indicator was a priority in the previous snapshot (for achievement rate analysis)"
