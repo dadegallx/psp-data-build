@@ -31,6 +31,7 @@ renamed as (
         last_modified_date as updated_at
 
     from source
+    where family_id is not null  -- Exclude orphan records
 )
 
 select * from renamed

@@ -171,13 +171,11 @@ models:
         data_tests:
           - not_null
       - name: indicator_status_value
-        description: "Stoplight status: 1=Red, 2=Yellow, 3=Green, NULL=Skipped"
+        description: "Stoplight status: 0=Skipped, 1=Red, 2=Yellow, 3=Green, 9=N/A"
         data_tests:
+          - not_null
           - accepted_values:
-              values: [1, 2, 3]
-              config:
-                severity: warn
-                where: "indicator_status_value is not null"
+              values: [0, 1, 2, 3, 9]
       - name: is_additional
         description: "Whether this is an additional indicator"
       - name: created_at
@@ -371,6 +369,8 @@ models:
           - relationships:
               field: snapshot_stoplight_id
               to: ref('stg_snapshot_stoplight')
+              config:
+                severity: warn  # Warn only: snapshot_stoplight records may arrive after priorities due to sync lag
       - name: reason
         description: "Reason given for selecting this priority"
       - name: action
@@ -393,6 +393,8 @@ models:
           - relationships:
               field: snapshot_stoplight_id
               to: ref('stg_snapshot_stoplight')
+              config:
+                severity: warn  # Warn only: snapshot_stoplight records may arrive after achievements due to sync lag
       - name: action
         description: "Action taken to achieve the result"
       - name: roadmap

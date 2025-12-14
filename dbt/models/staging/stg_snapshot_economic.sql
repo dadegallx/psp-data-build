@@ -13,8 +13,11 @@ renamed as (
         -- Question identifier (normalized for joins)
         lower(trim(code_name)) as code_name,
 
-        -- Answer type and raw value
-        answer_type,
+        -- Answer type and raw value (default to 'text' when missing)
+        coalesce(
+            case when answer_type = 'string' then 'text' else answer_type end,
+            'text'
+        ) as answer_type,
         value as answer_value,
         multiple_value as answer_multiple_value,
 
