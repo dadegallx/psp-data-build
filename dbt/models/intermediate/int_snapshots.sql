@@ -30,7 +30,7 @@ with_snapshot_number as (
         -- Fixes source data integrity issues where baseline has later date than follow-up
         row_number() over (
             partition by family_id, survey_definition_id
-            order by snapshot_date, created_at, snapshot_id
+            order by snapshot_date, snapshot_created_at, snapshot_id
         ) as snapshot_number
     from snapshots
 ),
@@ -66,7 +66,7 @@ final as (
         case
             when row_number() over (
                 partition by family_id
-                order by snapshot_date desc, created_at desc, snapshot_id desc
+                order by snapshot_date desc, snapshot_created_at desc, snapshot_id desc
             ) = 1
             then true
             else false
@@ -79,13 +79,13 @@ final as (
         -- Days elapsed since baseline survey (0 for baseline, positive for follow-ups)
         snapshot_date::date - first_value(snapshot_date::date) over (
             partition by family_id, survey_definition_id
-            order by snapshot_date, created_at, snapshot_id
+            order by snapshot_date, snapshot_created_at, snapshot_id
         ) as days_since_baseline,
 
         -- Days elapsed since previous snapshot (NULL for baseline)
         snapshot_date::date - lag(snapshot_date::date) over (
             partition by family_id, survey_definition_id
-            order by snapshot_date, created_at, snapshot_id
+            order by snapshot_date, snapshot_created_at, snapshot_id
         ) as days_since_previous,
 
         -- Max snapshot number in this family+survey journey (for cohort filtering)

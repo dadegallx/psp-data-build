@@ -33,11 +33,11 @@ models:
         description: "Whether the stoplight section was skipped"
       - name: snapshot_date
         description: "Date when survey was completed"
-      - name: created_at
+      - name: snapshot_created_at
         description: "Record creation timestamp"
       - name: created_by
         description: "User who created the snapshot"
-      - name: updated_at
+      - name: snapshot_updated_at
         description: "Record last modified timestamp"
       - name: snapshot_number
         description: >
