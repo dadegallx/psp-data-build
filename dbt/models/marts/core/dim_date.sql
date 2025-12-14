@@ -2,7 +2,7 @@ with date_spine as (
     select
         date_day::date as date_actual
     from generate_series(
-        '2015-01-01'::date,
+        '2011-01-01'::date,
         '2035-12-31'::date,
         '1 day'::interval
     ) as date_day

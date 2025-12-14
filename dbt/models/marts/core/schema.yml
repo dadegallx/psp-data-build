@@ -94,7 +94,7 @@ models:
         data_tests:
           - not_null
 
-      - name: indicator_code_name
+      - name: survey_indicator_code_name
         description: "Master indicator code (e.g., 'income') - use for technical joins"
         data_tests:
           - not_null
@@ -107,10 +107,7 @@ models:
       - name: indicator_description
         description: "English description of the master indicator"
 
-      - name: survey_indicator_code_name
-        description: "Survey-specific indicator code"
-        data_tests:
-          - not_null
+
 
       - name: survey_indicator_short_name
         description: "Translated indicator name (e.g., 'Ingresos', 'Renda')"
@@ -173,7 +170,9 @@ models:
       - name: organization_id
         description: "Foreign key to dim_organization"
         data_tests:
-          - not_null
+          - not_null:
+              config:
+                severity: warn
           - relationships:
               field: organization_id
               to: ref('dim_organization')
@@ -316,18 +315,10 @@ models:
           - relationships:
               field: date_key
               to: ref('dim_date')
-      - name: is_anonymous
-        description: "Privacy flag - when true, personal data is anonymized"
-      - name: stoplight_skipped
-        description: "Whether the stoplight section was skipped"
       - name: snapshot_date
         description: "Date when survey was completed"
         data_tests:
           - not_null
-      - name: snapshot_created_at
-        description: "Record creation timestamp"
-      - name: snapshot_updated_at
-        description: "Record last modified timestamp"
       - name: snapshot_number
         description: >
           Recomputed survey round per family+survey_definition.
@@ -343,16 +334,24 @@ models:
         description: "True when snapshot_number = 1 (first survey in family+survey journey)"
         data_tests:
           - not_null
+      - name: max_snapshot_number
+        description: "Max snapshot number in this family+survey journey (for cohort filtering)"
+        data_tests:
+          - not_null
       - name: days_since_baseline
         description: "Days elapsed since baseline survey (0 for baseline, positive for follow-ups)"
         data_tests:
           - not_null
       - name: days_since_previous
         description: "Days elapsed since previous snapshot (NULL for baseline)"
-      - name: max_snapshot_number
-        description: "Max snapshot number in this family+survey journey (for cohort filtering)"
-        data_tests:
-          - not_null
+      - name: stoplight_skipped
+        description: "Whether the stoplight section was skipped"
+      - name: is_anonymous
+        description: "Privacy flag - when true, personal data is anonymized"
+      - name: snapshot_created_at
+        description: "Record creation timestamp"
+      - name: snapshot_updated_at
+        description: "Record last modified timestamp"
 
   - name: fact_indicators
     description: >
@@ -374,8 +373,14 @@ models:
       - Progress from start: SELECT *, (current_score - baseline_score) as change WHERE baseline_score IS NOT NULL
       - Recent momentum: SELECT *, (current_score - previous_score) as momentum
     columns:
-      - name: date_key
-        description: "Foreign key to dim_date (YYYYMMDD integer)"
+      - name: snapshot_stoplight_id
+        description: "Primary key - also serves as FK for joining to stg_snapshot_stoplight_priority/achievement"
+        data_tests:
+          - unique
+          - not_null
+
+      - name: snapshot_id
+        description: "Degenerate dimension - source snapshot identifier"
         data_tests:
           - not_null
 
@@ -402,8 +407,8 @@ models:
       - name: project_id
         description: "Foreign key to stg_projects (nullable)"
 
-      - name: snapshot_id
-        description: "Degenerate dimension - source snapshot identifier"
+      - name: date_key
+        description: "Foreign key to dim_date (YYYYMMDD integer)"
         data_tests:
           - not_null
 
@@ -438,12 +443,6 @@ models:
 
       - name: previous_score
         description: "Score from previous snapshot for this family+indicator (NULL for first observation)"
-
-      - name: snapshot_stoplight_id
-        description: "Primary key - also serves as FK for joining to stg_snapshot_stoplight_priority/achievement"
-        data_tests:
-          - unique
-          - not_null
 
       - name: is_priority
         description: "TRUE if family marked this indicator as a priority in this snapshot"

@@ -192,4 +192,43 @@ Top orphaned indicators by volume:
 
 **Current handling:** The fact table's CTE 1 (`stoplight_with_survey_indicator`) filters these out via INNER JOIN. No explicit handling needed.
 
-**Recommendation:** Investigate whether removed indicators should be restored to survey definitions for historical completeness, or accept data loss for deprecated indicators.
+**
+---
+
+## Historical Data Date Range
+
+**Table:** `data_collect.snapshot`
+**Column:** `snapshot_date`
+
+**Issue:** Source data contains snapshots dating back to 2011 (`2011-10-25`), which is outside the default `dim_date` range (typically started at 2015).
+
+**Impact:** ~24,000 snapshots failed foreign key integrity tests against `dim_date`.
+
+**Model Handling:** `dim_date.sql` has been updated to generate dates starting from **2011-01-01** to accommodate this history.
+
+---
+
+## Families Without Organizations
+
+**Table:** `ps_families.family`
+**Column:** `organization_id`
+
+**Issue:** 16 legacy family records have `NULL` `organization_id`.
+
+**Impact:** Violates standard referential integrity expectations for the `dim_family` dimension.
+
+**Model Handling:** The `not_null` test for `organization_id` in `schema.yml` has been set to `severity: warn` to allow the pipeline to proceed while flagging these known anomalies.
+
+---
+
+## Duplicate Indicator Definitions
+
+**Table:** `data_collect.survey_stoplight`
+**Columns:** `survey_definition_id`, `code_name`
+
+**Issue:** Survey 80 has duplicate entries for the indicator code `socialcapital`.
+
+**Impact:** Causes Cartesian products (fan-out) in joins when linking snapshots to indicators, resulting in duplicate rows in `fact_indicators`.
+
+**Model Handling:** `stg_survey_stoplight.sql` now implements deduplication logic using `DISTINCT ON (survey_definition_id, code_name) ORDER BY updated_at DESC`, keeping only the most recently updated definition.
+

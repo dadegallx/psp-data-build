@@ -26,6 +26,20 @@ renamed as (
         updated_at as survey_indicator_updated_at
 
     from source
+    -- Deduplicate indicators per survey (fixing issue with survey_definition_id=80/socialcapital)
+    -- Keeps the most recently updated version of any duplicate indicator code within a survey
+    distinct on (survey_definition_id, lower(trim(code_name)))
+    order by 
+        survey_definition_id, 
+        lower(trim(code_name)), 
+        updated_at desc
+    -- Deduplicate indicators per survey (fixing issue with survey_definition_id=80/socialcapital)
+    -- Keeps the most recently updated version of any duplicate indicator code within a survey
+    distinct on (survey_definition_id, lower(trim(code_name)))
+    order by 
+        survey_definition_id, 
+        lower(trim(code_name)), 
+        updated_at desc
 )
 
 select * from renamed
