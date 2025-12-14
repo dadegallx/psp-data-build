@@ -47,11 +47,25 @@ models:
           - not_null
       - name: is_last
         description: >
-          Dynamically computed flag for most recent snapshot per family.
+          Dynamically computed flag for most recent snapshot per family (across all surveys).
           Fixes source data integrity issues.
         data_tests:
           - not_null
-      - name: max_wave_reached
-        description: "Total snapshots for this family (for cohort/survivor curve filtering)"
+      - name: is_baseline
+        description: "True when snapshot_number = 1 (first survey in family+survey journey)"
+        data_tests:
+          - not_null
+      - name: is_followup
+        description: "True when snapshot_number > 1 (subsequent surveys)"
+        data_tests:
+          - not_null
+      - name: days_since_baseline
+        description: "Days elapsed since baseline survey (0 for baseline, positive for follow-ups)"
+        data_tests:
+          - not_null
+      - name: days_since_previous
+        description: "Days elapsed since previous snapshot (NULL for baseline)"
+      - name: max_snapshot_number
+        description: "Max snapshot number in this family+survey journey (for cohort filtering)"
         data_tests:
           - not_null

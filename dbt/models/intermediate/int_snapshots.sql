@@ -72,6 +72,22 @@ final as (
             else false
         end as is_last,
 
+        -- Explicit baseline/followup flags
+        snapshot_number = 1 as is_baseline,
+        snapshot_number > 1 as is_followup,
+
+        -- Days elapsed since baseline survey (0 for baseline, positive for follow-ups)
+        snapshot_date::date - first_value(snapshot_date::date) over (
+            partition by family_id, survey_definition_id
+            order by snapshot_date, created_at, snapshot_id
+        ) as days_since_baseline,
+
+        -- Days elapsed since previous snapshot (NULL for baseline)
+        snapshot_date::date - lag(snapshot_date::date) over (
+            partition by family_id, survey_definition_id
+            order by snapshot_date, created_at, snapshot_id
+        ) as days_since_previous,
+
         -- Max snapshot number in this family+survey journey (for cohort filtering)
         max(snapshot_number) over (
             partition by family_id, survey_definition_id
