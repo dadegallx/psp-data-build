@@ -1,10 +1,30 @@
 {{
     config(
         materialized='table',
-        schema='staging',
-        tags=['intermediate']
+        tags=['mart', 'semantic_layer']
     )
 }}
+
+{#
+    SNAPSHOT FACT TABLE
+
+    Grain: One row per family × snapshot
+
+    This table captures the snapshot-level attributes for each family survey event.
+    Join to fact_indicators via snapshot_id for indicator-level analysis.
+
+    Key columns:
+    - snapshot_number: Sequential survey number (1=baseline, 2+=followup)
+    - is_baseline: TRUE if this is the first survey for this family+survey_definition
+    - is_last: TRUE if this is the family's most recent snapshot (across all surveys)
+    - days_since_baseline: Days elapsed since baseline (0 for baseline)
+    - days_since_previous: Days since prior snapshot (NULL for baseline)
+
+    Use Cases:
+    - Cohort analysis: Filter by max_snapshot_number to find families with N+ surveys
+    - Time-to-followup: Analyze days_since_baseline distribution
+    - Current status: Filter WHERE is_last = TRUE for most recent family state
+#}
 
 with snapshots as (
     select * from {{ ref('stg_snapshots') }}
@@ -46,6 +66,9 @@ final as (
         application_id,
         survey_definition_id,
         project_id,
+
+        -- Date key for joining to dim_date
+        to_char(snapshot_date, 'YYYYMMDD')::integer as date_key,
 
         -- Attributes
         is_anonymous,

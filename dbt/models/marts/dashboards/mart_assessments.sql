@@ -26,7 +26,7 @@
 #}
 
 with snapshots as (
-    select * from {{ ref('int_snapshots') }}
+    select * from {{ ref('fact_snapshots') }}
 ),
 
 organizations as (

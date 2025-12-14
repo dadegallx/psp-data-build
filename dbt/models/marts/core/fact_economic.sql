@@ -1,7 +1,7 @@
 {{ config(enabled=false) }}
 
 with snapshots as (
-    select * from {{ ref('int_snapshots') }}
+    select * from {{ ref('fact_snapshots') }}
 ),
 
 snapshot_economic as (

@@ -133,7 +133,7 @@ These two patterns account for 60% of all mismatches.
 
 **Impact:** Affects longitudinal analysis — baseline/follow-up classification may be incorrect for ~10K families depending on which date field is used.
 
-**Current handling:** `int_snapshots` recomputes `snapshot_number` using `ORDER BY snapshot_date, created_at, id`. This changes the sequence for 24K records.
+**Current handling:** `fact_snapshots` recomputes `snapshot_number` using `ORDER BY snapshot_date, created_at, id`. This changes the sequence for 24K records.
 
 **Note:** When ordering by `created_at`, the source `snapshot_number` matches 99.97% of records (only 275 mismatches).
 

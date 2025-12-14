@@ -261,7 +261,100 @@ models:
   # FACT TABLES
   # ========================================
 
+  - name: fact_snapshots
+    description: >
+      Snapshot-level fact table capturing survey event attributes.
 
+      **Grain:** One row per family × snapshot (survey submission).
+
+      Join to fact_indicators via snapshot_id for indicator-level analysis.
+      This table captures snapshot-level attributes that apply to all indicators
+      within a single survey event.
+
+      Fixes source data integrity issues by recalculating snapshot_number and is_last
+      using window functions based on actual chronological order.
+
+      **Key Use Cases:**
+      - Cohort analysis: Filter by max_snapshot_number to find families with N+ surveys
+      - Time-to-followup: Analyze days_since_baseline distribution
+      - Current status: Filter WHERE is_last = TRUE for most recent family state
+    columns:
+      - name: snapshot_id
+        description: "Primary key"
+        data_tests:
+          - unique
+          - not_null
+      - name: family_id
+        description: "Foreign key to dim_family"
+        data_tests:
+          - not_null
+          - relationships:
+              field: family_id
+              to: ref('dim_family')
+      - name: organization_id
+        description: "Foreign key to dim_organization"
+        data_tests:
+          - not_null
+          - relationships:
+              field: organization_id
+              to: ref('dim_organization')
+      - name: application_id
+        description: "Foreign key to applications"
+      - name: survey_definition_id
+        description: "Foreign key to dim_survey_definition"
+        data_tests:
+          - not_null
+          - relationships:
+              field: survey_definition_id
+              to: ref('dim_survey_definition')
+      - name: project_id
+        description: "Foreign key to projects (nullable)"
+      - name: date_key
+        description: "Foreign key to dim_date (YYYYMMDD integer format)"
+        data_tests:
+          - not_null
+          - relationships:
+              field: date_key
+              to: ref('dim_date')
+      - name: is_anonymous
+        description: "Privacy flag - when true, personal data is anonymized"
+      - name: stoplight_skipped
+        description: "Whether the stoplight section was skipped"
+      - name: snapshot_date
+        description: "Date when survey was completed"
+        data_tests:
+          - not_null
+      - name: snapshot_created_at
+        description: "Record creation timestamp"
+      - name: created_by
+        description: "User who created the snapshot"
+      - name: snapshot_updated_at
+        description: "Record last modified timestamp"
+      - name: snapshot_number
+        description: >
+          Recomputed survey round per family+survey_definition.
+          1=baseline, >1=follow-up. Calculated chronologically to fix source data issues.
+        data_tests:
+          - not_null
+      - name: is_last
+        description: >
+          Dynamically computed flag for most recent snapshot per family (across all surveys).
+        data_tests:
+          - not_null
+      - name: is_baseline
+        description: "True when snapshot_number = 1 (first survey in family+survey journey)"
+        data_tests:
+          - not_null
+      - name: days_since_baseline
+        description: "Days elapsed since baseline survey (0 for baseline, positive for follow-ups)"
+        data_tests:
+          - not_null
+      - name: days_since_previous
+        description: "Days elapsed since previous snapshot (NULL for baseline)"
+      - name: max_snapshot_number
+        description: "Max snapshot number in this family+survey journey (for cohort filtering)"
+        data_tests:
+          - not_null
 
   - name: fact_family_economic_snapshot
     description: >
