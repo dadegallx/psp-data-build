@@ -46,15 +46,13 @@ organizations as (
     select * from {{ ref('dim_organization') }}
 ),
 
-indicators as (
-    select * from {{ ref('dim_indicator_questions') }}
-),
-
 survey_definitions as (
     select * from {{ ref('dim_survey_definition') }}
 ),
 
 -- Resolve code_name to survey_indicator_id via snapshot → survey_definition
+-- Note: INNER JOIN filters out orphaned responses (code_names removed from survey definitions)
+-- See DATA_QUALITY_ISSUES.md "Orphaned Indicator Responses" for details
 stoplight_with_survey_indicator as (
     select
         ss.snapshot_id,
@@ -69,34 +67,25 @@ stoplight_with_survey_indicator as (
         and ss.indicator_code_name = si.indicator_code_name
 ),
 
--- Validate survey_indicator_id exists in dimension
-stoplight_validated as (
-    select
-        swsi.snapshot_id,
-        swsi.indicator_status_value,
-        swsi.survey_indicator_id
-    from stoplight_with_survey_indicator swsi
-    inner join indicators ind
-        on swsi.survey_indicator_id = ind.survey_indicator_id
-),
-
 -- Join all sources
 joined as (
     select
         snapshots.snapshot_id,
         snapshots.snapshot_number,
         snapshots.is_last,
+        snapshots.is_baseline,
+        snapshots.is_followup,
         snapshots.max_snapshot_number,
         snapshots.snapshot_date,
         snapshots.family_id,
         snapshots.organization_id,
-        stoplight_validated.survey_indicator_id,
+        stoplight_with_survey_indicator.survey_indicator_id,
         snapshots.survey_definition_id,
         snapshots.project_id,
         -- Normalize score: 0=skipped, 1=red, 2=yellow, 3=green, invalid→NULL
         case
-            when stoplight_validated.indicator_status_value in (0, 1, 2, 3)
-            then stoplight_validated.indicator_status_value
+            when stoplight_with_survey_indicator.indicator_status_value in (0, 1, 2, 3)
+            then stoplight_with_survey_indicator.indicator_status_value
             else null
         end as current_score
     from snapshots
@@ -106,8 +95,8 @@ joined as (
         on snapshots.organization_id = organizations.organization_id
     inner join survey_definitions
         on snapshots.survey_definition_id = survey_definitions.survey_definition_id
-    inner join stoplight_validated
-        on snapshots.snapshot_id = stoplight_validated.snapshot_id
+    inner join stoplight_with_survey_indicator
+        on snapshots.snapshot_id = stoplight_with_survey_indicator.snapshot_id
 ),
 
 -- Add window function columns
@@ -125,6 +114,8 @@ enriched as (
         snapshot_id,
         snapshot_number,
         is_last,
+        is_baseline,
+        is_followup,
         max_snapshot_number,
 
         -- Current score (this row's value)

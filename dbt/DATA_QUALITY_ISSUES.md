@@ -129,3 +129,38 @@ One duplicate found: Survey 80 uses `code_name = 'socialCapital'` for two differ
 **Impact:** None. Survey 80 has **zero snapshots** — it was never deployed. The duplicate exists in the definition but causes no response ambiguity.
 
 **Note:** `data_model/DATA_QUALITY.md` documents 9 duplicate rows (likely from Demo database). Warehouse has only this one case.
+
+---
+
+## Orphaned Indicator Responses (Removed Indicators)
+
+**Table:** `data_collect.snapshot_stoplight`
+**Column:** `code_name`
+**Related:** `data_collect.snapshot`, `data_collect.survey_stoplight`
+
+Indicator responses exist for `code_name` values that no longer exist in the survey definition:
+
+| Metric | Value |
+|--------|-------|
+| Total `snapshot_stoplight` records | 38,917,319 |
+| Orphaned responses | 25,143 |
+| Percentage | 0.065% |
+| Distinct surveys affected | 22 |
+
+Top orphaned indicators by volume:
+
+| code_name | survey_definition_id | count |
+|-----------|---------------------|-------|
+| `insurance` | 147 | 6,761 |
+| `culturalTraditionsAndHeritage` | 59 | 1,618 |
+| `abilityToSolveProblemsAndConflicts` | 29 | 662 |
+| `moralConscience` | 29 | 662 |
+| `insurance` | 29 | 662 |
+
+**Root cause:** Indicators were removed from survey definitions after responses had already been collected. For example, `insurance` exists in 170+ surveys but not in surveys 29, 118, 147.
+
+**Impact:** These responses are silently dropped by the INNER JOIN in `fact_indicators_v2` when resolving `code_name` → `survey_indicator_id`. The data is lost from analytics.
+
+**Current handling:** The fact table's CTE 1 (`stoplight_with_survey_indicator`) filters these out via INNER JOIN. No explicit handling needed.
+
+**Recommendation:** Investigate whether removed indicators should be restored to survey definitions for historical completeness, or accept data loss for deprecated indicators.
