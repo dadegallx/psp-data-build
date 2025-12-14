@@ -15,9 +15,9 @@ final as (
         survey_is_active,
         country_code as survey_country_code,
 
-        -- Additional attributes (not in source, set to defaults)
-        null as survey_status,
-        false as survey_is_current
+        -- Audit fields
+        survey_created_at,
+        survey_updated_at
 
     from survey_definitions
 )

@@ -11,15 +11,26 @@ joined as (
         -- Primary key
         families.family_id,
 
-        -- Family attributes
-        families.is_anonymous,
+        -- Hub context
+        families.application_id,
+
+        -- Organization context
         families.organization_id,
 
-        -- Geographic attributes (resolved via country FK)
+        -- Project context
+        families.project_id,
+
+        -- Family attributes
+        families.is_anonymous,
+        families.family_is_active,
         countries.country_code,
         countries.country_name,
         families.latitude,
-        families.longitude
+        families.longitude,
+
+        -- Audit fields
+        families.family_created_at,
+        families.family_updated_at
 
     from families
     left join countries

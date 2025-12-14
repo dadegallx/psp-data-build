@@ -11,25 +11,31 @@ final as (
         -- Primary key
         se.survey_economic_id,
 
-        -- Business key (composite: survey_definition_id + code_name)
+        -- Survey context (denormalized)
         se.survey_definition_id,
-        se.code_name,
+        sd.survey_code,
+        sd.survey_title,
+        sd.survey_description,
+        sd.survey_language,
+        sd.survey_is_active,
+        sd.country_code as survey_country_code,
 
         -- Question attributes
+        se.code_name,
         se.question_text,
         se.answer_type,
         se.answer_options,
         se.scope,
+        se.topic,
         se.is_for_family_member,
 
-        -- Survey context
-        sd.survey_code,
-        sd.survey_title,
-        sd.survey_language,
+        -- Audit fields (survey context)
+        sd.survey_created_at,
+        sd.survey_updated_at,
 
-        -- Audit fields
-        se.created_date,
-        se.last_modified_date
+        -- Audit fields (question)
+        se.survey_economic_created_at,
+        se.survey_economic_updated_at
 
     from survey_economic as se
     left join survey_definitions as sd
