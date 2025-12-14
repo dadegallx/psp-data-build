@@ -10,18 +10,25 @@
 
     Grain: One row per family × indicator × snapshot
 
-    Adds window function columns for progress analysis:
+    Score columns:
+    - current_score: The indicator value for this row (0=skipped, 1=red, 2=yellow, 3=green)
     - baseline_score: Value from baseline snapshot (NULL if indicator didn't exist in baseline)
     - previous_score: Value from the previous snapshot (NULL for first observation)
-    - current_score: The value for this specific row
+
+    Priority/Achievement columns:
+    - is_priority: TRUE if family marked this indicator as a priority
+    - has_achievement: TRUE if family marked this indicator as achieved
+    - was_priority_in_previous: TRUE if this indicator was a priority in the previous snapshot
 
     Use Cases:
     - Sankey diagrams: Filter WHERE is_last = TRUE, map baseline_score → current_score
     - Progress analysis: Compare current_score - baseline_score (only valid when baseline_score IS NOT NULL)
     - Momentum: Compare current_score - previous_score
+    - Achievement rate: Filter WHERE has_achievement AND was_priority_in_previous
 
-    Note: baseline_score = NULL means the indicator was added after the baseline survey.
-    Filter WHERE baseline_score IS NOT NULL for valid baseline comparisons.
+    Notes:
+    - baseline_score = NULL means the indicator was added after the baseline survey
+    - Join to stg_snapshot_stoplight_priority/achievement via snapshot_stoplight_id for details
 #}
 
 -- Source CTEs (self-contained, mirrors fact_family_indicator_snapshot logic)
@@ -53,11 +60,20 @@ survey_definitions as (
     select * from {{ ref('dim_survey_definition') }}
 ),
 
+priorities as (
+    select * from {{ ref('stg_snapshot_stoplight_priority') }}
+),
+
+achievements as (
+    select * from {{ ref('stg_snapshot_stoplight_achievement') }}
+),
+
 -- Resolve code_name to survey_indicator_id via snapshot → survey_definition
 -- Note: INNER JOIN filters out orphaned responses (code_names removed from survey definitions)
 -- See DATA_QUALITY_ISSUES.md "Orphaned Indicator Responses" for details
 stoplight_with_survey_indicator as (
     select
+        ss.snapshot_stoplight_id,
         ss.snapshot_id,
         ss.indicator_code_name,
         ss.indicator_status_value,
@@ -84,12 +100,21 @@ joined as (
         stoplight_with_survey_indicator.survey_indicator_id,
         snapshots.survey_definition_id,
         snapshots.project_id,
+
+        -- Degenerate dimension for joining to priority/achievement details
+        stoplight_with_survey_indicator.snapshot_stoplight_id,
+
         -- Normalize score: 0=skipped, 1=red, 2=yellow, 3=green, invalid→NULL
         case
             when stoplight_with_survey_indicator.indicator_status_value in (0, 1, 2, 3)
             then stoplight_with_survey_indicator.indicator_status_value
             else null
-        end as current_score
+        end as current_score,
+
+        -- Priority/achievement flags (sparse - most will be false)
+        priorities.snapshot_stoplight_id is not null as is_priority,
+        achievements.snapshot_stoplight_id is not null as has_achievement
+
     from snapshots
     inner join families
         on snapshots.family_id = families.family_id
@@ -99,6 +124,10 @@ joined as (
         on snapshots.survey_definition_id = survey_definitions.survey_definition_id
     inner join stoplight_with_survey_indicator
         on snapshots.snapshot_id = stoplight_with_survey_indicator.snapshot_id
+    left join priorities
+        on stoplight_with_survey_indicator.snapshot_stoplight_id = priorities.snapshot_stoplight_id
+    left join achievements
+        on stoplight_with_survey_indicator.snapshot_stoplight_id = achievements.snapshot_stoplight_id
 ),
 
 -- Add window function columns
@@ -118,6 +147,7 @@ enriched as (
         is_last,
         is_baseline,
         max_snapshot_number,
+        snapshot_stoplight_id,  -- For joining to priority/achievement details
 
         -- Current score (this row's value)
         current_score,
@@ -130,8 +160,18 @@ enriched as (
         -- Previous score (NULL for first snapshot)
         lag(current_score) over (
             partition by family_id, survey_indicator_id
-            order by snapshot_date, snapshot_id
-        ) as previous_score
+            order by snapshot_number
+        ) as previous_score,
+
+        -- Priority/achievement flags
+        is_priority,
+        has_achievement,
+
+        -- Was this indicator a priority in the previous snapshot? (for achievement analysis)
+        lag(is_priority) over (
+            partition by family_id, survey_indicator_id
+            order by snapshot_number
+        ) as was_priority_in_previous
 
     from joined
 )
