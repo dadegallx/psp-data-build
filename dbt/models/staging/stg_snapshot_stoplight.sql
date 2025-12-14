@@ -16,8 +16,8 @@ renamed as (
         additional as is_additional,
 
         -- Audit fields
-        created_date as created_at,
-        to_timestamp(updated_at / 1000) as updated_at
+        created_date as snapshot_stoplight_created_at,
+        to_timestamp(updated_at / 1000) as snapshot_stoplight_updated_at
 
     from source
     where value in (0, 1, 2, 3, 9)

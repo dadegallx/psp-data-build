@@ -12,7 +12,7 @@ renamed as (
 
         -- Attributes
         first_participant,
-        active as is_active,
+        active as family_member_is_active,
         anonymous as is_anonymous,
 
         -- Gender Normalization (M/F/Other convention)
@@ -27,8 +27,8 @@ renamed as (
         coalesce(nullif(birth_country, ''), 'Unknown') as birth_country,
 
         -- Audit fields
-        created_date as created_at,
-        last_modified_date as updated_at
+        created_date as family_member_created_at,
+        last_modified_date as family_member_updated_at
 
     from source
     where family_id is not null  -- Exclude orphan records

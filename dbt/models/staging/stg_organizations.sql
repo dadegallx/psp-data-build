@@ -18,8 +18,8 @@ renamed as (
         language,
 
         -- Audit fields
-        created_date as created_at,
-        last_modified_date as updated_at
+        created_date as organization_created_at,
+        last_modified_date as organization_updated_at
 
     from source
 )

@@ -2,21 +2,28 @@ with families as (
     select * from {{ ref('stg_families') }}
 ),
 
-final as (
+countries as (
+    select * from {{ ref('stg_countries') }}
+),
+
+joined as (
     select
         -- Primary key
-        family_id,
+        families.family_id,
 
         -- Family attributes
-        is_anonymous,
-        organization_id,
+        families.is_anonymous,
+        families.organization_id,
 
-        -- Geographic attributes
-        country,
-        latitude,
-        longitude
+        -- Geographic attributes (resolved via country FK)
+        countries.country_code,
+        countries.country_name,
+        families.latitude,
+        families.longitude
 
     from families
+    left join countries
+        on families.country_id = countries.country_id
 )
 
-select * from final
+select * from joined

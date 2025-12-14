@@ -22,9 +22,9 @@ with_snapshot_number as (
         is_anonymous,
         stoplight_skipped,
         snapshot_date,
-        created_at,
+        snapshot_created_at,
         created_by,
-        updated_at,
+        snapshot_updated_at,
 
         -- Re-compute snapshot_number chronologically per family+survey
         -- Fixes source data integrity issues where baseline has later date than follow-up
@@ -53,11 +53,11 @@ final as (
 
         -- Date fields
         snapshot_date,
-        created_at,
+        snapshot_created_at,
 
         -- Audit fields
         created_by,
-        updated_at,
+        snapshot_updated_at,
 
         -- Snapshot sequencing
         snapshot_number,

@@ -24,8 +24,8 @@ renamed as (
         to_timestamp(snapshot_date) as snapshot_date,
 
         -- Audit fields
-        to_timestamp(created_at) as created_at,
-        last_modified_date as updated_at,
+        to_timestamp(created_at) as snapshot_created_at,
+        last_modified_date as snapshot_updated_at,
         created_by
 
     from source

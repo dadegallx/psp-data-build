@@ -30,8 +30,8 @@ renamed as (
         end as longitude,
 
         -- Audit fields
-        created_date as created_at,
-        last_modified_date as updated_at
+        created_date as family_created_at,
+        last_modified_date as family_updated_at
 
     from source
 )

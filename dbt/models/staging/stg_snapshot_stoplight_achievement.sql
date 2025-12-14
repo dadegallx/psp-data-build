@@ -15,8 +15,8 @@ renamed as (
         roadmap,
 
         -- Audit fields
-        created_date as created_at,
-        last_modified_date as updated_at
+        created_date as achievement_created_at,
+        last_modified_date as achievement_updated_at
 
     from source
 )

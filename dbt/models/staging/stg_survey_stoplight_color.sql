@@ -15,8 +15,8 @@ renamed as (
         description as color_description,
 
         -- Audit fields
-        created_at,
-        updated_at
+        created_at as color_created_at,
+        updated_at as color_updated_at
 
     from source
 )

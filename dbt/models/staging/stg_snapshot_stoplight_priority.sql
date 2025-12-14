@@ -16,8 +16,8 @@ renamed as (
         estimated_date,  -- Months to improve
 
         -- Audit fields
-        created_date as created_at,
-        last_modified_date as updated_at
+        created_date as priority_created_at,
+        last_modified_date as priority_updated_at
 
     from source
 )

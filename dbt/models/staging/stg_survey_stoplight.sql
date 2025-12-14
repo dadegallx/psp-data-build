@@ -22,8 +22,8 @@ renamed as (
         order_number,
 
         -- Audit fields
-        created_at,
-        updated_at
+        created_at as survey_indicator_created_at,
+        updated_at as survey_indicator_updated_at
 
     from source
 )

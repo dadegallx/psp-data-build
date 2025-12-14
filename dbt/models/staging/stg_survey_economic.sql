@@ -27,8 +27,8 @@ renamed as (
         topic,
 
         -- Audit fields
-        created_at,
-        updated_at
+        created_at as survey_economic_created_at,
+        updated_at as survey_economic_updated_at
 
     from source
 )

@@ -86,7 +86,7 @@ joined as (
         snapshots.snapshot_id,
         snapshots.snapshot_number,
         snapshots.is_last,
-        snapshots.max_wave_reached,
+        snapshots.max_snapshot_number,
         snapshots.snapshot_date,
         snapshots.family_id,
         snapshots.organization_id,
@@ -125,7 +125,7 @@ enriched as (
         snapshot_id,
         snapshot_number,
         is_last,
-        max_wave_reached,
+        max_snapshot_number,
 
         -- Current score (this row's value)
         current_score,

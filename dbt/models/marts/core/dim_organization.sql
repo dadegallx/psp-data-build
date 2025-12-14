@@ -12,17 +12,14 @@ joined as (
         organizations.organization_name,
         organizations.organization_description,
         organizations.organization_is_active,
-        organizations.organization_country,
-        organizations.organization_country_code,
-        organizations.organization_type,
+        organizations.country_code as organization_country_code,
 
         -- Application hierarchy (denormalized)
         applications.application_id,
         applications.application_name,
         applications.application_description,
         applications.application_is_active,
-        applications.application_country,
-        applications.application_country_code
+        applications.country_code as application_country_code
 
     from organizations
     inner join applications
@@ -38,16 +35,13 @@ final as (
         organization_name,
         organization_description,
         organization_is_active,
-        organization_country,
         organization_country_code,
-        organization_type,
 
         -- Application hierarchy (denormalized)
         application_id,
         application_name,
         application_description,
         application_is_active,
-        application_country,
         application_country_code
 
     from joined

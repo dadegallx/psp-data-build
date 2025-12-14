@@ -62,9 +62,9 @@ models:
         description: "GPS latitude rounded to 2 decimals for privacy"
       - name: longitude
         description: "GPS longitude rounded to 2 decimals for privacy"
-      - name: created_at
+      - name: family_created_at
         description: "Record creation timestamp"
-      - name: updated_at
+      - name: family_updated_at
         description: "Record last modified timestamp"
 
   - name: stg_family_members
@@ -84,7 +84,7 @@ models:
               to: ref('stg_families')
       - name: first_participant
         description: "Whether this is the first/primary participant"
-      - name: is_active
+      - name: family_member_is_active
         description: "Whether the member is currently active"
       - name: is_anonymous
         description: "Privacy flag - when true, personal data is anonymized"
@@ -92,9 +92,9 @@ models:
         description: "Normalized gender (Male/Female/Other)"
       - name: birth_country
         description: "Country of birth"
-      - name: created_at
+      - name: family_member_created_at
         description: "Record creation timestamp"
-      - name: updated_at
+      - name: family_member_updated_at
         description: "Record last modified timestamp"
 
   - name: stg_snapshots
@@ -141,9 +141,9 @@ models:
         description: "Whether the stoplight section was skipped"
       - name: snapshot_date
         description: "Date when survey was completed"
-      - name: created_at
+      - name: snapshot_created_at
         description: "Record creation timestamp"
-      - name: updated_at
+      - name: snapshot_updated_at
         description: "Record last modified timestamp"
       - name: created_by
         description: "User who created the snapshot"
@@ -178,9 +178,9 @@ models:
               values: [0, 1, 2, 3, 9]
       - name: is_additional
         description: "Whether this is an additional indicator"
-      - name: created_at
+      - name: snapshot_stoplight_created_at
         description: "Record creation timestamp"
-      - name: updated_at
+      - name: snapshot_stoplight_updated_at
         description: "Record last modified timestamp"
 
   - name: stg_survey_definitions
@@ -226,9 +226,9 @@ models:
         description: "Whether this indicator is required"
       - name: order_number
         description: "Display order within survey"
-      - name: created_at
+      - name: survey_indicator_created_at
         description: "Record creation timestamp"
-      - name: updated_at
+      - name: survey_indicator_updated_at
         description: "Record last modified timestamp"
 
   - name: stg_survey_stoplight_indicator
@@ -256,11 +256,11 @@ models:
           - not_null
       - name: dimension_met_name
         description: "Normalized translation key for dimension name lookup (lowercase)"
-      - name: is_active
+      - name: dimension_is_active
         description: "Whether the dimension is currently active"
-      - name: created_at
+      - name: dimension_created_at
         description: "Record creation timestamp"
-      - name: updated_at
+      - name: dimension_updated_at
         description: "Record last modified timestamp"
 
   - name: stg_survey_stoplight_color
@@ -283,9 +283,9 @@ models:
         description: "Stoplight color value (1=red, 2=yellow, 3=green)"
       - name: color_description
         description: "Description of the threshold criteria for this color"
-      - name: created_at
+      - name: color_created_at
         description: "Record creation timestamp"
-      - name: updated_at
+      - name: color_updated_at
         description: "Record last modified timestamp"
 
   - name: stg_survey_economic
@@ -322,9 +322,9 @@ models:
         description: "Whether the question is for individual family members"
       - name: topic
         description: "Topic category for the question"
-      - name: created_at
+      - name: survey_economic_created_at
         description: "Record creation timestamp"
-      - name: updated_at
+      - name: survey_economic_updated_at
         description: "Record last modified timestamp"
 
   - name: stg_snapshot_economic
@@ -353,6 +353,10 @@ models:
         description: "Response format type"
         data_tests:
           - not_null
+      - name: snapshot_economic_created_at
+        description: "Record creation timestamp"
+      - name: snapshot_economic_updated_at
+        description: "Record last modified timestamp"
 
   - name: stg_snapshot_stoplight_priority
     description: "Cleaned priority indicators from snapshot_stoplight_priority"
@@ -377,6 +381,10 @@ models:
         description: "Planned action to address the priority"
       - name: estimated_date
         description: "Months to improve (estimated)"
+      - name: priority_created_at
+        description: "Record creation timestamp"
+      - name: priority_updated_at
+        description: "Record last modified timestamp"
 
   - name: stg_snapshot_stoplight_achievement
     description: "Cleaned achievement records from snapshot_stoplight_achievement"
@@ -399,6 +407,33 @@ models:
         description: "Action taken to achieve the result"
       - name: roadmap
         description: "Steps taken/planned"
+      - name: achievement_created_at
+        description: "Record creation timestamp"
+      - name: achievement_updated_at
+        description: "Record last modified timestamp"
+
+  - name: stg_projects
+    description: "Cleaned project records"
+    columns:
+      - name: project_id
+        description: "Primary key"
+        data_tests:
+          - unique
+          - not_null
+      - name: organization_id
+        description: "Foreign key to organizations"
+      - name: project_name
+        description: "Project title"
+      - name: project_description
+        description: "Project description"
+      - name: project_is_active
+        description: "Whether the project is currently active"
+      - name: from_date
+        description: "Project start date"
+      - name: to_date
+        description: "Project end date"
+      - name: project_created_at
+        description: "Record creation timestamp"
 
   - name: stg_countries
     description: "ISO country codes and names reference table"

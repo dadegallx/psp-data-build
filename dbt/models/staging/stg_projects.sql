@@ -13,14 +13,14 @@ renamed as (
         -- Attributes
         title as project_name,
         description as project_description,
-        active as is_active,
+        active as project_is_active,
 
         -- Date range
         from_date,
         to_date,
 
         -- Audit fields
-        created_at
+        created_at as project_created_at
 
     from source
 )

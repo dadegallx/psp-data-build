@@ -22,8 +22,8 @@ renamed as (
         multiple_value as answer_multiple_value,
 
         -- Audit fields
-        created_date as created_at,
-        last_modified_date as updated_at
+        created_date as snapshot_economic_created_at,
+        last_modified_date as snapshot_economic_updated_at
 
     from source
 )

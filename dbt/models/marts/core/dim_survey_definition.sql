@@ -13,9 +13,9 @@ final as (
         survey_description,
         survey_language,
         survey_is_active,
+        country_code as survey_country_code,
 
         -- Additional attributes (not in source, set to defaults)
-        null as survey_country_code,
         null as survey_status,
         false as survey_is_current
 
