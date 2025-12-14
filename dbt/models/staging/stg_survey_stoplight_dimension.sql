@@ -8,9 +8,12 @@ renamed as (
         id as dimension_id,
 
         -- Attributes
-        code_name as dimension_code,
         lower(trim(met_name)) as dimension_met_name,  -- normalized for translation join
-        status as dimension_status
+        status as is_active,
+
+        -- Audit fields
+        created_date as created_at,
+        last_modified_date as updated_at
 
     from source
 )

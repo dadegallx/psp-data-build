@@ -12,7 +12,11 @@ renamed as (
 
         -- Attributes
         value as color_value,  -- 1=Red, 2=Yellow, 3=Green
-        description as color_description
+        description as color_description,
+
+        -- Audit fields
+        created_at,
+        updated_at
 
     from source
 )

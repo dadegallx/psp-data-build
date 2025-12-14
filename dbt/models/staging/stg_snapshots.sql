@@ -16,19 +16,19 @@ renamed as (
 
         -- Attributes
         snapshot_number,
+        is_last,
+        anonymous as is_anonymous,
+        stoplight_skipped,
 
-        anonymous,
-
-        -- Date fields (already in seconds, convert to timestamp)
+        -- Date fields (stored in seconds, convert to timestamp)
         to_timestamp(snapshot_date) as snapshot_date,
-        to_timestamp(created_at) as created_at,
 
         -- Audit fields
-        created_by,
-        last_modified_date as updated_at
+        to_timestamp(created_at) as created_at,
+        last_modified_date as updated_at,
+        created_by
 
     from source
-    where snapshot_date is not null  -- Filter out snapshots without dates
 )
 
 select * from renamed

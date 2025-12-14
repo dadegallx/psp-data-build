@@ -11,8 +11,7 @@ renamed as (
         name as application_name,
         description as application_description,
         is_active as application_is_active,
-        country as application_country,
-        country_code as application_country_code,
+        country_code,
 
         -- Audit fields
         created_date as created_at,

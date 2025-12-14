@@ -19,8 +19,8 @@ renamed as (
         multiple_value as answer_multiple_value,
 
         -- Audit fields
-        created_date,
-        last_modified_date
+        created_date as created_at,
+        last_modified_date as updated_at
 
     from source
 )

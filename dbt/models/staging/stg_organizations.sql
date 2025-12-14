@@ -14,9 +14,8 @@ renamed as (
         name as organization_name,
         description as organization_description,
         is_active as organization_is_active,
-        country as organization_country,
-        country_code as organization_country_code,
-        organization_type,
+        country_code,
+        language,
 
         -- Audit fields
         created_date as created_at,

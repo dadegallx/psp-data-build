@@ -35,7 +35,6 @@ indicator_templates_with_translations as (
     select
         ssi.indicator_template_id,
         ssi.dimension_id,
-        ssi.indicator_template_code_name,
         ssi.indicator_template_short_name,
         ssi.indicator_template_description,
         name_trans.translation_text as indicator_name,
@@ -59,14 +58,12 @@ joined as (
 
         -- Master indicator (template) - for aggregation
         indicator_templates_with_translations.indicator_template_id,
-        indicator_templates_with_translations.indicator_template_code_name as indicator_code_name,
         indicator_templates_with_translations.indicator_name as indicator_name,
         indicator_templates_with_translations.indicator_description as indicator_description,
 
-        -- Dimension attributes (from master dimension table with English translation)
-        indicator_templates_with_translations.dimension_id,
+        -- Dimension attributes (join via survey_stoplight.survey_dimension_id)
+        survey_stoplight_dimension.dimension_id,
         dimension_trans.translation_text as dimension_name,
-        survey_stoplight_dimension.dimension_code,
 
         -- Color criteria descriptions (what each color level means)
         color_criteria_pivoted.red_criteria_description,
@@ -77,7 +74,7 @@ joined as (
     inner join indicator_templates_with_translations
         on survey_stoplight.indicator_template_id = indicator_templates_with_translations.indicator_template_id
     left join survey_stoplight_dimension
-        on indicator_templates_with_translations.dimension_id = survey_stoplight_dimension.dimension_id
+        on survey_stoplight.survey_dimension_id = survey_stoplight_dimension.dimension_id
     left join translations dimension_trans
         on survey_stoplight_dimension.dimension_met_name = dimension_trans.translation_key
     left join color_criteria_pivoted
@@ -91,7 +88,6 @@ final as (
         indicator_template_id,    -- Master template ID
 
         -- MASTER INDICATOR ATTRIBUTES (for aggregation/grouping)
-        indicator_code_name,      -- Template code (e.g., 'income')
         indicator_name,           -- English display name (e.g., 'Income')
         indicator_description,    -- English description
 
@@ -105,7 +101,6 @@ final as (
         -- DIMENSION ATTRIBUTES
         dimension_id,
         dimension_name,  -- English canonical name from translation table
-        dimension_code,  -- Dimension code (e.g., 'incomeAndEmployment')
 
         -- COLOR CRITERIA DESCRIPTIONS (what each poverty level means for this indicator)
         red_criteria_description,      -- Critical poverty threshold description

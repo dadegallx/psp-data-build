@@ -13,14 +13,11 @@ renamed as (
         -- Attributes
         reason,
         action,
-        estimated_date, -- Represents months to improve? verify vs schema descriptions or dates. Schema says "Months to improve" but type is bigint? or timestamp? RAW_SCHEMA says "Months to improve" but type bigint. Let's keep as is for now.
+        estimated_date,  -- Months to improve
 
-        -- Metadata
-        created_at,
-        created_by,
-        last_modified_by,
-        created_date,
-        last_modified_date
+        -- Audit fields
+        created_date as created_at,
+        last_modified_date as updated_at
 
     from source
 )

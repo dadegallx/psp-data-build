@@ -12,12 +12,12 @@ renamed as (
 
         -- Attributes (normalized for joins)
         lower(trim(code_name)) as indicator_code_name,
-        value as indicator_status_value,  -- 1=Red, 2=Yellow, 3=Green, NULL=Skipped
+        value as indicator_status_value,  -- 1=Red, 2=Yellow, 3=Green, 0=Skipped
+        additional as is_additional,
 
         -- Audit fields
-        to_timestamp(updated_at / 1000) as updated_at,
-        updated_by,
-        created_date as created_at
+        created_date as created_at,
+        to_timestamp(updated_at / 1000) as updated_at
 
     from source
 )

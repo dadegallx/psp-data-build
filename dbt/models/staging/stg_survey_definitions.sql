@@ -12,10 +12,12 @@ renamed as (
         title as survey_title,
         description as survey_description,
         lang as survey_language,
-        active as survey_is_active,
+        active as is_active,
+        country_code,
 
         -- Audit fields
-        created_at
+        created_at,
+        updated_at
 
     from source
 )

@@ -10,6 +10,7 @@ renamed as (
         -- Foreign keys
         survey_definition_id,
         survey_indicator_id as indicator_template_id,
+        survey_dimension_id,
 
         -- Attributes (normalized for joins)
         lower(trim(code_name)) as indicator_code_name,
@@ -18,7 +19,11 @@ renamed as (
         description as indicator_description,
         definition as indicator_definition,
         required as indicator_is_required,
-        dimension as dimension_name  -- One of 6 poverty dimensions
+        order_number,
+
+        -- Audit fields
+        created_at,
+        updated_at
 
     from source
 )

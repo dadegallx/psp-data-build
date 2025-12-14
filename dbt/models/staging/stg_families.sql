@@ -7,11 +7,15 @@ renamed as (
         -- Primary key
         family_id,
 
+        -- Foreign keys
+        country as country_id,  -- FK to countries table
+        application_id,
+        organization_id,
+        project_id,
+
         -- Attributes
         is_active as family_is_active,
         anonymous as is_anonymous,
-        country,
-        organization_id,
 
         -- Geographic coordinates: validate format, range, and round to 2 decimals for privacy
         case
@@ -23,7 +27,11 @@ renamed as (
             when longitude ~ '^-?[0-9]+\.?[0-9]*$'
                 and longitude::numeric between -180 and 180
             then round(longitude::numeric, 2)
-        end as longitude
+        end as longitude,
+
+        -- Audit fields
+        created_date as created_at,
+        last_modified_date as updated_at
 
     from source
 )

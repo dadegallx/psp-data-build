@@ -14,11 +14,9 @@ renamed as (
         action,
         roadmap,
 
-        -- Metadata
-        created_by,
-        last_modified_by,
-        created_date,
-        last_modified_date
+        -- Audit fields
+        created_date as created_at,
+        last_modified_date as updated_at
 
     from source
 )

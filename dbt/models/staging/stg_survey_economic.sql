@@ -24,10 +24,11 @@ renamed as (
         -- Scope information
         scope,
         for_family_member as is_for_family_member,
+        topic,
 
         -- Audit fields
-        created_at as created_date,
-        updated_at as last_modified_date
+        created_at,
+        updated_at
 
     from source
 )
