@@ -1,11 +1,11 @@
 version: 2
 
 models:
-  - name: mart_indicators_v2
+  - name: mart_indicators
     description: >
       **Flow-Based Indicator Progress Model for Multi-Visualization Support.**
 
-      **Grain:** One row per indicator × snapshot_number × is_last × max_wave_reached
+      **Grain:** One row per indicator × snapshot_number × is_last × max_snapshot_number
       × baseline_label × previous_label × current_label × organization.
 
       **Use Case:** Supports Sankey diagrams, line charts, bar charts, and cohort analysis
@@ -16,7 +16,7 @@ models:
 
       **Key Features:**
       - Transition columns: baseline_label, previous_label, current_label
-      - Cohort filtering via max_wave_reached (survivor curves)
+      - Cohort filtering via max_snapshot_number (survivor curves)
       - Pre-aggregated family_count for fast queries
       - net_change_numeric for avg improvement calculations
       - RLS-enabled via application_id
@@ -25,7 +25,7 @@ models:
       - Sankey: baseline_label (source) → current_label (target) → SUM(family_count) WHERE is_last = TRUE
       - Line Chart: % Green = SUM(family_count) FILTER (WHERE current_label = 'Green') / SUM(family_count)
       - Bar Chart: Compare GROUP BY baseline_label vs GROUP BY current_label
-      - Survivor Curve: WHERE max_wave_reached >= N
+      - Survivor Curve: WHERE max_snapshot_number >= N
     columns:
       - name: snapshot_type
         description: "Survey type label: 'Baseline', '1st Follow-up', '2nd Follow-up', etc."
@@ -42,7 +42,7 @@ models:
         data_tests:
           - not_null
 
-      - name: max_wave_reached
+      - name: max_snapshot_number
         description: "Furthest wave this family reached - use for survivor curve filtering"
         data_tests:
           - not_null
@@ -83,7 +83,7 @@ models:
         data_tests:
           - not_null
           - accepted_values:
-              values: ['Red', 'Yellow', 'Green', 'Skipped']
+              values: ['Red', 'Yellow', 'Green', 'Skipped', 'N/A']
 
       - name: previous_label
         description: "Color at Wave N-1 - Sankey Source B (NULL for baseline rows)"
@@ -93,7 +93,7 @@ models:
         data_tests:
           - not_null
           - accepted_values:
-              values: ['Red', 'Yellow', 'Green', 'Skipped']
+              values: ['Red', 'Yellow', 'Green', 'Skipped', 'Unknown']
 
       - name: family_count
         description: "Number of families in this transition group - Sankey flow width"
@@ -102,5 +102,37 @@ models:
 
       - name: net_change_numeric
         description: "SUM(current_score - baseline_score) for calculating average improvement"
+
+  - name: mart_surveys
+    description: >
+      **Operational & Demographic Dashboard Model.**
+      
+      **Grain:** One row per snapshot (survey event).
+      
+      **Purpose:** 
+      - Analyzing survey operations (volume, timing, projects)
+      - Analyzing family demographics (location, country)
+      - Calculating "Per Family" metrics (instead of Per Indicator)
+
+      **Key Use Cases:**
+      - "How many families total?" -> SELECT COUNT(*) WHERE is_last = TRUE
+      - "Efficiency?" -> SELECT AVG(days_since_previous)
+      - "Project Reach?" -> SELECT count(*) GROUP BY project_name
+    columns:
+      - name: snapshot_id
+        description: "Primary Key"
+        data_tests:
+          - unique
+          - not_null
+      
+      - name: country_name
+        description: "Country where the family is located"
         data_tests:
           - not_null
+
+      - name: days_since_previous
+        description: "Days elapsed since the previous survey (Operational Metric)"
+
+      - name: is_last
+        description: "Filter for Current Active Portfolio (Most recent snapshot per family)"
+
