@@ -110,6 +110,8 @@ These two patterns account for 60% of all mismatches.
 
 **Open question:** Unknown whether source `snapshot_number` is assigned by `created_at` order, manual entry, or another mechanism.
 
+**Recommendation:** Either drop snapshot_date from the model or fix the data quality issue in the source database.
+
 ---
 
 ## Duplicate code_name in Survey Definitions
