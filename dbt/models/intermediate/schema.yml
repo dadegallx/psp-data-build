@@ -1,0 +1,57 @@
+version: 2
+
+models:
+  - name: int_snapshots
+    description: >
+      Enriched snapshot records with recomputed survey sequencing.
+
+      Fixes source data integrity issues by recalculating snapshot_number and is_last
+      using window functions based on actual chronological order.
+    columns:
+      - name: snapshot_id
+        description: "Primary key"
+        data_tests:
+          - unique
+          - not_null
+      - name: family_id
+        description: "Foreign key to families"
+        data_tests:
+          - not_null
+      - name: organization_id
+        description: "Foreign key to organizations"
+        data_tests:
+          - not_null
+      - name: application_id
+        description: "Foreign key to applications"
+      - name: survey_definition_id
+        description: "Foreign key to survey definitions"
+      - name: project_id
+        description: "Foreign key to projects (nullable)"
+      - name: is_anonymous
+        description: "Privacy flag - when true, personal data is anonymized"
+      - name: stoplight_skipped
+        description: "Whether the stoplight section was skipped"
+      - name: snapshot_date
+        description: "Date when survey was completed"
+      - name: created_at
+        description: "Record creation timestamp"
+      - name: created_by
+        description: "User who created the snapshot"
+      - name: updated_at
+        description: "Record last modified timestamp"
+      - name: snapshot_number
+        description: >
+          Recomputed survey round per family+survey_definition.
+          1=baseline, >1=follow-up. Calculated chronologically to fix source data issues.
+        data_tests:
+          - not_null
+      - name: is_last
+        description: >
+          Dynamically computed flag for most recent snapshot per family.
+          Fixes source data integrity issues.
+        data_tests:
+          - not_null
+      - name: max_wave_reached
+        description: "Total snapshots for this family (for cohort/survivor curve filtering)"
+        data_tests:
+          - not_null

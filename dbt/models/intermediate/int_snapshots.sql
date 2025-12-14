@@ -23,7 +23,8 @@ final as (
         project_id,
 
         -- Attributes
-        anonymous,
+        is_anonymous,
+        stoplight_skipped,
 
         -- Date fields
         snapshot_date,
