@@ -58,6 +58,7 @@ joined as (
         survey_stoplight_dimension.dimension_id,
         dimension_trans.translation_text as dimension_name,
         survey_stoplight_dimension.dimension_is_active,
+        survey_stoplight_dimension.is_core_dimension,
 
         -- Master indicator (template)
         indicator_templates_with_translations.indicator_template_id,

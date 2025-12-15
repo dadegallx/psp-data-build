@@ -232,3 +232,42 @@ Top orphaned indicators by volume:
 
 **Model Handling:** `stg_survey_stoplight.sql` now implements deduplication logic using `DISTINCT ON (survey_definition_id, code_name) ORDER BY updated_at DESC`, keeping only the most recently updated definition.
 
+---
+
+## Unused and Orphan Dimensions
+
+**Table:** `data_collect.survey_stoplight_dimension`
+**Column:** `status`
+
+The dimension table contains 60 dimensions, but only 6 account for 99.7% of all family responses (~35.5M out of ~35.6M):
+
+| Dimension | Responses | Families |
+|-----------|-----------|----------|
+| Housing and Infrastructure | 9,665,218 | 513,100 |
+| Health and Environment | 7,625,167 | 509,523 |
+| Education and Culture | 6,407,024 | 503,062 |
+| Income and Employment | 4,986,835 | 512,800 |
+| Interiority and Motivation | 3,772,597 | 575,954 |
+| Organization and Participation | 3,033,038 | 573,876 |
+
+The remaining 54 dimensions fall into three categories:
+
+| Category | Count | Description |
+|----------|-------|-------------|
+| ORPHAN | 9 | Never linked to any indicator (test/placeholder dimensions) |
+| DIRECT SURVEYS | 24 | Have survey indicators but no master templates (custom/ad-hoc) |
+| LOW USAGE | 21 | Have both templates and surveys but minimal responses (<100K combined) |
+
+Examples of orphan dimensions:
+- `ANewDimension2.name`, `ANewDimensionTest.name` (test dimensions)
+- `DimensionInvalida.name` (invalid placeholder)
+- `Beliefs&Values.name`, `Physiological&BasicHumanNeeds.name` (created but never used)
+
+**Impact:** Dashboard charts show many empty or near-empty dimension bars, cluttering visualizations.
+
+**Ideal handling:** The source `status` field should be used to mark non-core dimensions as `INACTIVE`. Currently, most orphan dimensions are marked `ACTIVE` in the source, making the field unreliable for filtering.
+
+**Current handling:** `stg_survey_stoplight_dimension.sql` implements a hardcoded `is_core_dimension` flag whitelisting the 6 primary poverty dimensions. `mart_indicators.sql` filters on this flag. This is a workaround — ideally the source system would maintain accurate `status` values.
+
+**Recommendation:** Update the source application to set `status = 'INACTIVE'` for orphan/test dimensions, then replace the hardcoded whitelist with a filter on the source status field.
+
