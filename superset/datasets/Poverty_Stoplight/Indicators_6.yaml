@@ -488,7 +488,63 @@ columns:
   groupby: true
   filterable: true
   expression: ''
-  description: null
+  python_date_format: null
+  extra: {}
+- column_name: current_label_ordered
+  verbose_name: Current Status (Ordered)
+  is_dttm: false
+  is_active: true
+  type: STRING
+  advanced_data_type: null
+  groupby: true
+  filterable: true
+  expression: >-
+    CASE 
+      WHEN current_label = 'Green' THEN '1 - Green'
+      WHEN current_label = 'Yellow' THEN '2 - Yellow'
+      WHEN current_label = 'Red' THEN '3 - Red'
+      WHEN current_label = 'Skipped' THEN '4 - Skipped'
+      ELSE '5 - Unknown'
+    END
+  description: "Numeric prefixed status for sorting"
+  python_date_format: null
+  extra: {}
+- column_name: baseline_label_ordered
+  verbose_name: Baseline Status (Ordered)
+  is_dttm: false
+  is_active: true
+  type: STRING
+  advanced_data_type: null
+  groupby: true
+  filterable: true
+  expression: >-
+    CASE 
+      WHEN baseline_label = 'Green' THEN '1 - Green'
+      WHEN baseline_label = 'Yellow' THEN '2 - Yellow'
+      WHEN baseline_label = 'Red' THEN '3 - Red'
+      WHEN baseline_label = 'Skipped' THEN '4 - Skipped'
+      ELSE '5 - Unknown'
+    END
+  description: "Numeric prefixed status for sorting"
+  python_date_format: null
+  extra: {}
+- column_name: previous_label_ordered
+  verbose_name: Previous Status (Ordered)
+  is_dttm: false
+  is_active: true
+  type: STRING
+  advanced_data_type: null
+  groupby: true
+  filterable: true
+  expression: >-
+    CASE 
+      WHEN previous_label = 'Green' THEN '1 - Green'
+      WHEN previous_label = 'Yellow' THEN '2 - Yellow'
+      WHEN previous_label = 'Red' THEN '3 - Red'
+      WHEN previous_label = 'Skipped' THEN '4 - Skipped'
+      ELSE '5 - Unknown'
+    END
+  description: "Numeric prefixed status for sorting"
   python_date_format: null
   extra: {}
 version: 1.0.0
