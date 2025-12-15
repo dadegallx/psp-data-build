@@ -271,3 +271,46 @@ Examples of orphan dimensions:
 
 **Recommendation:** Update the source application to set `status = 'INACTIVE'` for orphan/test dimensions, then replace the hardcoded whitelist with a filter on the source status field.
 
+---
+
+## Families Without Country
+
+**Table:** `ps_families.family`
+**Column:** `country`
+
+**Issue:** 1,197 family records have `NULL` country, resulting in "Unknown" in the Surveys dashboard table.
+
+| Metric | Value |
+|--------|-------|
+| Families without country | 1,197 |
+| Total families | 595,347 |
+| Percentage | 0.20% |
+| Surveys affected | 1,184 |
+| Surveys percentage | 0.12% |
+
+Top affected organizations:
+
+| Organization | Families | Actual Location |
+|--------------|----------|-----------------|
+| BANCAMIA | 489 | Colombia? |
+| WARC Group | 208 | Unknown |
+| Spring - Study Programme | 155 | UK |
+| Newcastle Futures | 80 | UK |
+| BANKOMUNALES | 74 | Unknown |
+
+**Root cause:** These families were created without a country assignment in the source application.
+
+**Organization fallback not viable:** The organization `country_code` field is unreliable — many UK/US organizations incorrectly default to `PY` (Paraguay):
+
+| Organization | Has country_code | Actual Location |
+|--------------|------------------|-----------------|
+| Newcastle Futures | PY | UK |
+| Gateshead OPA | PY | UK |
+| CCE Chemung - Elmira US | PY | USA |
+| Citizens Advice Newcastle | PY | UK |
+| CARE USA | PY | USA |
+
+**Current handling:** `mart_surveys.sql` uses `COALESCE(dim_family.country_name, 'Unknown')` to surface these records rather than hiding them.
+
+**Recommendation:** Flag to platform team for source data cleanup. Given the low impact (0.12% of surveys), "Unknown" is an acceptable placeholder.
+
