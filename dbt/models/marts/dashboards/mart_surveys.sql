@@ -1,7 +1,7 @@
 {{
     config(
         materialized='table',
-        alias='mart_surveys',
+        alias='Surveys',
         tags=['dashboard'],
         indexes=[
             {'columns': ['application_id']},

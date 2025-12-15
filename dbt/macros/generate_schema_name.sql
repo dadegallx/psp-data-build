@@ -7,7 +7,7 @@
 
     {%- else -%}
 
-        {%- if target.name == 'prod' -%}
+        {%- if target.name == 'prod' or custom_schema_name == 'superset' -%}
             {{ custom_schema_name | trim }}
         {%- else -%}
             {{ default_schema }}_{{ custom_schema_name | trim }}

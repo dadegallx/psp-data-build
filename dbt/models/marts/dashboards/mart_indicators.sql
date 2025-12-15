@@ -1,7 +1,7 @@
 {{
     config(
         materialized='table',
-        alias='mart_indicators',
+        alias='Indicators',
         tags=['dashboard'],
         indexes=[
             {'columns': ['application_id']},
@@ -168,6 +168,7 @@ final as (
         on aggregated.survey_definition_id = dim_survey_definition.survey_definition_id
     left join stg_projects
         on aggregated.project_id = stg_projects.project_id
+    where dim_indicator_questions.is_core_dimension = true
 )
 
 select * from final
