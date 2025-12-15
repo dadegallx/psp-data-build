@@ -1,0 +1,495 @@
+table_name: Indicators
+main_dttm_col: null
+description: null
+default_endpoint: null
+offset: 0
+cache_timeout: null
+catalog: neondb
+schema: superset
+sql: ''
+params: null
+template_params: null
+filter_select_enabled: true
+fetch_values_predicate: null
+extra: null
+normalize_columns: false
+always_filter_main_dttm: false
+folders: null
+uuid: 3800ff8a-e8e3-4d26-bd5a-4683e708fcb1
+metrics:
+- metric_name: count
+  verbose_name: "# Families"
+  metric_type: count
+  expression: SUM(family_count)
+  description: "Total number of families"
+  d3format: null
+  currency: null
+  extra: {}
+  warning_text: null
+
+# --- Current Status Counts ---
+- metric_name: count_green
+  verbose_name: "# Green"
+  metric_type: count
+  expression: SUM(CASE WHEN current_label = 'Green' THEN family_count ELSE 0 END)
+  description: "Number of families at Green status currently"
+  d3format: null
+  currency: null
+  extra: {}
+  warning_text: null
+- metric_name: count_yellow
+  verbose_name: "# Yellow"
+  metric_type: count
+  expression: SUM(CASE WHEN current_label = 'Yellow' THEN family_count ELSE 0 END)
+  description: "Number of families at Yellow status currently"
+  d3format: null
+  currency: null
+  extra: {}
+  warning_text: null
+- metric_name: count_red
+  verbose_name: "# Red"
+  metric_type: count
+  expression: SUM(CASE WHEN current_label = 'Red' THEN family_count ELSE 0 END)
+  description: "Number of families at Red status currently"
+  d3format: null
+  currency: null
+  extra: {}
+  warning_text: null
+- metric_name: count_skipped
+  verbose_name: "# Skipped"
+  metric_type: count
+  expression: SUM(CASE WHEN current_label = 'Skipped' THEN family_count ELSE 0 END)
+  description: "Number of families with Skipped status currently"
+  d3format: null
+  currency: null
+  extra: {}
+  warning_text: null
+
+# --- Current Status Ratios ---
+- metric_name: pct_green
+  verbose_name: "% Green"
+  metric_type: null
+  expression: SUM(CASE WHEN current_label = 'Green' THEN family_count ELSE 0 END) * 1.0 / NULLIF(SUM(family_count), 0)
+  description: "Percentage of families at Green status"
+  d3format: '.1%'
+  currency: null
+  extra: {}
+  warning_text: null
+- metric_name: pct_yellow
+  verbose_name: "% Yellow"
+  metric_type: null
+  expression: SUM(CASE WHEN current_label = 'Yellow' THEN family_count ELSE 0 END) * 1.0 / NULLIF(SUM(family_count), 0)
+  description: "Percentage of families at Yellow status"
+  d3format: '.1%'
+  currency: null
+  extra: {}
+  warning_text: null
+- metric_name: pct_red
+  verbose_name: "% Red"
+  metric_type: null
+  expression: SUM(CASE WHEN current_label = 'Red' THEN family_count ELSE 0 END) * 1.0 / NULLIF(SUM(family_count), 0)
+  description: "Percentage of families at Red status"
+  d3format: '.1%'
+  currency: null
+  extra: {}
+  warning_text: null
+- metric_name: pct_skipped
+  verbose_name: "% Skipped"
+  metric_type: null
+  expression: SUM(CASE WHEN current_label = 'Skipped' THEN family_count ELSE 0 END) * 1.0 / NULLIF(SUM(family_count), 0)
+  description: "Percentage of families with Skipped status"
+  d3format: '.1%'
+  currency: null
+  extra: {}
+  warning_text: null
+
+# --- Baseline Comparisons ---
+- metric_name: count_green_baseline
+  verbose_name: "# Green (Baseline)"
+  metric_type: count
+  expression: SUM(CASE WHEN baseline_label = 'Green' THEN family_count ELSE 0 END)
+  description: "Number of families at Green status at Baseline"
+  d3format: null
+  currency: null
+  extra: {}
+  warning_text: null
+- metric_name: count_yellow_baseline
+  verbose_name: "# Yellow (Baseline)"
+  metric_type: count
+  expression: SUM(CASE WHEN baseline_label = 'Yellow' THEN family_count ELSE 0 END)
+  description: "Number of families at Yellow status at Baseline"
+  d3format: null
+  currency: null
+  extra: {}
+  warning_text: null
+- metric_name: count_red_baseline
+  verbose_name: "# Red (Baseline)"
+  metric_type: count
+  expression: SUM(CASE WHEN baseline_label = 'Red' THEN family_count ELSE 0 END)
+  description: "Number of families at Red status at Baseline"
+  d3format: null
+  currency: null
+  extra: {}
+  warning_text: null
+- metric_name: pct_green_baseline
+  verbose_name: "% Green (Baseline)"
+  metric_type: null
+  expression: SUM(CASE WHEN baseline_label = 'Green' THEN family_count ELSE 0 END) * 1.0 / NULLIF(SUM(family_count), 0)
+  description: "Percentage of families at Green status at Baseline"
+  d3format: '.1%'
+  currency: null
+  extra: {}
+  warning_text: null
+- metric_name: pct_yellow_baseline
+  verbose_name: "% Yellow (Baseline)"
+  metric_type: null
+  expression: SUM(CASE WHEN baseline_label = 'Yellow' THEN family_count ELSE 0 END) * 1.0 / NULLIF(SUM(family_count), 0)
+  description: "Percentage of families at Yellow status at Baseline"
+  d3format: '.1%'
+  currency: null
+  extra: {}
+  warning_text: null
+- metric_name: pct_red_baseline
+  verbose_name: "% Red (Baseline)"
+  metric_type: null
+  expression: SUM(CASE WHEN baseline_label = 'Red' THEN family_count ELSE 0 END) * 1.0 / NULLIF(SUM(family_count), 0)
+  description: "Percentage of families at Red status at Baseline"
+  d3format: '.1%'
+  currency: null
+  extra: {}
+  warning_text: null
+
+# --- Previous Comparisons ---
+- metric_name: count_green_previous
+  verbose_name: "# Green (Previous)"
+  metric_type: count
+  expression: SUM(CASE WHEN previous_label = 'Green' THEN family_count ELSE 0 END)
+  description: "Number of families at Green status in Previous Snapshot"
+  d3format: null
+  currency: null
+  extra: {}
+  warning_text: null
+- metric_name: count_yellow_previous
+  verbose_name: "# Yellow (Previous)"
+  metric_type: count
+  expression: SUM(CASE WHEN previous_label = 'Yellow' THEN family_count ELSE 0 END)
+  description: "Number of families at Yellow status in Previous Snapshot"
+  d3format: null
+  currency: null
+  extra: {}
+  warning_text: null
+- metric_name: count_red_previous
+  verbose_name: "# Red (Previous)"
+  metric_type: count
+  expression: SUM(CASE WHEN previous_label = 'Red' THEN family_count ELSE 0 END)
+  description: "Number of families at Red status in Previous Snapshot"
+  d3format: null
+  currency: null
+  extra: {}
+  warning_text: null
+- metric_name: pct_green_previous
+  verbose_name: "% Green (Previous)"
+  metric_type: null
+  expression: SUM(CASE WHEN previous_label = 'Green' THEN family_count ELSE 0 END) * 1.0 / NULLIF(SUM(family_count), 0)
+  description: "Percentage of families at Green status in Previous Snapshot"
+  d3format: '.1%'
+  currency: null
+  extra: {}
+  warning_text: null
+- metric_name: pct_yellow_previous
+  verbose_name: "% Yellow (Previous)"
+  metric_type: null
+  expression: SUM(CASE WHEN previous_label = 'Yellow' THEN family_count ELSE 0 END) * 1.0 / NULLIF(SUM(family_count), 0)
+  description: "Percentage of families at Yellow status in Previous Snapshot"
+  d3format: '.1%'
+  currency: null
+  extra: {}
+  warning_text: null
+- metric_name: pct_red_previous
+  verbose_name: "% Red (Previous)"
+  metric_type: null
+  expression: SUM(CASE WHEN previous_label = 'Red' THEN family_count ELSE 0 END) * 1.0 / NULLIF(SUM(family_count), 0)
+  description: "Percentage of families at Red status in Previous Snapshot"
+  d3format: '.1%'
+  currency: null
+  extra: {}
+  warning_text: null
+
+# --- Priority & Impact ---
+- metric_name: count_priorities
+  verbose_name: "# Priorities"
+  metric_type: count
+  expression: SUM(CASE WHEN is_priority THEN family_count ELSE 0 END)
+  description: "Number of indicators marked as Priority"
+  d3format: null
+  currency: null
+  extra: {}
+  warning_text: null
+- metric_name: count_achieved
+  verbose_name: "# Achieved"
+  metric_type: count
+  expression: SUM(CASE WHEN has_achievement THEN family_count ELSE 0 END)
+  description: "Number of indicators marked as Achieved"
+  d3format: null
+  currency: null
+  extra: {}
+  warning_text: null
+- metric_name: priority_success_rate
+  verbose_name: "Priority Success Rate"
+  metric_type: null
+  expression: SUM(CASE WHEN is_priority AND current_label = 'Green' THEN family_count ELSE 0 END) * 1.0 / NULLIF(SUM(CASE WHEN is_priority THEN family_count ELSE 0 END), 0)
+  description: "Percentage of Priorities that are now Green"
+  d3format: '.1%'
+  currency: null
+  extra: {}
+  warning_text: null
+- metric_name: achievement_rate
+  verbose_name: "Achievement Rate"
+  metric_type: null
+  expression: SUM(CASE WHEN has_achievement THEN family_count ELSE 0 END) * 1.0 / NULLIF(SUM(CASE WHEN was_priority_in_previous THEN family_count ELSE 0 END), 0)
+  description: "Ratio of Achievements to Previous Priorities"
+  d3format: '.1%'
+  currency: null
+  extra: {}
+  warning_text: null
+- metric_name: avg_improvement_steps
+  verbose_name: "Avg Improvement Steps"
+  metric_type: null
+  expression: SUM(net_change_numeric) * 1.0 / NULLIF(SUM(family_count), 0)
+  description: "Average steps moved (numeric score change)"
+  d3format: '.2f'
+  currency: null
+  extra: {}
+  warning_text: null
+
+columns:
+- column_name: application_id
+  verbose_name: Application ID
+  is_dttm: false
+  is_active: true
+  type: BIGINT
+  advanced_data_type: null
+  groupby: true
+  filterable: true
+  expression: ''
+  description: null
+  python_date_format: null
+  extra: {}
+- column_name: indicator_name
+  verbose_name: Indicator
+  is_dttm: false
+  is_active: true
+  type: VARCHAR(300)
+  advanced_data_type: null
+  groupby: true
+  filterable: true
+  expression: ''
+  description: null
+  python_date_format: null
+  extra: {}
+- column_name: dimension_name
+  verbose_name: Dimension
+  is_dttm: false
+  is_active: true
+  type: VARCHAR(300)
+  advanced_data_type: null
+  groupby: true
+  filterable: true
+  expression: ''
+  description: null
+  python_date_format: null
+  extra: {}
+- column_name: organization_name
+  verbose_name: Organization
+  is_dttm: false
+  is_active: true
+  type: VARCHAR(50)
+  advanced_data_type: null
+  groupby: true
+  filterable: true
+  expression: ''
+  description: null
+  python_date_format: null
+  extra: {}
+- column_name: hub_name
+  verbose_name: Hub
+  is_dttm: false
+  is_active: true
+  type: VARCHAR(50)
+  advanced_data_type: null
+  groupby: true
+  filterable: true
+  expression: ''
+  description: null
+  python_date_format: null
+  extra: {}
+- column_name: project_name
+  verbose_name: Project
+  is_dttm: false
+  is_active: true
+  type: VARCHAR(255)
+  advanced_data_type: null
+  groupby: true
+  filterable: true
+  expression: ''
+  description: null
+  python_date_format: null
+  extra: {}
+- column_name: survey_title
+  verbose_name: Survey Title
+  is_dttm: false
+  is_active: true
+  type: VARCHAR(255)
+  advanced_data_type: null
+  groupby: true
+  filterable: true
+  expression: ''
+  description: null
+  python_date_format: null
+  extra: {}
+- column_name: was_priority_in_previous
+  verbose_name: Was Priority Previously?
+  is_dttm: false
+  is_active: true
+  type: BOOLEAN
+  advanced_data_type: null
+  groupby: true
+  filterable: true
+  expression: ''
+  description: null
+  python_date_format: null
+  extra: {}
+- column_name: has_achievement
+  verbose_name: Has Achievement?
+  is_dttm: false
+  is_active: true
+  type: BOOLEAN
+  advanced_data_type: null
+  groupby: true
+  filterable: true
+  expression: ''
+  description: null
+  python_date_format: null
+  extra: {}
+- column_name: is_last
+  verbose_name: Is Latest Snapshot?
+  is_dttm: false
+  is_active: true
+  type: BOOLEAN
+  advanced_data_type: null
+  groupby: true
+  filterable: true
+  expression: ''
+  description: null
+  python_date_format: null
+  extra: {}
+- column_name: is_priority
+  verbose_name: Is Priority?
+  is_dttm: false
+  is_active: true
+  type: BOOLEAN
+  advanced_data_type: null
+  groupby: true
+  filterable: true
+  expression: ''
+  description: null
+  python_date_format: null
+  extra: {}
+- column_name: max_snapshot_number
+  verbose_name: Max Wave Reached
+  is_dttm: false
+  is_active: true
+  type: BIGINT
+  advanced_data_type: null
+  groupby: true
+  filterable: true
+  expression: ''
+  description: null
+  python_date_format: null
+  extra: {}
+- column_name: net_change_numeric
+  verbose_name: Net Change Value
+  is_dttm: false
+  is_active: true
+  type: BIGINT
+  advanced_data_type: null
+  groupby: true
+  filterable: true
+  expression: ''
+  description: null
+  python_date_format: null
+  extra: {}
+- column_name: snapshot_number
+  verbose_name: Snapshot #
+  is_dttm: false
+  is_active: true
+  type: BIGINT
+  advanced_data_type: null
+  groupby: true
+  filterable: true
+  expression: ''
+  description: null
+  python_date_format: null
+  extra: {}
+- column_name: family_count
+  verbose_name: Family Count
+  is_dttm: false
+  is_active: true
+  type: BIGINT
+  advanced_data_type: null
+  groupby: false
+  filterable: false
+  expression: ''
+  description: null
+  python_date_format: null
+  extra: {}
+- column_name: baseline_label
+  verbose_name: Baseline Status
+  is_dttm: false
+  is_active: true
+  type: TEXT
+  advanced_data_type: null
+  groupby: true
+  filterable: true
+  expression: ''
+  description: null
+  python_date_format: null
+  extra: {}
+- column_name: current_label
+  verbose_name: Current Status
+  is_dttm: false
+  is_active: true
+  type: TEXT
+  advanced_data_type: null
+  groupby: true
+  filterable: true
+  expression: ''
+  description: null
+  python_date_format: null
+  extra: {}
+- column_name: previous_label
+  verbose_name: Previous Status
+  is_dttm: false
+  is_active: true
+  type: TEXT
+  advanced_data_type: null
+  groupby: true
+  filterable: true
+  expression: ''
+  description: null
+  python_date_format: null
+  extra: {}
+- column_name: snapshot_type
+  verbose_name: Snapshot Type
+  is_dttm: false
+  is_active: true
+  type: TEXT
+  advanced_data_type: null
+  groupby: true
+  filterable: true
+  expression: ''
+  description: null
+  python_date_format: null
+  extra: {}
+version: 1.0.0
+database_uuid: 9fa8e708-58e1-47a5-b02b-b134c9dc2c6c
