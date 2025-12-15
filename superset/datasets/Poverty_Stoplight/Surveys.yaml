@@ -1,0 +1,233 @@
+table_name: Surveys
+main_dttm_col: snapshot_date
+description: "Operational & Demographic Dashboard Model"
+default_endpoint: null
+offset: 0
+cache_timeout: null
+catalog: neondb
+schema: superset
+sql: ''
+params: null
+template_params: null
+filter_select_enabled: true
+fetch_values_predicate: null
+extra: null
+normalize_columns: false
+always_filter_main_dttm: false
+folders: null
+uuid: 77f1df9b-73c3-4560-848e-2f7678151234
+metrics:
+- metric_name: count
+  verbose_name: "# Surveys Recorded"
+  metric_type: count
+  expression: COUNT(*)
+  description: "Total number of surveys submitted"
+  d3format: null
+  currency: null
+  extra: {}
+  warning_text: null
+- metric_name: count_families_active
+  verbose_name: "# Families (Active Portfolio)"
+  metric_type: count
+  expression: SUM(CASE WHEN is_last THEN 1 ELSE 0 END)
+  description: "Number of unique families currently in the program (Is Last = True)"
+  d3format: null
+  currency: null
+  extra: {}
+  warning_text: null
+- metric_name: count_baselines
+  verbose_name: "# Baselines"
+  metric_type: count
+  expression: SUM(CASE WHEN snapshot_number = 1 THEN 1 ELSE 0 END)
+  description: "Number of initial surveys (New families)"
+  d3format: null
+  currency: null
+  extra: {}
+  warning_text: null
+- metric_name: count_followups
+  verbose_name: "# Follow-ups"
+  metric_type: count
+  expression: SUM(CASE WHEN snapshot_number > 1 THEN 1 ELSE 0 END)
+  description: "Number of follow-up surveys (Retained families)"
+  d3format: null
+  currency: null
+  extra: {}
+  warning_text: null
+- metric_name: avg_days_since_previous
+  verbose_name: "Avg. Days Since Last"
+  metric_type: null
+  expression: AVG(days_since_previous)
+  description: "Average days elapsed between current and previous survey"
+  d3format: '.1f'
+  currency: null
+  extra: {}
+  warning_text: null
+- metric_name: avg_days_since_baseline
+  verbose_name: "Avg. Days Since Baseline"
+  metric_type: null
+  expression: AVG(days_since_baseline)
+  description: "Average days elapsed since the family joined the program"
+  d3format: '.1f'
+  currency: null
+  extra: {}
+  warning_text: null
+
+columns:
+- column_name: snapshot_date
+  verbose_name: Snapshot Date
+  is_dttm: true
+  is_active: true
+  type: DATE
+  advanced_data_type: null
+  groupby: true
+  filterable: true
+  expression: ''
+  description: null
+  python_date_format: null
+  extra: {}
+- column_name: organization_name
+  verbose_name: Organization
+  is_dttm: false
+  is_active: true
+  type: VARCHAR(50)
+  advanced_data_type: null
+  groupby: true
+  filterable: true
+  expression: ''
+  description: null
+  python_date_format: null
+  extra: {}
+- column_name: country_name
+  verbose_name: Country
+  is_dttm: false
+  is_active: true
+  type: VARCHAR(255)
+  advanced_data_type: null
+  groupby: true
+  filterable: true
+  expression: ''
+  description: null
+  python_date_format: null
+  extra: {}
+- column_name: hub_name
+  verbose_name: Hub
+  is_dttm: false
+  is_active: true
+  type: VARCHAR(50)
+  advanced_data_type: null
+  groupby: true
+  filterable: true
+  expression: ''
+  description: null
+  python_date_format: null
+  extra: {}
+- column_name: project_name
+  verbose_name: Project
+  is_dttm: false
+  is_active: true
+  type: VARCHAR(255)
+  advanced_data_type: null
+  groupby: true
+  filterable: true
+  expression: ''
+  description: null
+  python_date_format: null
+  extra: {}
+- column_name: survey_title
+  verbose_name: Survey Title
+  is_dttm: false
+  is_active: true
+  type: VARCHAR(255)
+  advanced_data_type: null
+  groupby: true
+  filterable: true
+  expression: ''
+  description: null
+  python_date_format: null
+  extra: {}
+- column_name: is_last
+  verbose_name: Is Latest?
+  is_dttm: false
+  is_active: true
+  type: BOOLEAN
+  advanced_data_type: null
+  groupby: true
+  filterable: true
+  expression: ''
+  description: null
+  python_date_format: null
+  extra: {}
+- column_name: snapshot_number
+  verbose_name: Survey Sequence
+  is_dttm: false
+  is_active: true
+  type: INTEGER
+  advanced_data_type: null
+  groupby: true
+  filterable: true
+  expression: ''
+  description: "1, 2, 3..."
+  python_date_format: null
+  extra: {}
+- column_name: is_baseline
+  verbose_name: Is Baseline?
+  is_dttm: false
+  is_active: true
+  type: BOOLEAN
+  advanced_data_type: null
+  groupby: true
+  filterable: true
+  expression: ''
+  description: null
+  python_date_format: null
+  extra: {}
+- column_name: days_since_previous
+  verbose_name: Days Since Previous
+  is_dttm: false
+  is_active: true
+  type: INTEGER
+  advanced_data_type: null
+  groupby: false
+  filterable: true
+  expression: ''
+  description: null
+  python_date_format: null
+  extra: {}
+- column_name: days_since_baseline
+  verbose_name: Days Since Baseline
+  is_dttm: false
+  is_active: true
+  type: INTEGER
+  advanced_data_type: null
+  groupby: false
+  filterable: true
+  expression: ''
+  description: null
+  python_date_format: null
+  extra: {}
+- column_name: snapshot_id
+  verbose_name: Snapshot ID
+  is_dttm: false
+  is_active: true
+  type: VARCHAR
+  advanced_data_type: null
+  groupby: true
+  filterable: true
+  expression: ''
+  description: null
+  python_date_format: null
+  extra: {}
+- column_name: application_id
+  verbose_name: Application ID
+  is_dttm: false
+  is_active: true
+  type: BIGINT
+  advanced_data_type: null
+  groupby: true
+  filterable: true
+  expression: ''
+  description: null
+  python_date_format: null
+  extra: {}
+version: 1.0.0
+database_uuid: 9fa8e708-58e1-47a5-b02b-b134c9dc2c6c
